@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+<configuration debug="false" scan="false">
+
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<target>System.out</target>
+		<encoder>
+			<!--
+			<pattern>%date{ISO8601} aa %-5level %logger{36} %X{sourceThread}  %X{akkaSource} - %msg%n</pattern>
+			-->
+			<!--
+			<pattern>%X{akkaTimestamp} %-5level - %-8replace(%X{sourceThread}){'bknow-akka.actor.default-dispatcher', 'disp'} - %X{akkaSource} %logger{36} - %msg%n</pattern>
+			-->
+			<pattern>%X{akkaTimestamp} %-5level - %-8replace(%X{sourceThread}){'bknow-akka.actor.default-dispatcher', 'disp'} - %X{akkaSource} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+    <!--
+	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
+		<file>bknow.log</file>
+		<append>false</append>
+		<encoder>
+			<pattern>%date{ISO8601} %-5level %logger{36} %X{sourceThread} -	%msg%n</pattern>
+		</encoder>
+	</appender>
+	-->
+
+	<logger name="akka" level="DEBUG" />
+  <logger name="jndi" level="INFO" />
+
+	<logger name="akka.event.slf4j.Slf4jLogger" level="ERROR" />
+  <logger name="ch.qos.logback" level="ERROR" />
+	<logger name="com.hp.hpl.jena" level="INFO" />
+	<logger name="org.apache.http" level="INFO" />
+	<logger name="com.clarkparsia.stardog" level="INFO" />
+	<logger name="org.openrdf" level="INFO" />
+	<logger name="net.spy.memcached.ConfigurationPoller" level="WARNING" />
+  <logger name="net.spy.memcached.MemcachedConnection" level="ERROR" />
+  <logger name="net.spy.memcached.ConfigurationPoller" level="ERROR" />
+  <logger name="org.apache.camel" level="INFO" />
+  <logger name="org.apache.camel.component.restlet.DefaultRestletBinding" level="INFO" />
+  <logger name="org.restlet" level="INFO" />
+
+  <root level="DEBUG">
+		<appender-ref ref="CONSOLE" />
+		<!-- <appender-ref ref="FILE" /> -->
+	</root>
+
+</configuration>

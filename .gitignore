@@ -1,0 +1,51 @@
+
+# Java class files
+*.class
+
+# Windows thumbnail db
+Thumbs.db
+
+# OSX files
+.DS_Store
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# Log files
+*.log
+
+# sbt specific
+.cache/
+.history
+.lib/
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+boot/
+test-output/
+target/
+
+# Scala-IDE / Eclipse specific
+.scala_dependencies
+.worksheet
+.settings/
+.classpath
+.cache
+.project
+.target/
+
+# IntelliJ specific
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+

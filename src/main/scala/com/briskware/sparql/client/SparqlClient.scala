@@ -10,18 +10,20 @@ import com.modelfabric.akka.actor.UnknownMessageHandler
 /**
  * Messages
  */
-case class MessageSparqlClientQuerySolution(sparql : SparqlQuery, qs : QuerySolution)
+abstract class MessageSparqlClient
 
-case class MessageSparqlClientNoQuerySolutions(sparql : SparqlQuery)
+case class MessageSparqlClientQuerySolution(sparql : SparqlQuery, qs : QuerySolution) extends MessageSparqlClient
 
-case class MessageSparqlClientQueryEnd(sparql : SparqlQuery, rs : ResultSet)
+case class MessageSparqlClientNoQuerySolutions(sparql : SparqlQuery) extends MessageSparqlClient
 
-case class MessageSparqlClientUpdateSuccessful(sparql : SparqlUpdate)
+case class MessageSparqlClientQueryEnd(sparql : SparqlQuery, rs : ResultSet) extends MessageSparqlClient
+
+case class MessageSparqlClientUpdateSuccessful(sparql : SparqlUpdate) extends MessageSparqlClient
 
 case class MessageSparqlStatementFailed(
   statement : SparqlStatement,
   response : Option[HttpResponse],
-  error : Option[Throwable])
+  error : Option[Throwable]) extends MessageSparqlClient
 
 /**
  * A SparqlClient is an Actor that sends SPARQL statements to a given endPoint and send you a Message for every

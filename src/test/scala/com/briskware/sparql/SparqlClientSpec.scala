@@ -65,7 +65,7 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
     override def statement = build(s"""
     |SELECT ?a ?b ?c
     |FROM
-    |  <tag:bware:data>
+    |  <urn:test:bware:data>
     |WHERE {
     | ?a ?b ?c .
     |}

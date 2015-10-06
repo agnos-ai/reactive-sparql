@@ -130,6 +130,9 @@ private sealed abstract class ExtendedSparqlStatement(
 
   val uri : Uri
 
+  /** computes a relative Uri, which is necessary for HTTP compliance */
+  def relativeUri = uri.toRelative
+
   /**
    *  Optimizing pipeline creation by this partially applied function that
    *  defines a pipeline before it takes the connection actor.
@@ -140,8 +143,8 @@ private sealed abstract class ExtendedSparqlStatement(
   val postBody : HttpEntity
 
   def httpRequest : HttpRequest = statement.httpMethod match {
-    case GET    ⇒ Get(uri)
-    case POST   ⇒ Post(uri, postBody)
+    case GET    ⇒ Get(relativeUri)
+    case POST   ⇒ Post(relativeUri, postBody)
     case method ⇒ throw new IllegalArgumentException(s"Unsupported HTTP Method $method")
   }
 

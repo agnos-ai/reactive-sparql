@@ -8,13 +8,12 @@ import scala.concurrent.duration._
 
 import akka.actor.{Props, ActorSystem}
 
-import spray.http.{StatusCodes, HttpResponse}
+import spray.http.{HttpMethods, StatusCodes, HttpResponse}
 import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest._
 
 import com.briskware.sparql.client._
 import Helpers._
-import spray.http.HttpResponse
 import com.typesafe.config.ConfigFactory
 
 object SparqlClientSpec {
@@ -113,15 +112,22 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
     |}""")
   }
 
-  lazy val query2 = new SparqlQuery {
-    override def statement = build(s"""
-    |SELECT ?g ?b ?c
-    |FROM NAMED <urn:test:bware:data>
-    |WHERE {
-    |  GRAPH ?g {
-    |    <urn:test:whatever> ?b ?c
-    |  }
-    |}""")
+  lazy val sparql2 = s"""
+      |SELECT ?g ?b ?c
+      |FROM NAMED <urn:test:bware:data>
+      |WHERE {
+      |  GRAPH ?g {
+      |    <urn:test:whatever> ?b ?c
+      |  }
+      |}"""
+
+  lazy val query2Get = new SparqlQuery {
+    override def statement = build(sparql2)
+  }
+
+  lazy val query2Post = new SparqlQuery {
+    override def statement = build(sparql2)
+    override def httpMethod = HttpMethods.POST
   }
 
   import SparqlClientSpec._
@@ -200,9 +206,27 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
        }
     }
 
-    "4. Get the results just inserted" in {
+    "4. Get the results just inserted via HTTP GET" in {
 
-      client ! query2
+      client ! query2Get
+
+      val result = fishForMessage(dbTimeout, "a. wait for MessageSparqlClientQuerySolution") {
+        case MessageSparqlClientQuerySolution(_, qs) => handleSparqlQuerySolution(qs)
+        case MessageSparqlClientQueryEnd(_, _) => handleSparqlQueryNoResults
+        case msg @ MessageSparqlStatementFailed(_, _, _) => handleSparqlClientError(msg.statement, msg.response)
+        case msg @ _ => handleUnknownMessage(msg)
+      }
+      if (result == true) {
+        fishForMessage(dbTimeout, "b. wait for MessageSparqlClientQueryEnd") {
+          case MessageSparqlClientQueryEnd(_, _) => handleSparqlQueryEnd
+          case msg @ _ => handleUnknownMessage(msg)
+        }
+      }
+    }
+
+    "5. Get the results just inserted via HTTP POST" in {
+
+      client ! query2Post
 
       val result = fishForMessage(dbTimeout, "a. wait for MessageSparqlClientQuerySolution") {
         case MessageSparqlClientQuerySolution(_, qs) => handleSparqlQuerySolution(qs)

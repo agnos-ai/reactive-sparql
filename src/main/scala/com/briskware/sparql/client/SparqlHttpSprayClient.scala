@@ -68,7 +68,8 @@ object SparqlHttpSprayClient {
   val DEFAULT_GRAPH_PARAM_NAME = "default-graph-uri"
   val NAMED_GRAPH_PARAM_NAME = "named-graph-uri"
   val ACCEPT_PARAM_NAME = "Accept"
-  val STATEMENTS = "statements"
+  val QUERY = "query"
+  val UPDATE = "update"
   val INCLUDE_INFERRED_PARAM_NAME = "infer"
 
   val `application/sparql-results+json` = MediaType.custom(SPARQL_RESULTS_MIME_TYPE)
@@ -299,11 +300,11 @@ private class ExtendedSparqlQuery(
   lazy val postBody = HttpEntity(`application/x-www-form-urlencoded`, bodyContent)
 
   lazy val uri : Uri = statement.httpMethod match {
-    case POST ⇒ endPointURI
+    case POST ⇒ endPointURI.copy(path = endPointURI.path / QUERY)
     case _ ⇒ Uri(
       endPointURI.scheme,
       endPointURI.authority,
-      endPointURI.path,
+      endPointURI.path / QUERY,
       (QUERY_PARAM_NAME, actualSparql) +: Uri.Query.Empty,
       None
     )
@@ -374,12 +375,14 @@ private class ExtendedSparqlUpdate(
   lazy val postBody = HttpEntity(`application/x-www-form-urlencoded`, queryParams.mkString("&"))
 
   lazy val queryParams = List(
+/*
     s"$QUERY_LANGUAGE_PARAM_NAME=SPARQL",
     s"$INCLUDE_INFERRED_PARAM_NAME=true",
+*/
     s"$UPDATE_PARAM_NAME=${actualSparql.urlEncode}"
   )
 
-  lazy val uri : Uri = endPointURI.copy(path = endPointURI.path / STATEMENTS)
+  lazy val uri : Uri = endPointURI.copy(path = endPointURI.path / UPDATE)
 
   /**
    * Create and return the HTTP pipeline.
@@ -391,7 +394,7 @@ private class ExtendedSparqlUpdate(
 
   override def handleResponse(response_ : HttpResponse, attempt : Int) {
 
-    if (response_.status != StatusCodes.NoContent) { // 204 is actually ok in this case
+    if (response_.status != StatusCodes.OK) {
       handleError(Option(response_), Some(new RuntimeException(s"${response_.status.value} (${response_.status.reason})")), attempt)
       return
     }

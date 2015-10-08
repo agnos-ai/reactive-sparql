@@ -25,6 +25,7 @@ object BuildSettings {
 object Version {
 
   val scala      = "2.11.7"
+  val scalaUtils = "0.1-SNAPSHOT"
   val akka       = "2.3.13"
   val sprayJson  = "1.3.2"
   val spray      = "1.3.3"
@@ -36,8 +37,7 @@ object Version {
 
 object Library {
 
-
-//libraryDependencies += "com.modelfabric" %% "scala-utils" % "0.1-SNAPSHOT"
+  val scalaUtils            = "com.modelfabric"       %% "scala-utils"                  % Version.scalaUtils
   val akkaActor            = "com.typesafe.akka"       %% "akka-actor"                  % Version.akka
   val akkaSlf4j            = "com.typesafe.akka"       %% "akka-slf4j"                  % Version.akka
   val akkaTestkit          = "com.typesafe.akka"       %% "akka-testkit"                % Version.akka
@@ -63,7 +63,7 @@ object Build extends sbt.Build {
   import Library._
   import plugins._
 
-  val projectDependencies = Seq(akkaActor, akkaSlf4j, akkaTestkit, sprayClient, sprayJson, javaxWsRs, jerseyCore, jerseyClient, logbackClassic, scalaTest)
+  val projectDependencies = Seq(scalaUtils, akkaActor, akkaSlf4j, akkaTestkit, sprayClient, sprayJson, javaxWsRs, jerseyCore, jerseyClient, logbackClassic, scalaTest)
 
   lazy val project = Project("sparql-client", file("."))
     .configs(IntegrationTest)

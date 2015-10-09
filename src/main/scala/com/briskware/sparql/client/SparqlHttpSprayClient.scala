@@ -1,8 +1,7 @@
 package com.briskware.sparql.client
 
-import _root_.spray.can.parsing.ParserSettings
 import akka.actor._
-import com.briskware.sparql.{SparqlQuery, SparqlStatement, SparqlUpdate}
+import com.briskware.sparql.{SparqlQuery, SparqlUpdate}
 import com.briskware.sparql.SparqlStatement
 import com.modelfabric.extension.StringExtensions._
 
@@ -14,7 +13,7 @@ import spray.http.HttpCharsets._
 import spray.client.pipelining._
 import spray.http._
 import spray.json.JsonParser
-import scala.concurrent.{ Await, Future }
+import scala.concurrent.Future
 import HttpMethods._
 import SparqlHttpSprayClient._
 import scala.io.Source
@@ -25,15 +24,11 @@ import scala.util.Success
 import spray.http.HttpRequest
 import spray.http.Uri
 import spray.can.client.{ ClientConnectionSettings, HostConnectorSettings }
-import spray.client.pipelining
 import spray.can.Http
 import spray.can.Http.{ HostConnectorInfo, HostConnectorSetup }
-import java.net.InetSocketAddress
 import akka.io
 import akka.pattern._
-import akka._
 import akka.util.Timeout
-import scala.concurrent.duration.Duration
 
 object UrlPart {
 
@@ -43,7 +38,10 @@ object UrlPart {
   private def decode(in: java.net.URL) = Some((
     in.getProtocol,
     in.getHost,
-    in.getPort,
+    in.getPort match {
+      case x if x < 0 => 80
+      case x => x
+    },
     in.getPath
   ))
 }

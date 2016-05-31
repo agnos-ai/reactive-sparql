@@ -24,9 +24,9 @@ object BuildSettings {
 
 object Version {
 
-  val scala      = "2.11.7"
+  val scala      = "2.11.8"
   val scalaUtils = "0.1-SNAPSHOT"
-  val akka       = "2.3.13"
+  val akka       = "2.4.4"
   val sprayJson  = "1.3.2"
   val spray      = "1.3.3"
   val javaxWsRs  = "1.1.1"
@@ -53,7 +53,6 @@ object Library {
   val logbackClassic       = "ch.qos.logback"          %  "logback-classic"             % Version.logback
 
   val scalaTest            = "org.scalatest"           %% "scalatest"                   % Version.scalaTest  % "it,test"
-
 
 }
 

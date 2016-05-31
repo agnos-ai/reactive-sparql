@@ -22,9 +22,9 @@ object Helpers {
    * @param system The ActorSystem currently in use.
    */
   def shutdownSystem(implicit system: ActorSystem) {
-    if (!system.isTerminated) {
-      system.shutdown
-    }
+    //if (!system.is) {
+      system.terminate()
+    //}
 
     // Give the OS some time to clean up the current port. This sucks.
     Thread.sleep(250)

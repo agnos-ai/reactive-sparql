@@ -1,10 +1,10 @@
 package com.briskware.sparql
 
 import com.briskware.sparql.client.{SparqlHttpSprayClient, SparqlClientConfig, QuerySolution, MessageSparqlClientQueryEnd}
-import com.briskware.test.functional.Helpers
+import com.briskware.test.functional.{FusekiRunner, Helpers}
 
+import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
-import scala.concurrent.duration._
 
 import akka.actor.{Props, ActorSystem}
 
@@ -15,6 +15,8 @@ import org.scalatest._
 import com.briskware.sparql.client._
 import Helpers._
 import com.typesafe.config.ConfigFactory
+
+import scala.concurrent.duration._
 
 object SparqlClientSpec {
   // This may have to be scaled back in the future
@@ -46,11 +48,15 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
 
   def this() = this(SparqlClientSpec.testSystem)
 
+  val fusekiRunner = new FusekiRunner()
+
   override def beforeAll() {
-    //startServer()
+    fusekiRunner.startServer()
   }
 
   override def afterAll() {
+    fusekiRunner.shutdownServer()
+
     shutdownSystem
   }
 
@@ -165,25 +171,7 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
   }
 
   "The SparqlClient" must {
-    "1. Return at least one query solution" in {
-
-      client ! query1
-
-      val result = fishForMessage(dbTimeout, "a. wait for MessageSparqlClientQuerySolution") {
-        case MessageSparqlClientQuerySolution(_, qs) => handleSparqlQuerySolution(qs)
-        case MessageSparqlClientQueryEnd(_, _) => handleSparqlQueryNoResults
-        case msg @ MessageSparqlStatementFailed(_, _, _) => handleSparqlClientError(msg.statement, msg.response)
-        case msg @ _ => handleUnknownMessage(msg)
-      }
-      if (result == true) {
-        fishForMessage(dbTimeout, "b. wait for MessageSparqlClientQueryEnd") {
-          case MessageSparqlClientQueryEnd(_, _) => handleSparqlQueryEnd
-          case msg @ _ => handleUnknownMessage(msg)
-        }
-      }
-    }
-
-    "2. Allow one insert" in {
+    "1. Allow one insert" in {
 
       client ! insert1
 
@@ -195,7 +183,7 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
     }
 
 
-    "3. Allow one insert" in {
+    "2. Allow one insert" in {
 
       client ! insert2
 
@@ -206,7 +194,7 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
        }
     }
 
-    "4. Get the results just inserted via HTTP GET" in {
+    "3. Get the results just inserted via HTTP GET" in {
 
       client ! query2Get
 
@@ -224,7 +212,7 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
       }
     }
 
-    "5. Get the results just inserted via HTTP POST" in {
+    "4. Get the results just inserted via HTTP POST" in {
 
       client ! query2Post
 

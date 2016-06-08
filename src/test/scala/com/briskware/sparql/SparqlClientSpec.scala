@@ -171,6 +171,7 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
   }
 
   "The SparqlClient" must {
+
     "1. Allow one insert" in {
 
       client ! insert1
@@ -181,7 +182,6 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
         case msg @ _ => handleUnknownMessage(msg)
       }
     }
-
 
     "2. Allow one insert" in {
 

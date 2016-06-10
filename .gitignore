@@ -49,3 +49,6 @@ target/
 *.iws
 out/
 
+project/project/
+run/
+webapp/

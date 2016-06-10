@@ -1,10 +1,11 @@
 package com.briskware.sparql
 
+import java.net.ServerSocket
+
 import com.briskware.sparql.client.{SparqlHttpSprayClient, SparqlClientConfig, QuerySolution, MessageSparqlClientQueryEnd}
-import com.briskware.test.functional.Helpers
+import com.briskware.test.functional.{FusekiManager, Helpers}
 
 import scala.language.postfixOps
-import scala.concurrent.duration._
 
 import akka.actor.{Props, ActorSystem}
 
@@ -16,27 +17,48 @@ import com.briskware.sparql.client._
 import Helpers._
 import com.typesafe.config.ConfigFactory
 
+import scala.concurrent.duration._
+
 object SparqlClientSpec {
+
   // This may have to be scaled back in the future
   val dbTimeout = 2 seconds
 
-  val realConfig = ConfigFactory.load()
+  val endpointKey = "SPARQL_ENDPOINT"
 
-  val config = ConfigFactory.parseString("""
+  val useFuseki: Boolean = ! sys.env.contains(endpointKey)
 
-    akka.loggers = ["akka.testkit.TestEventListener"]
+  val endpoint: String = sys.env.getOrElse(endpointKey, s"http://localhost:${port}/test")
 
-    akka.remote {
-      netty.tcp {
-        hostname = ""
-        port = 0
-      }
+  lazy val port: Int = {
+    val socket = new ServerSocket(0)
+    val p = socket.getLocalPort
+    socket.close()
+    p
+  }
+
+  val config = {
+    ConfigFactory.parseString(
+      s"""
+        |akka.loggers = ["akka.testkit.TestEventListener"]
+        |akka.loglevel = INFO
+        |akka.remote {
+        |  netty.tcp {
+        |    hostname = ""
+        |    port = 0
+        |  }
+        |}
+        |akka.cluster {
+        |  seed-nodes = []
+        |}
+        |sparql.client {
+        |  type = "HttpSpray"
+        |  endpoint = "${endpoint}"
+        |  userId = "admin"
+        |  password = "admin"
+        |}
+    """.stripMargin).withFallback(ConfigFactory.load())
     }
-
-    akka.cluster {
-      seed-nodes = []
-    }""").withFallback(realConfig)
-
   implicit val testSystem = ActorSystem("testsystem", config)
 }
 
@@ -44,13 +66,36 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
   with WordSpecLike with MustMatchers with BeforeAndAfterAll
   with ImplicitSender {
 
+  import SparqlClientSpec._
+  import FusekiManager._
+
   def this() = this(SparqlClientSpec.testSystem)
 
+  lazy val fusekiManager = system.actorOf(Props(classOf[FusekiManager], port), "fuseki-manager")
+
   override def beforeAll() {
-    //startServer()
+    if (useFuseki) {
+      fusekiManager ! Start
+      fishForMessage(20 seconds, "Allowing Fuseki Server to start up") {
+        case StartOk =>
+          true
+        case StartError =>
+          false
+      }
+
+    }
   }
 
   override def afterAll() {
+    if (useFuseki) {
+      fusekiManager ! Shutdown
+      fishForMessage(20 seconds, "Allowing Fuseki Server to shut down") {
+        case ShutdownOk =>
+          true
+        case ShutdownError =>
+          false
+      }
+    }
     shutdownSystem
   }
 
@@ -98,7 +143,7 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
     |}""")
   }
 
-  lazy val insert2 = new SparqlUpdate {
+  lazy val update = new SparqlUpdate {
     override def statement = build(s"""
     |WITH <urn:test:bware:data>
     |DELETE {
@@ -165,80 +210,58 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
   }
 
   "The SparqlClient" must {
-    "1. Return at least one query solution" in {
 
-      client ! query1
-
-      val result = fishForMessage(dbTimeout, "a. wait for MessageSparqlClientQuerySolution") {
-        case MessageSparqlClientQuerySolution(_, qs) => handleSparqlQuerySolution(qs)
-        case MessageSparqlClientQueryEnd(_, _) => handleSparqlQueryNoResults
-        case msg @ MessageSparqlStatementFailed(_, _, _) => handleSparqlClientError(msg.statement, msg.response)
-        case msg @ _ => handleUnknownMessage(msg)
-      }
-      if (result == true) {
-        fishForMessage(dbTimeout, "b. wait for MessageSparqlClientQueryEnd") {
-          case MessageSparqlClientQueryEnd(_, _) => handleSparqlQueryEnd
-          case msg @ _ => handleUnknownMessage(msg)
-        }
-      }
-    }
-
-    "2. Allow one insert" in {
+    "1. Allow one insert" in {
 
       client ! insert1
 
-      fishForMessage(dbTimeout, "Wait for MessageSparqlClientUpdateSuccessful") {
+      fishForMessage(dbTimeout, "a. wait for MessageSparqlClientUpdateSuccessful") {
         case MessageSparqlClientUpdateSuccessful(_) => handleSparqlUpdateSuccessful
         case msg @ MessageSparqlStatementFailed(_, _, _) => handleSparqlClientError(msg.statement, msg.response)
         case msg @ _ => handleUnknownMessage(msg)
       }
     }
 
+    "2. Allow one insert" in {
 
-    "3. Allow one insert" in {
+      client ! update
 
-      client ! insert2
-
-      fishForMessage(dbTimeout, "3. response from sparql client") {
+      fishForMessage(dbTimeout, "a. response from sparql client") {
          case MessageSparqlClientUpdateSuccessful(_) => handleSparqlUpdateSuccessful
          case msg @ MessageSparqlStatementFailed(_, _, _) => handleSparqlClientError(msg.statement, msg.response)
          case msg @ _ => handleUnknownMessage(msg)
        }
     }
 
-    "4. Get the results just inserted via HTTP GET" in {
+    "3. Get the results just inserted via HTTP GET" in {
 
       client ! query2Get
 
-      val result = fishForMessage(dbTimeout, "a. wait for MessageSparqlClientQuerySolution") {
+      fishForMessage(dbTimeout, "a. wait for MessageSparqlClientQuerySolution") {
         case MessageSparqlClientQuerySolution(_, qs) => handleSparqlQuerySolution(qs)
         case MessageSparqlClientQueryEnd(_, _) => handleSparqlQueryNoResults
         case msg @ MessageSparqlStatementFailed(_, _, _) => handleSparqlClientError(msg.statement, msg.response)
         case msg @ _ => handleUnknownMessage(msg)
       }
-      if (result == true) {
-        fishForMessage(dbTimeout, "b. wait for MessageSparqlClientQueryEnd") {
-          case MessageSparqlClientQueryEnd(_, _) => handleSparqlQueryEnd
-          case msg @ _ => handleUnknownMessage(msg)
-        }
+      fishForMessage(dbTimeout, "b. wait for MessageSparqlClientQueryEnd") {
+        case MessageSparqlClientQueryEnd(_, _) => handleSparqlQueryEnd
+        case msg @ _ => handleUnknownMessage(msg)
       }
-    }
+  }
 
-    "5. Get the results just inserted via HTTP POST" in {
+    "4. Get the results just inserted via HTTP POST" in {
 
       client ! query2Post
 
-      val result = fishForMessage(dbTimeout, "a. wait for MessageSparqlClientQuerySolution") {
+      fishForMessage(dbTimeout, "a. wait for MessageSparqlClientQuerySolution") {
         case MessageSparqlClientQuerySolution(_, qs) => handleSparqlQuerySolution(qs)
         case MessageSparqlClientQueryEnd(_, _) => handleSparqlQueryNoResults
         case msg @ MessageSparqlStatementFailed(_, _, _) => handleSparqlClientError(msg.statement, msg.response)
         case msg @ _ => handleUnknownMessage(msg)
       }
-      if (result == true) {
-        fishForMessage(dbTimeout, "b. wait for MessageSparqlClientQueryEnd") {
-          case MessageSparqlClientQueryEnd(_, _) => handleSparqlQueryEnd
-          case msg @ _ => handleUnknownMessage(msg)
-        }
+      fishForMessage(dbTimeout, "b. wait for MessageSparqlClientQueryEnd") {
+        case MessageSparqlClientQueryEnd(_, _) => handleSparqlQueryEnd
+        case msg @ _ => handleUnknownMessage(msg)
       }
     }
   }

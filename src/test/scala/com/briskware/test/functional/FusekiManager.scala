@@ -25,13 +25,13 @@ object FusekiManager {
 
   private class FusekiRunner(val port: Int) extends Thread {
 
-    var process: Process = null
+    var process: Option[Process] = None
 
     override def run(): Unit = {
       val path = new org.apache.jena.fuseki.Fuseki().getClass.getProtectionDomain.getCodeSource.getLocation.getPath
       val cmd = s"java -jar $path --port=$port --mem --update /test"
       println(s"Launching Fuseki Server: $cmd")
-      process = Runtime.getRuntime.exec(cmd)
+      process = Some(Runtime.getRuntime.exec(cmd))
     }
 
     def startServer(): Unit = {
@@ -39,9 +39,10 @@ object FusekiManager {
     }
 
     def shutdownServer(): Unit = {
-      process.destroy()
+      process.map(_.destroy())
+      process = None
 
-      /* this looks scary but the line above should kill this thread so joining should not take too much time */
+      /* this looks scary but the line above should kill this thread immediately so joining should not take too much time */
       this.join()
     }
 
@@ -64,9 +65,7 @@ class FusekiManager(val port: Int) extends Actor with ActorLogging {
 
   val pipeline = sendReceive
 
-  override def receive: Receive = receiveAtStartup
-
-  def receiveAtStartup: Receive = {
+  override def receive: Receive = {
 
     case Start =>
       /* kick off the server */

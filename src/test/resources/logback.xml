@@ -27,10 +27,10 @@
 	</appender>
 	-->
 
-    <logger name="akka" level="DEBUG"/>
     <logger name="jndi" level="INFO"/>
 
     <logger name="akka.event.slf4j.Slf4jLogger" level="ERROR"/>
+    <logger name="akka" level="INFO"/>
     <logger name="ch.qos.logback" level="ERROR"/>
     <logger name="com.hp.hpl.jena" level="INFO"/>
     <logger name="com.clarkparsia.stardog" level="INFO"/>

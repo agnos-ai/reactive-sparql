@@ -354,6 +354,8 @@ private class ExtendedSparqlQuery(
       }
     }
 
+    log.info("Successfully executed SPARQL QUERY: {}", statement.statement)
+
     requestor ! MessageSparqlClientQueryEnd(statement_, resultSet)
   }
 }
@@ -401,7 +403,7 @@ private class ExtendedSparqlUpdate(
       log.info(s"Sparql Update RETRY operation (attempt=${attempt + 1}) SUCCESSFUL")
     }
 
-    log.info("Successfully executed {}", statement.statement)
+    log.info("Successfully executed SPARQL UPDATE: {}", statement.statement)
 
     requestor_ ! MessageSparqlClientUpdateSuccessful(statement_)
   }

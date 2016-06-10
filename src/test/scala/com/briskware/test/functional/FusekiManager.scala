@@ -32,8 +32,6 @@ object FusekiManager {
       val cmd = s"java -jar $path --port=$port --mem --update /test"
       println(s"Launching Fuseki Server: $cmd")
       process = Some(Runtime.getRuntime.exec(cmd))
-      process = Nonell
-
     }
 
     def startServer(): Unit = {
@@ -41,17 +39,10 @@ object FusekiManager {
     }
 
     def shutdownServer(): Unit = {
-      process map { p =>
-        p.destroy()
-        /* this looks scary but the line above should kill this thread immediately so joining should not take too much time */
-        this.join()
-        1
-      }
+      process.map(_.destroy())
       process = None
     }
-
   }
-
 }
 
 class FusekiManager(val port: Int) extends Actor with ActorLogging {
@@ -124,11 +115,6 @@ class FusekiManager(val port: Int) extends Actor with ActorLogging {
           originalSender ! ShutdownError
       }
 
-  }
-
-  override def postStop() {
-    /* make sure the server is really off */
-    fusekiRunner.shutdownServer()
   }
 
 }

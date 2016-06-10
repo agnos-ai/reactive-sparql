@@ -19,7 +19,7 @@ object FusekiManager {
   case object ShutdownOk extends Message
   case object ShutdownError extends Message
 
-  private case class Ping(respondTo: ActorRef, sendOnSuccess: Option[Message] = None, sendOnFailure: Option[Message] = None, waitingTime: Duration = 500 milliseconds, retries: Int = 20)
+  private case class Ping(respondTo: ActorRef, sendOnSuccess: Option[Message] = None, sendOnFailure: Option[Message] = None, waitingTime: Duration = 500 milliseconds)
   private case class SoftShutdownRequested(respondTo: ActorRef)
   private case class HardShutdownRequested(respondTo: ActorRef)
 
@@ -32,6 +32,8 @@ object FusekiManager {
       val cmd = s"java -jar $path --port=$port --mem --update /test"
       println(s"Launching Fuseki Server: $cmd")
       process = Some(Runtime.getRuntime.exec(cmd))
+      process = Nonell
+
     }
 
     def startServer(): Unit = {
@@ -39,11 +41,13 @@ object FusekiManager {
     }
 
     def shutdownServer(): Unit = {
-      process.map(_.destroy())
+      process map { p =>
+        p.destroy()
+        /* this looks scary but the line above should kill this thread immediately so joining should not take too much time */
+        this.join()
+        1
+      }
       process = None
-
-      /* this looks scary but the line above should kill this thread immediately so joining should not take too much time */
-      this.join()
     }
 
   }
@@ -75,20 +79,20 @@ class FusekiManager(val port: Int) extends Actor with ActorLogging {
       /* start pinging the server and issue StartOk to the sender when ping is successful */
       self ! Ping(sender, Some(StartOk), None)
 
-    case x @ Ping(originalSender, sendOnSuccess, sendOnFailure, duration, retries) => pipeline(pingReq) onComplete {
+    case x @ Ping(originalSender, sendOnSuccess, sendOnFailure, duration) => pipeline(pingReq) onComplete {
       case Success(HttpResponse(StatusCodes.OK, _, _, _)) =>
         log.info(s"ping response received for $x")
         sendOnSuccess foreach { originalSender ! _ }
         if ( sendOnSuccess.isEmpty ) {
           log.info(s"re-sending ping on success")
-          context.system.scheduler.scheduleOnce(1 second, self, Ping(originalSender, sendOnSuccess, sendOnFailure, duration, retries-1))
+          context.system.scheduler.scheduleOnce(1 second, self, Ping(originalSender, sendOnSuccess, sendOnFailure, duration))
         }
       case _ =>
         log.info(s"ping failed for $x")
         sendOnFailure foreach { originalSender ! _ }
         if ( sendOnFailure.isEmpty ) {
           log.info(s"re-sending ping on failure")
-          context.system.scheduler.scheduleOnce(1 second, self, Ping(originalSender, sendOnSuccess, sendOnFailure, duration, retries-1))
+          context.system.scheduler.scheduleOnce(1 second, self, Ping(originalSender, sendOnSuccess, sendOnFailure, duration))
         }
     }
 
@@ -120,6 +124,11 @@ class FusekiManager(val port: Int) extends Actor with ActorLogging {
           originalSender ! ShutdownError
       }
 
+  }
+
+  override def postStop() {
+    /* make sure the server is really off */
+    fusekiRunner.shutdownServer()
   }
 
 }

@@ -82,7 +82,6 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
         case StartError =>
           false
       }
-
     }
   }
 
@@ -222,7 +221,7 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
       }
     }
 
-    "2. Allow one insert" in {
+    "2. Allow for an update" in {
 
       client ! update
 

@@ -1,4 +1,4 @@
-GET /test/query?query=SELECT%20%3Fg%20%3Fb%20%3Fc%0AFROM%20NAMED%20%3Curn%3Atest%3Abware%3Adata%3E%0AWHERE%20%7B%0A%20%20GRAPH%20%3Fg%20%7B%0A%20%20%20%20%3Curn%3Atest%3Awhatever%3E%20%3Fb%20%3Fc%0A%20%20%7D%0A%7D HTTP/1.1
+GET /test/query?query=SELECT%20%3Fg%20%3Fb%20%3Fc%0AFROM%20NAMED%20%3Curn%3Atest%3Amodelfabric%3Adata%3E%0AWHERE%20%7B%0A%20%20GRAPH%20%3Fg%20%7B%0A%20%20%20%20%3Curn%3Atest%3Awhatever%3E%20%3Fb%20%3Fc%0A%20%20%7D%0A%7D HTTP/1.1
 Accept: application/sparql-results+json
 Authorization: Basic YWRtaW46YWRtaW4=
 Host: localhost:5820

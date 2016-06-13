@@ -4,8 +4,8 @@ import spray.revolver.RevolverPlugin._
 
 
 object BuildSettings {
-  val buildOrganization = "com.briskware"
-  val buildVersion      = "0.0.1-SNAPSHOT"
+  val buildOrganization = "com.modelfabric"
+  val buildVersion      = "0.0.2-SNAPSHOT"
   val buildScalaVersion = Version.scala
   val buildExportJars   = true
 
@@ -67,10 +67,10 @@ object Build extends sbt.Build {
 
   val projectDependencies = Seq(scalaUtils, akkaActor, akkaSlf4j, akkaTestkit, sprayClient, sprayJson, javaxWsRs, jerseyCore, jerseyClient, logbackClassic, scalaTest, fusekiServer)
 
-  lazy val project = Project("sparql-client", file("."))
+  lazy val project = Project("reactive-sparql", file("."))
     .configs(IntegrationTest)
     .settings(buildSettings: _*)
-    .settings(name := "sparql-client")
+    .settings(name := "reactive-sparql")
     .settings(libraryDependencies ++= projectDependencies)
 } 
 

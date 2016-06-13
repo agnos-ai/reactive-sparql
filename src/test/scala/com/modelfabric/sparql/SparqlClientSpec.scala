@@ -1,9 +1,8 @@
 package com.modelfabric.sparql
 
 import java.net.ServerSocket
-
 import com.modelfabric.sparql.client.{SparqlHttpSprayClient, SparqlClientConfig, QuerySolution, MessageSparqlClientQueryEnd}
-import com.modelfabric.test.functional.{FusekiManager, Helpers}
+import com.modelfabric.test.{FusekiManager, Helpers}
 
 import scala.language.postfixOps
 

@@ -2,13 +2,14 @@
  * Helper functions / values / variables for functional tests.
  */
 
-package com.modelfabric.test.functional
+package com.modelfabric.test
+
+import _root_.akka.actor.{ActorRef, ActorSystem}
 
 import scala.language.postfixOps
-import akka.actor.{ActorRef, ActorSystem}
 
 /**
- * Provides helper and utility functions for functional tests.
+ * Provides helper and utility functions for tests.
  */
 object Helpers {
 

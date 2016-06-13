@@ -1,10 +1,11 @@
-package com.modelfabric.test.functional
+package com.modelfabric.test
 
 import akka.actor._
 import akka.util.Timeout
-import com.modelfabric.test.functional.FusekiManager._
+import com.modelfabric.test.FusekiManager._
 import spray.client.pipelining._
-import spray.http.{StatusCodes, HttpResponse}
+import spray.http.{HttpResponse, StatusCodes}
+
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}

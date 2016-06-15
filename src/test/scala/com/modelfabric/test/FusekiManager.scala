@@ -12,7 +12,7 @@ import scala.util.{Failure, Success}
 
 object FusekiManager {
 
-  trait Message
+  sealed trait Message
   case object Start extends Message
   case object StartOk extends Message
   case object StartError extends Message
@@ -54,7 +54,7 @@ object FusekiManager {
   * until it is up and running. Depending on the machine, the server might take between 2 and 10 seconds to start.
   *
   * Pinging the server every 500ms will ensure that the tests can start the moment the server is up (i.e. it responds
-  * to a Ping request). The server startup and shutdown is managed via [[com.modelfabric.HttpEndpointTests]] Suite's
+  * to a Ping request). The server startup and shutdown is managed via [[HttpEndpointTests]] Suite's
   * [[org.scalatest.BeforeAndAfter]] hooks.
   *
   * @param host the hostname to bind too, e.g. "localhost"

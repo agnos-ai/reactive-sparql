@@ -10,6 +10,7 @@ import akka.stream.scaladsl._
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.Http
+import com.modelfabric.HttpEndpointTests
 
 import scala.concurrent.{Await, Future}
 
@@ -51,6 +52,11 @@ object StreamSpec {
   implicit val testMaterializer = ActorMaterializer()
 }
 
+/**
+  * This test runs as part of the [[HttpEndpointTests]] Suite.
+  * @param _system
+  */
+@DoNotDiscover
 class StreamSpec(_system: ActorSystem) extends TestKit(_system)
   with WordSpecLike with MustMatchers with BeforeAndAfterAll {
 
@@ -70,9 +76,9 @@ class StreamSpec(_system: ActorSystem) extends TestKit(_system)
     val auth = Authorization(BasicHttpCredentials("admin", "admin"))
 
     val connectionFlow: Flow[HttpRequest, HttpResponse, Future[Http.OutgoingConnection]] =
-      Http().outgoingConnection("localhost", 5820)
+      Http().outgoingConnection("localhost", HttpEndpointTests.bindPort)
 
-    "Allow a request to a valid URL" in {
+    "1. Allow a request to a valid URL" in {
       val responseFuture: Future[HttpResponse] =
           Source.single(HttpRequest(uri = "/test", headers = auth :: Nil))
         .via(connectionFlow)
@@ -88,7 +94,7 @@ class StreamSpec(_system: ActorSystem) extends TestKit(_system)
       }
     }
 
-    "Fail with a request to an invalid URL" in {
+    "2. Fail with a request to an invalid URL" in {
       val responseFuture: Future[HttpResponse] =
           Source.single(HttpRequest(uri = "/blah", headers = auth :: Nil))
         .via(connectionFlow)

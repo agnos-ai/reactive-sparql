@@ -1,6 +1,6 @@
 package com.modelfabric.sparql
 
-import java.net.ServerSocket
+import com.modelfabric.HttpEndpointTests
 import com.modelfabric.sparql.client.{SparqlHttpSprayClient, SparqlClientConfig, QuerySolution, MessageSparqlClientQueryEnd}
 import com.modelfabric.test.{FusekiManager, Helpers}
 
@@ -13,54 +13,19 @@ import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest._
 
 import com.modelfabric.sparql.client._
-import Helpers._
-import com.typesafe.config.ConfigFactory
 
 import scala.concurrent.duration._
 
 object SparqlClientSpec {
-
   // This may have to be scaled back in the future
   val dbTimeout = 2 seconds
-
-  val endpointKey = "SPARQL_ENDPOINT"
-
-  val useFuseki: Boolean = ! sys.env.contains(endpointKey)
-
-  val endpoint: String = sys.env.getOrElse(endpointKey, s"http://localhost:${port}/test")
-
-  lazy val port: Int = {
-    val socket = new ServerSocket(0)
-    val p = socket.getLocalPort
-    socket.close()
-    p
-  }
-
-  val config = {
-    ConfigFactory.parseString(
-      s"""
-        |akka.loggers = ["akka.testkit.TestEventListener"]
-        |akka.loglevel = INFO
-        |akka.remote {
-        |  netty.tcp {
-        |    hostname = ""
-        |    port = 0
-        |  }
-        |}
-        |akka.cluster {
-        |  seed-nodes = []
-        |}
-        |sparql.client {
-        |  type = "HttpSpray"
-        |  endpoint = "${endpoint}"
-        |  userId = "admin"
-        |  password = "admin"
-        |}
-    """.stripMargin).withFallback(ConfigFactory.load())
-    }
-  implicit val testSystem = ActorSystem("testsystem", config)
 }
 
+/**
+  * This test runs as part of the [[HttpEndpointTests]] Suite.
+  * @param _system
+  */
+@DoNotDiscover
 class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
   with WordSpecLike with MustMatchers with BeforeAndAfterAll
   with ImplicitSender {
@@ -68,34 +33,7 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
   import SparqlClientSpec._
   import FusekiManager._
 
-  def this() = this(SparqlClientSpec.testSystem)
-
-  lazy val fusekiManager = system.actorOf(Props(classOf[FusekiManager], port), "fuseki-manager")
-
-  override def beforeAll() {
-    if (useFuseki) {
-      fusekiManager ! Start
-      fishForMessage(20 seconds, "Allowing Fuseki Server to start up") {
-        case StartOk =>
-          true
-        case StartError =>
-          false
-      }
-    }
-  }
-
-  override def afterAll() {
-    if (useFuseki) {
-      fusekiManager ! Shutdown
-      fishForMessage(20 seconds, "Allowing Fuseki Server to shut down") {
-        case ShutdownOk =>
-          true
-        case ShutdownError =>
-          false
-      }
-    }
-    shutdownSystem
-  }
+  def this() = this(HttpEndpointTests.testSystem)
 
   def config = SparqlClientConfig(_system)
 

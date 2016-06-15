@@ -46,14 +46,28 @@ object FusekiManager {
   }
 }
 
-class FusekiManager(val port: Int) extends Actor with ActorLogging {
+
+/**
+  * Class responsible for managing the runtime of a Fuseki server, which is launched as a separate process.
+  *
+  * The Actor will manage the server's startup and shutdown and will continuously ping the server
+  * until it is up and running. Depending on the machine, the server might take between 2 and 10 seconds to start.
+  *
+  * Pinging the server every 500ms will ensure that the tests can start the moment the server is up (i.e. it responds
+  * to a Ping request). The server startup and shutdown is managed via [[com.modelfabric.HttpEndpointTests]] Suite's
+  * [[org.scalatest.BeforeAndAfter]] hooks.
+  *
+  * @param host the hostname to bind too, e.g. "localhost"
+  * @param port the port to bind to
+  */
+class FusekiManager(val host: String, val port: Int) extends Actor with ActorLogging {
 
   import context.dispatcher
   implicit val timeout = Timeout(5 seconds)
 
   private val fusekiRunner = new FusekiRunner(port)
 
-  private def fusekiEndpoint(path: String): String = s"http://localhost:${port}/${path}"
+  private def fusekiEndpoint(path: String): String = s"http://${host}:${port}/${path}"
 
   val shutdownReq = Post(fusekiEndpoint("$/server/shutdown"))
 

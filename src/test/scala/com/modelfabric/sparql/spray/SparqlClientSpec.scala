@@ -2,7 +2,7 @@ package com.modelfabric.sparql.spray
 
 import com.modelfabric.sparql.api._
 import com.modelfabric.sparql.spray.client.{SparqlHttpSprayClient, QuerySolution, MessageSparqlClientQueryEnd}
-import com.modelfabric.test.HttpEndpointTests
+import com.modelfabric.test.HttpEndpointSuiteTestRunner
 
 import scala.language.postfixOps
 
@@ -22,7 +22,7 @@ object SparqlClientSpec {
 }
 
 /**
-  * This test runs as part of the [[HttpEndpointTests]] Suite.
+  * This test runs as part of the [[HttpEndpointSuiteTestRunner]] Suite.
   *
   * @param _system
   */
@@ -31,7 +31,7 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
   with WordSpecLike with MustMatchers with BeforeAndAfterAll
   with ImplicitSender {
 
-  def this() = this(HttpEndpointTests.testSystem)
+  def this() = this(HttpEndpointSuiteTestRunner.testSystem)
 
   def config = SparqlClientConfig(_system)
 

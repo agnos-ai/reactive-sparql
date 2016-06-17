@@ -1,11 +1,10 @@
 package com.modelfabric.test
 
-import java.net.ServerSocket
-
 import _root_.akka.actor.{ActorSystem, Props}
 import _root_.akka.testkit.{ImplicitSender, TestKit}
 import com.modelfabric.sparql.spray.SparqlClientSpec
 import com.modelfabric.sparql.stream.StreamSpec
+import com.modelfabric.sparql.util.HttpEndpoint
 import com.modelfabric.test.FusekiManager._
 import com.modelfabric.test.Helpers._
 import com.typesafe.config.ConfigFactory
@@ -14,22 +13,19 @@ import org.scalatest._
 import scala.concurrent.duration._
 import scala.languageFeature.postfixOps
 
-object HttpEndpointTests {
+object HttpEndpointSuiteTestRunner {
 
-  val endpointKey = "SPARQL_ENDPOINT"
+  val sparqlServerEndpointKey = "SPARQL_ENDPOINT"
 
-  val useFuseki: Boolean = ! sys.env.contains(endpointKey)
+  val sparqlServerEndpoint: Option[String] = sys.env.get(sparqlServerEndpointKey)
 
-  val bindHost = "localhost"
+  val useFuseki: Boolean = sparqlServerEndpoint.isEmpty
 
-  lazy val bindPort: Int = {
-    val socket = new ServerSocket(0)
-    val p = socket.getLocalPort
-    socket.close()
-    p
+  val testServerEndpoint = sparqlServerEndpoint match {
+    case Some(end) => HttpEndpoint(end)
+
+    case _ => HttpEndpoint.localhostWithAutomaticPort("/test")
   }
-
-  val endpoint: String = sys.env.getOrElse(endpointKey, s"http://$bindHost:$bindPort/test")
 
   val config = {
     ConfigFactory.parseString(
@@ -47,7 +43,7 @@ object HttpEndpointTests {
          |}
          |sparql.client {
          |  type = "HttpSpray"
-         |  endpoint = "$endpoint"
+         |  endpoint = "${testServerEndpoint.url}"
          |  userId = "admin"
          |  password = "admin"
          |}
@@ -68,14 +64,14 @@ object HttpEndpointTests {
   *
   * @param _system
   */
-class HttpEndpointTests(_system: ActorSystem) extends TestKit(_system)
+class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
   with WordSpecLike with MustMatchers with ImplicitSender with BeforeAndAfterAll {
 
-  import HttpEndpointTests._
+  import HttpEndpointSuiteTestRunner._
 
-  def this() = this(HttpEndpointTests.testSystem)
+  def this() = this(HttpEndpointSuiteTestRunner.testSystem)
 
-  lazy val fusekiManager = testSystem.actorOf(Props(classOf[FusekiManager], bindHost,  bindPort), "fuseki-manager")
+  lazy val fusekiManager = testSystem.actorOf(Props(classOf[FusekiManager], testServerEndpoint), "fuseki-manager")
 
   override def beforeAll() {
     if (useFuseki) {
@@ -84,6 +80,7 @@ class HttpEndpointTests(_system: ActorSystem) extends TestKit(_system)
         case StartOk =>
           true
         case StartError =>
+          afterAll()
           false
       }
     }
@@ -111,7 +108,7 @@ class HttpEndpointTests(_system: ActorSystem) extends TestKit(_system)
     * @return
     */
   override def nestedSuites = Vector(
-    new SparqlClientSpec(HttpEndpointTests.testSystem),
-    new StreamSpec(HttpEndpointTests.testSystem)
+    new SparqlClientSpec(HttpEndpointSuiteTestRunner.testSystem),
+    new StreamSpec(HttpEndpointSuiteTestRunner.testSystem)
   )
 }

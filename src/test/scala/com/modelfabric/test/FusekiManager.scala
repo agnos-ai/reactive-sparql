@@ -2,6 +2,7 @@ package com.modelfabric.test
 
 import akka.actor._
 import akka.util.Timeout
+import com.modelfabric.sparql.util.HttpEndpoint
 import com.modelfabric.test.FusekiManager._
 import spray.client.pipelining._
 import spray.http.{HttpResponse, StatusCodes}
@@ -24,13 +25,13 @@ object FusekiManager {
   private case class SoftShutdownRequested(respondTo: ActorRef)
   private case class HardShutdownRequested(respondTo: ActorRef)
 
-  private class FusekiRunner(val port: Int) extends Thread {
+  private class FusekiRunner(val port: Int, val resource: String) extends Thread {
 
     var process: Option[Process] = None
 
     override def run(): Unit = {
       val path = new org.apache.jena.fuseki.Fuseki().getClass.getProtectionDomain.getCodeSource.getLocation.getPath
-      val cmd = s"java -jar $path --port=$port --mem --update /test"
+      val cmd = s"java -jar $path --port=$port --mem --update $resource"
       println(s"Launching Fuseki Server: $cmd")
       process = Some(Runtime.getRuntime.exec(cmd))
     }
@@ -54,20 +55,19 @@ object FusekiManager {
   * until it is up and running. Depending on the machine, the server might take between 2 and 10 seconds to start.
   *
   * Pinging the server every 500ms will ensure that the tests can start the moment the server is up (i.e. it responds
-  * to a Ping request). The server startup and shutdown is managed via [[HttpEndpointTests]] Suite's
+  * to a Ping request). The server startup and shutdown is managed via [[HttpEndpointSuiteTestRunner]] Suite's
   * [[org.scalatest.BeforeAndAfter]] hooks.
   *
-  * @param host the hostname to bind too, e.g. "localhost"
-  * @param port the port to bind to
+  * @param endpoint the HttpEndpoint instance to bind too, e.g. "localhost"
   */
-class FusekiManager(val host: String, val port: Int) extends Actor with ActorLogging {
+class FusekiManager(val endpoint: HttpEndpoint) extends Actor with ActorLogging {
 
   import context.dispatcher
   implicit val timeout = Timeout(5 seconds)
 
-  private val fusekiRunner = new FusekiRunner(port)
+  private val fusekiRunner = new FusekiRunner(endpoint.port, endpoint.resource)
 
-  private def fusekiEndpoint(path: String): String = s"http://${host}:${port}/${path}"
+  private def fusekiEndpoint(path: String): String = s"http://${endpoint.host}:${endpoint.port}/${path}"
 
   val shutdownReq = Post(fusekiEndpoint("$/server/shutdown"))
 

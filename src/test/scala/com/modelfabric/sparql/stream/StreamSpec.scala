@@ -10,7 +10,7 @@ import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
-import com.modelfabric.test.HttpEndpointTests
+import com.modelfabric.test.HttpEndpointSuiteTestRunner
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
@@ -21,28 +21,31 @@ import org.scalatest._
 import akka.testkit.TestKit
 
 /**
-  * This test runs as part of the [[HttpEndpointTests]] Suite.
+  * This test runs as part of the [[HttpEndpointSuiteTestRunner]] Suite.
+ *
   * @param _system
   */
 @DoNotDiscover
 class StreamSpec(val _system: ActorSystem) extends TestKit(_system)
   with WordSpecLike with MustMatchers with BeforeAndAfterAll {
 
-  def this() = this(HttpEndpointTests.testSystem)
+  def this() = this(HttpEndpointSuiteTestRunner.testSystem)
   implicit val testMaterializer = ActorMaterializer()
+
+  import HttpEndpointSuiteTestRunner.testServerEndpoint._
 
   "Akka Streams" must {
 
     val auth = Authorization(BasicHttpCredentials("admin", "admin"))
 
     val connectionFlow: Flow[HttpRequest, HttpResponse, Future[Http.OutgoingConnection]] =
-      Http().outgoingConnection("localhost", HttpEndpointTests.bindPort)
+      Http().outgoingConnection(host, port)
 
     "1. Allow a request to a valid URL" in {
       val responseFuture: Future[HttpResponse] =
-          Source.single(HttpRequest(uri = "/test", headers = auth :: Nil))
-        .via(connectionFlow)
-        .runWith(Sink.head)
+        Source.single(HttpRequest(uri = "/test", headers = auth :: Nil))
+          .via(connectionFlow)
+          .runWith(Sink.head)
 
       val result = Await.result(responseFuture, 5 seconds)
       println(result)
@@ -56,9 +59,9 @@ class StreamSpec(val _system: ActorSystem) extends TestKit(_system)
 
     "2. Fail with a request to an invalid URL" in {
       val responseFuture: Future[HttpResponse] =
-          Source.single(HttpRequest(uri = "/blah", headers = auth :: Nil))
-        .via(connectionFlow)
-        .runWith(Sink.head)
+        Source.single(HttpRequest(uri = "/blah", headers = auth :: Nil))
+          .via(connectionFlow)
+          .runWith(Sink.head)
 
       val result = Await.result(responseFuture, 5 seconds)
       println(result)

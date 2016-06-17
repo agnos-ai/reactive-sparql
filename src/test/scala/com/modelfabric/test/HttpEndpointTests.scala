@@ -4,8 +4,8 @@ import java.net.ServerSocket
 
 import _root_.akka.actor.{ActorSystem, Props}
 import _root_.akka.testkit.{ImplicitSender, TestKit}
-import com.modelfabric.client.sparql.spray.SparqlClientSpec
-import com.modelfabric.client.sparql.stream.StreamSpec
+import com.modelfabric.sparql.spray.SparqlClientSpec
+import com.modelfabric.sparql.stream.StreamSpec
 import com.modelfabric.test.FusekiManager._
 import com.modelfabric.test.Helpers._
 import com.typesafe.config.ConfigFactory

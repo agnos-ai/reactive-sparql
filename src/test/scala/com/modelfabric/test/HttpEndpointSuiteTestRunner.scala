@@ -1,7 +1,7 @@
 package com.modelfabric.test
 
-import _root_.akka.actor.{ActorSystem, Props}
-import _root_.akka.testkit.{ImplicitSender, TestKit}
+import akka.actor.{ActorSystem, Props}
+import akka.testkit.{ImplicitSender, TestKit}
 import com.modelfabric.sparql.spray.SparqlClientSpec
 import com.modelfabric.sparql.stream.StreamSpec
 import com.modelfabric.sparql.util.HttpEndpoint
@@ -71,6 +71,8 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
 
   def this() = this(HttpEndpointSuiteTestRunner.testSystem)
 
+  val _log = akka.event.Logging(this.system, testActor)
+
   lazy val fusekiManager = testSystem.actorOf(Props(classOf[FusekiManager], testServerEndpoint), "fuseki-manager")
 
   override def beforeAll() {
@@ -79,8 +81,9 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
       fishForMessage(20 seconds, "Allowing Fuseki Server to start up") {
         case StartOk =>
           true
-        case StartError =>
-          afterAll()
+
+        case x@_ =>
+          _log.info(s"Received unexpected message: $x")
           false
       }
     }
@@ -89,12 +92,7 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
   override def afterAll() {
     if (useFuseki) {
       fusekiManager ! Shutdown
-      fishForMessage(20 seconds, "Allowing Fuseki Server to shut down") {
-        case ShutdownOk =>
-          true
-        case ShutdownError =>
-          false
-      }
+      expectMsg(20 seconds, "Allowing Fuseki Server to shut down", ShutdownOk)
     }
     shutdownSystem
   }

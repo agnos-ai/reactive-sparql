@@ -63,21 +63,19 @@ abstract class SparqlPagedQuery(
   private def descClause = if (pagingParams.orderDesc) "DESC" else ""
 
   protected val orderByStr = if (hasOrderBy(orderBy)) {
-    s"""ORDER BY $descClause (?${orderBy.get})"""
+    s"""ORDER BY $descClause (?${orderBy.get})\n"""
   }
   else ""
 
-  protected val limitStr = limit map { limit => s"""LIMIT $limit""" } getOrElse ""
+  protected val limitStr = limit map { limit => s"""LIMIT $limit\n""" } getOrElse ""
 
-  protected val offsetStr = offset map { offset => s"""OFFSET $offset""" } getOrElse ""
+  protected val offsetStr = offset map { offset => s"""OFFSET $offset\n""" } getOrElse ""
 
   protected override def build(statement_ : String) : String = {
     val sb = new StringBuilder(super.build(statement_))
     sb ++= "\n"
     sb ++= orderByStr
-    sb ++= "\n"
     sb ++= limitStr
-    sb ++= "\n"
     sb ++= offsetStr
     sb.toString()
   }

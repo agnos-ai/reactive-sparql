@@ -21,7 +21,13 @@ object FusekiManager {
   case object ShutdownOk extends Message
   case object ShutdownError extends Message
 
-  private case class Ping(respondTo: ActorRef, sendOnSuccess: Option[Message] = None, sendOnFailure: Option[Message] = None, waitingTime: Duration = 500 milliseconds)
+  private case class Ping(
+    respondTo: ActorRef,
+    sendOnSuccess: Message,
+    sendOnFailure: Message,
+    pingInterval: Duration = 1 second,
+    stopOnSuccess: Boolean = true,
+    retriesLeft: Int = 10)
   private case class SoftShutdownRequested(respondTo: ActorRef)
   private case class HardShutdownRequested(respondTo: ActorRef)
 
@@ -83,24 +89,33 @@ class FusekiManager(val endpoint: HttpEndpoint) extends Actor with ActorLogging 
         fusekiRunner.startServer()
       }
       /* start pinging the server and issue StartOk to the sender when ping is successful */
-      self ! Ping(sender, Some(StartOk), None)
+      self ! Ping(sender, sendOnSuccess = StartOk, sendOnFailure = StartError)
 
-    case x @ Ping(originalSender, sendOnSuccess, sendOnFailure, duration) =>
+    case x @ Ping(originalSender, sendOnSuccess, sendOnFailure, pingInterval, stopOnSuccess, 0) =>
+      log.info(s"Ping timeout for $x")
+      originalSender ! sendOnFailure
+      // kill the managed server as we timeout out on the pings
+      self ! HardShutdownRequested(originalSender)
+
+    case x @ Ping(originalSender, sendOnSuccess, sendOnFailure, pingInterval, stopOnSuccess, retriesLeft) =>
+      val stopOnFailure = !stopOnSuccess
       log.info(s"Sending: $pingReq")
       pipeline(pingReq) onComplete {
         case Success(HttpResponse(StatusCodes.OK, _, _, _)) =>
           log.info(s"ping response received for $x")
-          sendOnSuccess foreach { originalSender ! _ }
-          if ( sendOnSuccess.isEmpty ) {
+          if ( stopOnSuccess ) {
+            originalSender ! sendOnSuccess
+          } else {
             log.info(s"re-sending ping on success")
-            context.system.scheduler.scheduleOnce(1 second, self, Ping(originalSender, sendOnSuccess, sendOnFailure, duration))
+            context.system.scheduler.scheduleOnce(1 second, self, x.copy(retriesLeft = retriesLeft-1))
           }
         case _ =>
           log.info(s"ping failed for $x")
-          sendOnFailure foreach { originalSender ! _ }
-          if ( sendOnFailure.isEmpty ) {
+          if ( stopOnFailure ) {
+            originalSender ! sendOnFailure
+          } else {
             log.info(s"re-sending ping on failure")
-            context.system.scheduler.scheduleOnce(1 second, self, Ping(originalSender, sendOnSuccess, sendOnFailure, duration))
+            context.system.scheduler.scheduleOnce(1 second, self, x.copy(retriesLeft = retriesLeft-1))
           }
       }
 
@@ -119,9 +134,9 @@ class FusekiManager(val endpoint: HttpEndpoint) extends Actor with ActorLogging 
     }
 
     case SoftShutdownRequested(originalSender) =>
-      // soft shutdown succeeds if pings start failing eventually
+      /* soft shutdown succeeds if pings start failing eventually */
       /* start pinging the server and issue ShutdownOk to the sender when ping is no longer successful */
-      self ! Ping(originalSender, None, Some(ShutdownOk))
+      self ! Ping(originalSender, sendOnSuccess = ShutdownError, sendOnFailure = ShutdownOk, stopOnSuccess = false)
 
     case HardShutdownRequested(originalSender) =>
       Future {

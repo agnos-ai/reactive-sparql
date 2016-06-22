@@ -71,7 +71,7 @@ class FusekiManager(val endpoint: HttpEndpoint) extends Actor with ActorLogging 
   import context.dispatcher
   implicit val timeout = Timeout(5 seconds)
 
-  private val fusekiRunner = new FusekiRunner(endpoint.port, endpoint.resource)
+  private val fusekiRunner = new FusekiRunner(endpoint.port, endpoint.path)
 
   private def fusekiEndpoint(path: String): String = s"http://${endpoint.host}:${endpoint.port}/${path}"
 

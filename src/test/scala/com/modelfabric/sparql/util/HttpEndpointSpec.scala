@@ -13,7 +13,7 @@ class HttpEndpointSpec extends WordSpec with MustMatchers  {
       assert(endpoint.protocol === "http")
       assert(endpoint.host === "localhost")
       assert(endpoint.port > 100)
-      assert(endpoint.resource === "/test")
+      assert(endpoint.path === "/test")
       assert(endpoint.url.startsWith("http://localhost:"))
       assert(endpoint.url.endsWith("/test"))
     }
@@ -45,7 +45,7 @@ class HttpEndpointSpec extends WordSpec with MustMatchers  {
       assert(endpoint.protocol === "https")
       assert(endpoint.host === "my-host.my-domain.com")
       assert(endpoint.port === 1234)
-      assert(endpoint.resource === "")
+      assert(endpoint.path === "")
       assert(endpoint.url === "https://my-host.my-domain.com:1234")
     }
 

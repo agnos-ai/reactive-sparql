@@ -97,7 +97,7 @@ object HttpEndpoint {
       case _ => defaultPort
     }
 
-    val path = environmentEndpoint match {
+    val path: String = environmentEndpoint match {
       case Some(EndpointRegex(_, _, _, path)) if path != null => path
       case _ => useResourcePath
     }
@@ -112,9 +112,9 @@ object HttpEndpoint {
   * @param protocol
   * @param host
   * @param port
-  * @param resource
+  * @param path
   */
-case class HttpEndpoint(protocol: String, host: String, port: Int, resource: String) {
+case class HttpEndpoint(protocol: String, host: String, port: Int, path: String) {
   /**
     * Shows the desired fully qualified URL of the endpoint built from the individual components
     */
@@ -124,7 +124,7 @@ case class HttpEndpoint(protocol: String, host: String, port: Int, resource: Str
       case 443 => ""
       case x => s":$x"
     }
-  }$resource"
+  }$path"
 
 }
 

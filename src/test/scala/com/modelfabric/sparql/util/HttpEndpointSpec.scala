@@ -78,11 +78,28 @@ class HttpEndpointSpec extends WordSpec with MustMatchers  {
       val endpoint = HttpEndpoint("https://my-host.my-domain.com:12345/resources/qwerty")
 
       endpoint match {
-        case HttpEndpoint(protocol, host, int, resource) =>
+        case HttpEndpoint(protocol, host, int, resource, auth) =>
           assert(endpoint.protocol === "https")
           assert(endpoint.host === "my-host.my-domain.com")
           assert(endpoint.port === 12345)
           assert(endpoint.url === "https://my-host.my-domain.com:12345/resources/qwerty")
+          assert(endpoint.authentication === None)
+        case _ =>
+          assert(false, "unapply() failed")
+      }
+    }
+
+    "8. make sure unapply() extractor works correctly even with the Authentication" in {
+
+      val endpoint = HttpEndpoint("https://my-host.my-domain.com:12345/resources/qwerty", authentication = Some(Authentication("admin", "admin")))
+
+      endpoint match {
+        case HttpEndpoint(protocol, host, int, resource, auth) =>
+          assert(endpoint.protocol === "https")
+          assert(endpoint.host === "my-host.my-domain.com")
+          assert(endpoint.port === 12345)
+          assert(endpoint.url === "https://my-host.my-domain.com:12345/resources/qwerty")
+          assert(endpoint.authentication === Some(Authentication("admin", "admin")))
         case _ =>
           assert(false, "unapply() failed")
       }

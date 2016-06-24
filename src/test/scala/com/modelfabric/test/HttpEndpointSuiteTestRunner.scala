@@ -3,7 +3,7 @@ package com.modelfabric.test
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
 import com.modelfabric.sparql.spray.SparqlClientSpec
-import com.modelfabric.sparql.stream.StreamSpec
+import com.modelfabric.sparql.stream.{SparqlRequestFlowSpec, StreamSpec}
 import com.modelfabric.sparql.util.HttpEndpoint
 import com.modelfabric.test.FusekiManager._
 import com.modelfabric.test.Helpers._
@@ -22,7 +22,7 @@ object HttpEndpointSuiteTestRunner {
   val useFuseki: Boolean = sparqlServerEndpoint.isEmpty
 
   val testServerEndpoint = sparqlServerEndpoint match {
-    case Some(end) => HttpEndpoint(end)
+    case Some(end) => HttpEndpoint(end, None)
 
     case _ => HttpEndpoint.localhostWithAutomaticPort("/test")
   }
@@ -107,6 +107,7 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
     */
   override def nestedSuites = Vector(
     new SparqlClientSpec(HttpEndpointSuiteTestRunner.testSystem),
-    new StreamSpec(HttpEndpointSuiteTestRunner.testSystem)
+    new StreamSpec(HttpEndpointSuiteTestRunner.testSystem),
+    new SparqlRequestFlowSpec(HttpEndpointSuiteTestRunner.testSystem)
   )
 }

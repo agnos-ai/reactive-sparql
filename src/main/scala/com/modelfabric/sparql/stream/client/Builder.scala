@@ -2,7 +2,8 @@ package com.modelfabric.sparql.stream.client
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{Uri, HttpResponse, HttpRequest}
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, Authorization}
+import akka.http.scaladsl.model.{HttpHeader, Uri, HttpResponse, HttpRequest}
 import akka.stream.{Outlet, Inlet, FlowShape}
 import akka.stream.scaladsl._
 import com.modelfabric.sparql.api.SparqlStatement
@@ -22,7 +23,7 @@ object Builder {
     * @param _system
     * @return
     */
-  def flow(
+  def sparqlRequestFlow(
     endpoint: HttpEndpoint,
     statements: Outlet[SparqlStatement],
     results: Inlet[ResultSet])(implicit _system: ActorSystem): FlowShape[SparqlStatement, ResultSet] = {
@@ -34,7 +35,7 @@ object Builder {
       val connectionFlow: Flow[HttpRequest, HttpResponse, Future[Http.OutgoingConnection]] =
         Http().outgoingConnection(host, port).named("http.sparqlRequest")
 
-      val converter = builder.add(Flow.fromFunction(sparqlToRequest(Uri(path))).named("mapping.sparqlToHttpRequest"))
+      val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).named("mapping.sparqlToHttpRequest"))
       val parser = builder.add(Flow.fromFunction(responseToResultSet).named("mapping.httpResponseToResultSet"))
 
       statements ~> converter ~> connectionFlow ~> parser ~> results
@@ -46,9 +47,15 @@ object Builder {
     graph.shape
   }
 
-  private def sparqlToRequest(path: Uri)(sparql: SparqlStatement): HttpRequest = {
+  private def sparqlToRequest(endpoint: HttpEndpoint)(sparql: SparqlStatement): HttpRequest = {
+    // create the Basic authentication header
+    val auth: Option[Authorization] =
+      endpoint
+        .authentication
+        .map(a => Authorization(BasicHttpCredentials(a.username, a.password)))
+
     // TODO: do the proper mapping
-    HttpRequest(uri = path)
+    HttpRequest(uri = endpoint.path, headers = auth.toList)
   }
 
   private def responseToResultSet(response: HttpResponse): ResultSet = {

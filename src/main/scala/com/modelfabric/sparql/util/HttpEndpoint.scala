@@ -17,7 +17,7 @@ object HttpEndpoint {
     * @return
     */
   def localhostWithAutomaticPort(path: String): HttpEndpoint =
-    new HttpEndpointBuilder(assignPortAutomatically = true, useResourcePath = path).endpoint
+    new HttpEndpointBuilder(assignPortAutomatically = true, useResourcePath = path, authentication = None).endpoint
 
   /**
     * Construct an endpoint from a string URL representation,
@@ -29,7 +29,19 @@ object HttpEndpoint {
     * @return
     */
   def apply(endpointString: String): HttpEndpoint =
-    new HttpEndpointBuilder(Some(endpointString), false).endpoint
+    new HttpEndpointBuilder(Some(endpointString), false, "", None).endpoint
+
+  /**
+    * Construct an endpoint from a string URL representation,
+    * which corresponds to '''[${protocol}://]${host}[:${port}][${path}]'''
+    * Protocol, port and path are optional. Default protocol is http://,
+    * default port is 80, the default path is empty.
+    *
+    * @param endpointString
+    * @return
+    */
+  def apply(endpointString: String, authentication: Option[Authentication]): HttpEndpoint =
+    new HttpEndpointBuilder(Some(endpointString), false, "", authentication).endpoint
 
   /**
     * Construct an endpoint from individual parts.
@@ -39,8 +51,8 @@ object HttpEndpoint {
     * @param path
     * @return
     */
-  def apply(protocol: String, host: String, port: Integer, path: String): HttpEndpoint =
-    new HttpEndpoint(protocol, host, port, path)
+  def apply(protocol: String, host: String, port: Integer, path: String, authentication: Option[Authentication]): HttpEndpoint =
+    new HttpEndpoint(protocol, host, port, path, authentication)
 
   /**
     * Construct an HTTP endpoint from individual parts.
@@ -49,8 +61,8 @@ object HttpEndpoint {
     * @param port
     * @return
     */
-  def apply(host: String, port: Integer): HttpEndpoint =
-    new HttpEndpoint(defaultProtocol, host, port, "")
+  def apply(host: String, port: Integer, authentication: Option[Authentication]): HttpEndpoint =
+    new HttpEndpoint(defaultProtocol, host, port, "", authentication)
 
   /**
     * Construct an endpoint from individual parts with the desired path.
@@ -60,15 +72,17 @@ object HttpEndpoint {
     * @param path
     * @return
     */
-  def apply(host: String, port: Integer, path: String): HttpEndpoint =
-    new HttpEndpoint(defaultProtocol, host, port, path)
+  def apply(host: String, port: Integer, path: String, authentication: Option[Authentication] = None): HttpEndpoint =
+    new HttpEndpoint(defaultProtocol, host, port, path, authentication)
 
   private val defaultProtocol: String = "http"
   private val defaultHost: String = "localhost"
 
   private sealed class HttpEndpointBuilder(
     environmentEndpoint: Option[String] = None,
-    assignPortAutomatically: Boolean, useResourcePath: String = "") {
+    assignPortAutomatically: Boolean,
+    useResourcePath: String = "",
+    authentication: Option[Authentication] = None) {
 
     private val EndpointRegex = "(http[s]{0,1}://)?([a-zA-Z\\-\\.0-9]+)(:\\d{1,6})?(/.+)?".r
 
@@ -102,7 +116,7 @@ object HttpEndpoint {
       case _ => useResourcePath
     }
 
-    val endpoint = HttpEndpoint(protocol, host, port, path)
+    val endpoint = HttpEndpoint(protocol, host, port, path, authentication)
   }
 }
 
@@ -114,7 +128,7 @@ object HttpEndpoint {
   * @param port
   * @param path
   */
-case class HttpEndpoint(protocol: String, host: String, port: Int, path: String) {
+case class HttpEndpoint(protocol: String, host: String, port: Int, path: String, authentication: Option[Authentication]) {
   /**
     * Shows the desired fully qualified URL of the endpoint built from the individual components
     */
@@ -127,4 +141,12 @@ case class HttpEndpoint(protocol: String, host: String, port: Int, path: String)
   }$path"
 
 }
+
+/**
+  * Internal representation of use authentication credential.
+  *
+  * @param username
+  * @param password
+  */
+case class Authentication(username: String, password: String)
 

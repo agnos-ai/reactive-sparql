@@ -58,6 +58,8 @@ object Library {
 
   val scalaTest            = "org.scalatest"           %% "scalatest"                   % Version.scalaTest   % "it,test"
 
+  val akkaStreamTest       = "com.typesafe.akka"       %% "akka-stream-testkit"         % Version.akka        % "it,test"
+
   val fusekiServer         = "org.apache.jena"         % "jena-fuseki-server"           % Version.fuseki      % "it,test"
 
 }
@@ -71,7 +73,7 @@ object Build extends sbt.Build {
   val projectDependencies = Seq(
     scalaUtils, akkaActor, akkaStream, akkaHttpCore, akkaHttpExp, akkaSlf4j, akkaTestkit,
     sprayClient, sprayJson, javaxWsRs, jerseyCore, jerseyClient,
-    logbackClassic, scalaTest, fusekiServer)
+    logbackClassic, scalaTest, akkaStreamTest, fusekiServer)
 
   lazy val project = Project("reactive-sparql", file("."))
     .configs(IntegrationTest)

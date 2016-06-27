@@ -7,8 +7,9 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, _}
+import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestKit
-import com.modelfabric.sparql.api.SparqlQuery
+import com.modelfabric.sparql.api.{PrefixMapping, SparqlStatement, SparqlQuery}
 import com.modelfabric.sparql.spray.client.ResultSet
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 import com.modelfabric.sparql.stream.client.Builder
@@ -30,34 +31,33 @@ class SparqlRequestFlowSpec(val _system: ActorSystem) extends TestKit(_system)
   def this() = this(HttpEndpointSuiteTestRunner.testSystem)
   implicit val testMaterializer = ActorMaterializer()
 
+  implicit val prefixMapping = PrefixMapping.all
+
   import HttpEndpointSuiteTestRunner._
 
   "The Sparql request flow" must {
 
     "1. Allow a a simple Ping request through" in {
-/*
-      val auth = Authorization(BasicHttpCredentials("admin", "admin"))
 
-      val sparqlSource: Source[SparqlQuery, NotUsed] = Source.single(new SparqlQuery() { override val statement = "select * where { ?s ?p ?o}" })
+      val sparqlRequestFlow = Builder.sparqlRequestFlow(testServerEndpoint)
 
-      val resultSink: Sink[ResultSet] = Sink.head
+      val ( source, sink ) = TestSource.probe[SparqlQuery]
+        .via(sparqlRequestFlow)
+        .toMat(TestSink.probe[ResultSet])(Keep.both)
+        .run()
 
-      val sparlqRequestFlow = Builder.sparqlRequestFlow(testServerEndpoint, sparqlSource.to, resultsInlet)
+      sink.request(1)
+      source.sendNext(new SparqlQuery() { override val statement = "select * where { ?s ?p ?o}" })
 
-      val responseFuture: Future[HttpResponse] =
-        Source.single(new SparqlQuery() { override val statement = "select * where { ?s ?p ?o}" })
-          .via(connectionFlow)
-          .runWith(Sink.head)
-
-      val result = Await.result(responseFuture, 5 seconds)
-      println(result)
-      assert {
-        result match {
-          case HttpResponse(StatusCodes.OK, _, _, _) => true
-          case x@_ => false
-        }
+      sink.expectNext() match {
+        case x@ResultSet(_, _) =>
+          assert(true, x)
+        case x@_ =>
+          assert(false, x)
       }
-*/
+
+      sink.expectNoMsg(5 seconds)
+
     }
 
   }

@@ -1,10 +1,11 @@
 package com.modelfabric.sparql.stream.client
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, Authorization}
-import akka.http.scaladsl.model.{HttpHeader, Uri, HttpResponse, HttpRequest}
-import akka.stream.{Outlet, Inlet, FlowShape}
+import akka.http.scaladsl.model.{HttpResponse, HttpRequest}
+import akka.stream.{Graph, FlowShape}
 import akka.stream.scaladsl._
 import com.modelfabric.sparql.api.SparqlStatement
 import com.modelfabric.sparql.spray.client._
@@ -15,20 +16,17 @@ import scala.concurrent.Future
 object Builder {
 
   /**
-    * Create a Flow of statements to results.
+    * Create a partial flow Graph of statements to results.
     *
     * @param endpoint
-    * @param statements
-    * @param results
     * @param _system
     * @return
     */
   def sparqlRequestFlow(
-    endpoint: HttpEndpoint,
-    statements: Outlet[SparqlStatement],
-    results: Inlet[ResultSet])(implicit _system: ActorSystem): FlowShape[SparqlStatement, ResultSet] = {
+    endpoint: HttpEndpoint
+  )(implicit _system: ActorSystem): Graph[FlowShape[SparqlStatement, ResultSet], NotUsed] = {
 
-    val graph = GraphDSL.create() { implicit builder =>
+    GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
       import endpoint._
 
@@ -38,13 +36,11 @@ object Builder {
       val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).named("mapping.sparqlToHttpRequest"))
       val parser = builder.add(Flow.fromFunction(responseToResultSet).named("mapping.httpResponseToResultSet"))
 
-      statements ~> converter ~> connectionFlow ~> parser ~> results
+      converter ~> connectionFlow ~> parser
 
       FlowShape(converter.in, parser.out)
-
     }.named("flow.sparqlRequest")
 
-    graph.shape
   }
 
   private def sparqlToRequest(endpoint: HttpEndpoint)(sparql: SparqlStatement): HttpRequest = {
@@ -61,7 +57,7 @@ object Builder {
   private def responseToResultSet(response: HttpResponse): ResultSet = {
     // TODO: do the proper mapping
     ResultSet(
-      head = ResultSetVars(Nil),
+      head = ResultSetVars("status" :: "body" :: Nil),
       results = ResultSetResults(
         QuerySolution(Map(
           "status"  -> QuerySolutionValue("integer", Some("integer"), response.status.intValue().toString),

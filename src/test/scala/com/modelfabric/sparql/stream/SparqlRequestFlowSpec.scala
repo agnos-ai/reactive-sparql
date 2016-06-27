@@ -1,22 +1,17 @@
 package com.modelfabric.sparql.stream
 
-import akka.NotUsed
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Flow, _}
+import akka.stream.scaladsl.Keep
 import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestKit
-import com.modelfabric.sparql.api.{PrefixMapping, SparqlStatement, SparqlQuery}
+import com.modelfabric.sparql.api.{PrefixMapping, SparqlQuery}
 import com.modelfabric.sparql.spray.client.ResultSet
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 import com.modelfabric.sparql.stream.client.Builder
 import org.scalatest._
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 
 /**

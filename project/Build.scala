@@ -44,8 +44,6 @@ object Library {
   val akkaHttpCore         = "com.typesafe.akka"       %% "akka-http-core"              % Version.akka
   val akkaHttpExp          = "com.typesafe.akka"       %% "akka-http-experimental"      % Version.akka
   val akkaSlf4j            = "com.typesafe.akka"       %% "akka-slf4j"                  % Version.akka
-  val akkaTestkit          = "com.typesafe.akka"       %% "akka-testkit"                % Version.akka
-
   val sprayJson            = "io.spray"                %  "spray-json_2.11"             % Version.sprayJson
   val sprayClient          = "io.spray"                %% "spray-client"                % Version.spray
 
@@ -58,7 +56,9 @@ object Library {
 
   val scalaTest            = "org.scalatest"           %% "scalatest"                   % Version.scalaTest   % "it,test"
 
-  val akkaStreamTest       = "com.typesafe.akka"       %% "akka-stream-testkit"         % Version.akka        % "it,test"
+  val akkaTestkit          = "com.typesafe.akka"       %% "akka-testkit"                % Version.akka
+
+  val akkaStreamTestkit    = "com.typesafe.akka"       %% "akka-stream-testkit"         % Version.akka        % "it,test"
 
   val fusekiServer         = "org.apache.jena"         % "jena-fuseki-server"           % Version.fuseki      % "it,test"
 
@@ -71,9 +71,9 @@ object Build extends sbt.Build {
   import plugins._
 
   val projectDependencies = Seq(
-    scalaUtils, akkaActor, akkaStream, akkaHttpCore, akkaHttpExp, akkaSlf4j, akkaTestkit,
+    scalaUtils, akkaActor, akkaStream, akkaHttpCore, akkaHttpExp, akkaSlf4j,
     sprayClient, sprayJson, javaxWsRs, jerseyCore, jerseyClient,
-    logbackClassic, scalaTest, akkaStreamTest, fusekiServer)
+    logbackClassic, scalaTest, akkaTestkit, akkaStreamTestkit, fusekiServer)
 
   lazy val project = Project("reactive-sparql", file("."))
     .configs(IntegrationTest)

@@ -4,7 +4,7 @@ import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
 import com.modelfabric.sparql.spray.SparqlClientSpec
 import com.modelfabric.sparql.stream.{SparqlRequestFlowSpec, StreamSpec}
-import com.modelfabric.sparql.util.HttpEndpoint
+import com.modelfabric.sparql.util.{Authentication, HttpEndpoint}
 import com.modelfabric.test.FusekiManager._
 import com.modelfabric.test.Helpers._
 import com.typesafe.config.ConfigFactory
@@ -16,14 +16,19 @@ import scala.languageFeature.postfixOps
 object HttpEndpointSuiteTestRunner {
 
   val sparqlServerEndpointKey = "SPARQL_ENDPOINT"
+  val sparqlServerEndpointUserKey = "SPARQL_ENDPOINT_USER"
+  val sparqlServerEndpointPasswordKey = "SPARQL_ENDPOINT_PASSWORD"
 
   val sparqlServerEndpoint: Option[String] = sys.env.get(sparqlServerEndpointKey)
+  val sparqlServerEndpointUser: String = sys.env.getOrElse(sparqlServerEndpointUserKey, "admin")
+  val sparqlServerEndpointPassword: String = sys.env.getOrElse(sparqlServerEndpointPasswordKey, "admin")
+
+  lazy val sparqlServerEndpointAuthentication = Authentication(sparqlServerEndpointUser, sparqlServerEndpointPassword)
 
   val useFuseki: Boolean = sparqlServerEndpoint.isEmpty
 
   val testServerEndpoint = sparqlServerEndpoint match {
-    case Some(end) => HttpEndpoint(end, None)
-
+    case Some(end) => HttpEndpoint(end, Some(sparqlServerEndpointAuthentication))
     case _ => HttpEndpoint.localhostWithAutomaticPort("/test")
   }
 

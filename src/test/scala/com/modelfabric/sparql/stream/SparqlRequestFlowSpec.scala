@@ -17,7 +17,7 @@ import scala.language.postfixOps
 /**
   * This test runs as part of the [[HttpEndpointSuiteTestRunner]] Suite.
  *
-  * @param _system
+  * @param _system the actor system
   */
 @DoNotDiscover
 class SparqlRequestFlowSpec(val _system: ActorSystem) extends TestKit(_system)
@@ -34,27 +34,25 @@ class SparqlRequestFlowSpec(val _system: ActorSystem) extends TestKit(_system)
 
     "1. Allow a a simple Ping request through" in {
 
-      val sparqlRequestFlow = Builder.sparqlRequestFlow(testServerEndpoint)
+      val sparqlRequestFlowUnderTest = Builder.sparqlRequestFlow(testServerEndpoint)
 
       val ( source, sink ) = TestSource.probe[SparqlQuery]
-        .via(sparqlRequestFlow)
+        .via(sparqlRequestFlowUnderTest)
         .toMat(TestSink.probe[ResultSet])(Keep.both)
         .run()
 
       sink.request(1)
-      source.sendNext(new SparqlQuery() { override val statement = "select * where { ?s ?p ?o}" })
+      source.sendNext(new SparqlQuery() { override val statement = "select * where { ?s ?p ?o . } LIMIT 1" })
 
       sink.expectNext() match {
         case x@ResultSet(_, _) =>
-          assert(true, x)
+          assert(condition = true)
         case x@_ =>
-          assert(false, x)
+          assert(condition = false, x)
       }
 
       sink.expectNoMsg(5 seconds)
-
     }
-
   }
 
 }

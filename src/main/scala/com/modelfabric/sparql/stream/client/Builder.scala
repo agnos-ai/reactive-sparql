@@ -4,10 +4,10 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.{BasicHttpCredentials, Authorization}
-import akka.http.scaladsl.model.{HttpResponse, HttpRequest}
+import akka.http.scaladsl.model.{HttpMethods, HttpResponse, HttpRequest}
 import akka.stream.{Graph, FlowShape}
 import akka.stream.scaladsl._
-import com.modelfabric.sparql.api.SparqlStatement
+import com.modelfabric.sparql.api.{HttpMethod, SparqlStatement}
 import com.modelfabric.sparql.spray.client._
 import com.modelfabric.sparql.util.HttpEndpoint
 
@@ -18,8 +18,8 @@ object Builder {
   /**
     * Create a partial flow Graph of statements to results.
     *
-    * @param endpoint
-    * @param _system
+    * @param endpoint the HTTP endpoint of the Sparql database server
+    * @param _system the implicit actor system
     * @return
     */
   def sparqlRequestFlow(
@@ -50,8 +50,13 @@ object Builder {
         .authentication
         .map(a => Authorization(BasicHttpCredentials(a.username, a.password)))
 
+    val method = sparql.httpMethod match {
+      case HttpMethod.GET => HttpMethods.GET
+      case HttpMethod.POST => HttpMethods.POST
+    }
+
     // TODO: do the proper mapping
-    HttpRequest(uri = endpoint.path, headers = auth.toList)
+    HttpRequest(method = method, uri = endpoint.path, headers = auth.toList)
   }
 
   private def responseToResultSet(response: HttpResponse): ResultSet = {

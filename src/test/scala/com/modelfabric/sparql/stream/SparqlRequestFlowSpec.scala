@@ -42,16 +42,16 @@ class SparqlRequestFlowSpec(val _system: ActorSystem) extends TestKit(_system)
         .run()
 
       sink.request(1)
-      source.sendNext(new SparqlQuery() { override val statement = "select * where { ?s ?p ?o . } LIMIT 1" })
+      source.sendNext(SparqlQuery("select * where { ?s ?p ?o . } LIMIT 1"))
 
       sink.expectNext() match {
         case x@ResultSet(_, _) =>
-          assert(condition = true)
+          assert(true)
         case x@_ =>
-          assert(condition = false, x)
+          assert(false, x)
       }
 
-      sink.expectNoMsg(5 seconds)
+      sink.expectNoMsg(1 second)
     }
   }
 

@@ -1,9 +1,10 @@
 package com.modelfabric.sparql.spray.client
 
 import akka.actor._
-import com.modelfabric.sparql.api.{SparqlUpdate, SparqlQuery, SparqlStatement, HttpMethod}
+import com.modelfabric.sparql.api._
 import com.modelfabric.sparql.api.HttpMethod._
 import com.modelfabric.extension.StringExtensions._
+import com.modelfabric.sparql.mapper.SparqlClientJsonProtocol
 
 import scala.language.postfixOps
 

@@ -2,7 +2,7 @@ package com.modelfabric.sparql.api
 
 import java.text.SimpleDateFormat
 
-private object SparqlUpdate {
+object SparqlUpdate {
 
   /**
     * Construct a SparqlUpdate from the passed string and implicit prefix mappings.
@@ -12,7 +12,13 @@ private object SparqlUpdate {
     * @return
     */
   def apply(sparql: String)(implicit _pm : PrefixMapping): SparqlUpdate = {
-    new SparqlUpdate() { override val statement = sparql }
+    new SparqlUpdate() {
+      override val statement = build(sparql)
+    }
+  }
+
+  def unapply(update: SparqlUpdate): Option[(HttpMethod, String)] = {
+    Some((update.httpMethod, update.statement))
   }
 
 }

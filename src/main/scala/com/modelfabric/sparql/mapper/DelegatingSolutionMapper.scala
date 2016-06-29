@@ -1,6 +1,6 @@
 package com.modelfabric.sparql.mapper
 
-import com.modelfabric.sparql.spray.client.QuerySolution
+import com.modelfabric.sparql.api.QuerySolution
 
 
 /**

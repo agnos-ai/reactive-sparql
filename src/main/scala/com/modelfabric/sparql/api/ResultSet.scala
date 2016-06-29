@@ -1,16 +1,10 @@
 /*
  * Supports http://www.w3.org/TR/2013/REC-sparql11-results-json-20130321/
  */
-package com.modelfabric.sparql.spray.client
+package com.modelfabric.sparql.api
 
-import spray.json.{ JsValue, JsObject, RootJsonFormat, DefaultJsonProtocol }
-import javax.xml.bind.DatatypeConverter
 import java.net.URI
-
-object XSDDataType extends Enumeration {
-
-  type XSDDataType = Value
-}
+import javax.xml.bind.DatatypeConverter
 
 case class ResultSetVars(vars : List[String])
 
@@ -88,20 +82,4 @@ case class  QuerySolution(values : Map[String, QuerySolutionValue]) {
   }
 }
 
-object SparqlClientJsonProtocol extends DefaultJsonProtocol {
-  implicit val format4 = jsonFormat3(QuerySolutionValue)
 
-  implicit object format5 extends RootJsonFormat[QuerySolution] {
-    def write(c : QuerySolution) = JsObject()
-    def read(row : JsValue) = read(row.asInstanceOf[JsObject])
-    def read(row : JsObject) = {
-      QuerySolution(row.fields mapValues {
-        (value : JsValue) => value.convertTo[QuerySolutionValue]
-      })
-    }
-  }
-
-  implicit val format2 = jsonFormat(ResultSetResults, "bindings")
-  implicit val format1 = jsonFormat(ResultSetVars, "vars")
-  implicit val format3 = jsonFormat2(ResultSet)
-}

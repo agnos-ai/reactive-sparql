@@ -11,7 +11,31 @@ object SparqlQuery {
     * @return
     */
   def apply(sparql: String)(implicit _pm : PrefixMapping): SparqlQuery = {
-    new SparqlQuery() { override val statement = sparql }
+    new SparqlQuery() { override val statement = build(sparql) }
+  }
+
+  /**
+    * Construct a SparqlQuery from the passed string and implicit prefix mappings.
+    *
+    * @param method the HTTP method to use
+    * @param sparql the query string
+    * @param _pm prefix mappings from the current scope
+    * @return
+    */
+  def apply(method: HttpMethod, sparql: String)(implicit _pm : PrefixMapping): SparqlQuery = {
+    new SparqlQuery() {
+      override val httpMethod = method
+      override val statement = build(sparql)
+    }
+  }
+
+  /**
+    *
+    * @param query
+    * @return
+    */
+  def unapply(query: SparqlQuery): Option[(HttpMethod, String)] = {
+    Some((query.httpMethod, query.statement))
   }
 
 }

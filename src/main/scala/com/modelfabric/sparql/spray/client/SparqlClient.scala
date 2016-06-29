@@ -1,9 +1,9 @@
 package com.modelfabric.sparql.spray.client
 
-import com.modelfabric.sparql.api.{SparqlUpdate, SparqlStatement, SparqlQuery}
+import com.modelfabric.sparql.api._
 
 import scala.language.postfixOps
-import akka.actor.{ ActorLogging, Actor, ActorRef }
+import akka.actor.ActorRef
 import spray.http.HttpResponse
 import com.modelfabric.akka.actor.UnknownMessageHandler
 

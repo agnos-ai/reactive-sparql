@@ -5,8 +5,7 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Keep
 import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestKit
-import com.modelfabric.sparql.api.{PrefixMapping, SparqlQuery}
-import com.modelfabric.sparql.spray.client.ResultSet
+import com.modelfabric.sparql.api._
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 import com.modelfabric.sparql.stream.client.Builder
 import org.scalatest._
@@ -25,28 +24,71 @@ class SparqlRequestFlowSpec(val _system: ActorSystem) extends TestKit(_system)
 
   def this() = this(HttpEndpointSuiteTestRunner.testSystem)
   implicit val testMaterializer = ActorMaterializer()
-
-  implicit val prefixMapping = PrefixMapping.all
+  implicit val executionContext = _system.dispatcher
+  implicit val prefixMapping = PrefixMapping.none
 
   import HttpEndpointSuiteTestRunner._
 
   "The Sparql request flow" must {
 
-    "1. Allow a a simple Ping request through" in {
+    val sparqlRequestFlowUnderTest = Builder.sparqlRequestFlow(testServerEndpoint)
 
-      val sparqlRequestFlowUnderTest = Builder.sparqlRequestFlow(testServerEndpoint)
+    val ( source, sink ) = TestSource.probe[SparqlQuery]
+      .via(sparqlRequestFlowUnderTest)
+      .toMat(TestSink.probe[ResultSet])(Keep.both)
+      .run()
 
-      val ( source, sink ) = TestSource.probe[SparqlQuery]
-        .via(sparqlRequestFlowUnderTest)
-        .toMat(TestSink.probe[ResultSet])(Keep.both)
-        .run()
+    "1. Allow a simple SPARQL Select via HTTP GET" in {
 
       sink.request(1)
-      source.sendNext(SparqlQuery("select * where { ?s ?p ?o . } LIMIT 1"))
+      source.sendNext {
+        SparqlQuery {
+          s"""
+             |SELECT DISTINCT ?g
+             |WHERE {
+             |  GRAPH ?g {
+             |   ?s ?p ?o .
+             |  }
+             |  FILTER(?g = <urn:test:mfab:data>)
+             |}
+             |LIMIT 1""".stripMargin
+        }
+      }
 
       sink.expectNext() match {
         case x@ResultSet(_, _) =>
-          assert(true)
+          val result = x.results.bindings.head
+          println(result.prettyPrint)
+          assert(result.asValueMap.get("g") === Some(QuerySolutionValue("uri", None, "urn:test:mfab:data")))
+        case x@_ =>
+          assert(false, x)
+      }
+
+      sink.expectNoMsg(1 second)
+    }
+
+    "2. Allow a simple SPARQL Select via HTTP POST" in {
+
+      sink.request(1)
+      source.sendNext {
+        SparqlQuery (HttpMethod.POST,
+          s"""
+             |SELECT DISTINCT ?g
+             |WHERE {
+             |  GRAPH ?g {
+             |   ?s ?p ?o .
+             |  }
+             |  FILTER(?g = <urn:test:mfab:data>)
+             |}
+             |LIMIT 1""".stripMargin
+        )
+      }
+
+      sink.expectNext() match {
+        case x@ResultSet(_, _) =>
+          val result = x.results.bindings.head
+          println(result.prettyPrint)
+          assert(result.asValueMap.get("g") === Some(QuerySolutionValue("uri", None, "urn:test:mfab:data")))
         case x@_ =>
           assert(false, x)
       }

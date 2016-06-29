@@ -1,7 +1,7 @@
 package com.modelfabric.sparql.spray
 
 import com.modelfabric.sparql.api._
-import com.modelfabric.sparql.spray.client.{SparqlHttpSprayClient, QuerySolution, MessageSparqlClientQueryEnd}
+import com.modelfabric.sparql.spray.client.{SparqlHttpSprayClient, MessageSparqlClientQueryEnd}
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 
 import scala.language.postfixOps

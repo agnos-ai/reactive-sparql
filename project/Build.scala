@@ -38,30 +38,23 @@ object Version {
 
 object Library {
 
-  val scalaUtils           = "com.modelfabric"         %% "scala-utils"                 % Version.scalaUtils
-  val akkaActor            = "com.typesafe.akka"       %% "akka-actor"                  % Version.akka
-  val akkaStream           = "com.typesafe.akka"       %% "akka-stream"                 % Version.akka
-  val akkaHttpCore         = "com.typesafe.akka"       %% "akka-http-core"              % Version.akka
-  val akkaHttpExp          = "com.typesafe.akka"       %% "akka-http-experimental"      % Version.akka
-  val akkaSlf4j            = "com.typesafe.akka"       %% "akka-slf4j"                  % Version.akka
-  val sprayJson            = "io.spray"                %  "spray-json_2.11"             % Version.sprayJson
-  val sprayClient          = "io.spray"                %% "spray-client"                % Version.spray
-
-  val javaxWsRs            = "javax.ws.rs"             %  "jsr311-api"                  % Version.javaxWsRs
-
-  val jerseyCore           = "com.sun.jersey"          %  "jersey-core"                 % Version.jersey
-  val jerseyClient         = "com.sun.jersey"          %  "jersey-client"               % Version.jersey
-
-  val logbackClassic       = "ch.qos.logback"          %  "logback-classic"             % Version.logback
-
-  val scalaTest            = "org.scalatest"           %% "scalatest"                   % Version.scalaTest   % "it,test"
-
-  val akkaTestkit          = "com.typesafe.akka"       %% "akka-testkit"                % Version.akka
-
-  val akkaStreamTestkit    = "com.typesafe.akka"       %% "akka-stream-testkit"         % Version.akka        % "it,test"
-
-  val fusekiServer         = "org.apache.jena"         % "jena-fuseki-server"           % Version.fuseki      % "it,test"
-
+  val scalaUtils        = "com.modelfabric"   %% "scala-utils"                       % Version.scalaUtils
+  val akkaActor         = "com.typesafe.akka" %% "akka-actor"                        % Version.akka
+  val akkaStream        = "com.typesafe.akka" %% "akka-stream"                       % Version.akka
+  val akkaHttpCore      = "com.typesafe.akka" %% "akka-http-core"                    % Version.akka
+  val akkaHttpExp       = "com.typesafe.akka" %% "akka-http-experimental"            % Version.akka
+  val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json-experimental" % Version.akka
+  val akkaSlf4j         = "com.typesafe.akka" %% "akka-slf4j"                        % Version.akka
+  val sprayJson         = "io.spray"          %  "spray-json_2.11"                   % Version.sprayJson
+  val sprayClient       = "io.spray"          %% "spray-client"                      % Version.spray
+  val javaxWsRs         = "javax.ws.rs"       %  "jsr311-api"                        % Version.javaxWsRs
+  val jerseyCore        = "com.sun.jersey"    %  "jersey-core"                       % Version.jersey
+  val jerseyClient      = "com.sun.jersey"    %  "jersey-client"                     % Version.jersey
+  val logbackClassic    = "ch.qos.logback"    %  "logback-classic"                   % Version.logback
+  val scalaTest         = "org.scalatest"     %% "scalatest"                         % Version.scalaTest   % "it,test"
+  val akkaTestkit       = "com.typesafe.akka" %% "akka-testkit"                      % Version.akka        % "it,test"
+  val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit"               % Version.akka        % "it,test"
+  val fusekiServer      = "org.apache.jena"   %  "jena-fuseki-server"                % Version.fuseki      % "it,test"
 }
 
 object Build extends sbt.Build {
@@ -71,7 +64,7 @@ object Build extends sbt.Build {
   import plugins._
 
   val projectDependencies = Seq(
-    scalaUtils, akkaActor, akkaStream, akkaHttpCore, akkaHttpExp, akkaSlf4j,
+    scalaUtils, akkaActor, akkaStream, akkaHttpCore, akkaHttpExp, akkaHttpSprayJson, akkaSlf4j,
     sprayClient, sprayJson, javaxWsRs, jerseyCore, jerseyClient,
     logbackClassic, scalaTest, akkaTestkit, akkaStreamTestkit, fusekiServer)
 

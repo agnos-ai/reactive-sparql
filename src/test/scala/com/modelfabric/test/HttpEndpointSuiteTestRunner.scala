@@ -52,6 +52,13 @@ object HttpEndpointSuiteTestRunner {
          |  userId = "admin"
          |  password = "admin"
          |}
+         |
+         |akka {
+         |  http {
+         |    server.parsing.illegal-header-warnings = off
+         |    client.parsing.illegal-header-warnings = off
+         |  }
+         |}
     """.stripMargin).withFallback(ConfigFactory.load())
   }
 

@@ -4,11 +4,12 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.{Accept, BasicHttpCredentials, Authorization}
-import akka.http.scaladsl.model.{MediaType, HttpCharsets, HttpHeader, HttpResponse, HttpRequest, HttpMethods, StatusCodes, ContentTypes}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.{ActorMaterializer, Graph, FlowShape}
 import akka.stream.scaladsl._
 import com.modelfabric.extension.StringExtensions._
+import com.modelfabric.sparql.api.HttpMethod
 import com.modelfabric.sparql.api._
 import com.modelfabric.sparql.mapper.SparqlClientJsonProtocol._
 
@@ -19,12 +20,79 @@ import scala.concurrent.{ExecutionContext, Future}
 object Builder {
 
   /**
-    * Create a partial flow Graph of statements to results.
+    * Create a partial flow Graph of sparql requests to results.
+    * {{{
+    *                +----------------------------------------------+
+    *                | Load-balanced Disordered Sparql Request Flow |
+    *                |                                              |
+    *                |  +-----+        +----------+        +-----+  |
+    *                |  |     |        |          |        |     |  |
+    *                |  |     | ~Out~> | Request1 | ~Out~> |     |  |
+    *                |  |     |        |          |        |     |  |
+    *                |  |     |        +----------+        |     |  |
+    *                |  |     |                            |     |  |
+    *                |  |     |        +----------+        |     |  |
+    *                |  |     |        |          |        |     |  |
+    *                |  |  B  | ~Out~> | Request2 | ~Out~> |  M  |  |
+    *                |  |  a  |        |          |        |  e  |  |
+    *                |  |  l  |        +----------+        |  r  |  |
+    * SparqlRequest ~~> |  a  |                            |  g  | ~~> SparqlResponse
+    *                |  |  n  |             .              |  e  |  |
+    *                |  |  c  |             .              |     |  |
+    *                |  |  e  |             .              |     |  |
+    *                |  |     |                            |     |  |
+    *                |  |     |        +----------+        |     |  |
+    *                |  |     |        |          |        |     |  |
+    *                |  |     | ~Out~> | RequestN | ~Out~> |     |  |
+    *                |  |     |        |          |        |     |  |
+    *                |  +-----+        +----------+        +-----+  |
+    *                |                                              |
+    *                +-----------------------------------------------+
+    * }}}
     *
-    * @param endpoint the HTTP endpoint of the Sparql database server
+    * @param endpoint the HTTP endpoint of the Sparql triple store server
+    * @param parallelism the number of concurrent streams to use
     * @param _system the implicit actor system
     * @param _materializer the actor materializer
-    * @param _executionContext the Futures execution context
+    * @param _context the Futures execution context
+    * @return
+    */
+  def loadBalancedDisorderedSparqlRequestFlow(
+    endpoint: HttpEndpoint,
+    parallelism: Int
+  )(implicit
+      _system: ActorSystem,
+      _materializer: ActorMaterializer,
+      _context: ExecutionContext
+  ) : Graph[FlowShape[SparqlRequest, SparqlResponse], NotUsed] = {
+
+    GraphDSL.create() { implicit builder =>
+      import GraphDSL.Implicits._
+
+      val dispatcher = builder.add(Balance[SparqlRequest](parallelism))
+      val merger = builder.add(Merge[SparqlResponse](parallelism))
+      for ( i <- 0 until parallelism) {
+        dispatcher.out(i) ~> sparqlRequestFlow(endpoint) ~> merger.in(i)
+      }
+
+      FlowShape(dispatcher.in, merger.out)
+
+    } named "flow.loadBalancedDisorderedSparqlRequestFlow"
+
+  }
+
+  /**
+    * Create a partial flow Graph of sparql requests to results.
+    * {{{
+    *
+    * TODO
+    *
+    * }}}
+    *
+    * @param endpoint the HTTP endpoint of the Sparql triple store server
+    * @param _system the implicit actor system
+    * @param _materializer the actor materializer
+    * @param _context the Futures execution context
     * @return
     */
   def sparqlRequestFlow(
@@ -32,51 +100,155 @@ object Builder {
   )(implicit
       _system: ActorSystem,
       _materializer: ActorMaterializer,
-      _executionContext: ExecutionContext
-  ) : Graph[FlowShape[SparqlStatement, ResultSet], NotUsed] = {
+      _context: ExecutionContext
+  ) : Graph[FlowShape[SparqlRequest, SparqlResponse], NotUsed] = {
+
+    GraphDSL.create() { implicit builder =>
+      import GraphDSL.Implicits._
+
+      val broadcastRequest = builder.add(Broadcast[SparqlRequest](2))
+
+      val queryFilter = builder.add {
+        Flow[SparqlRequest].filter {
+          case r@SparqlRequest(SparqlQuery(_,_)) =>
+            println(s"Handling QUERY: $r")
+            true
+          case _ => false
+        }
+      }
+
+      val updateFilter = builder.add {
+        Flow[SparqlRequest].filter {
+          case r@SparqlRequest(SparqlUpdate(_,_)) =>
+            println(s"Handling UPDATE: $r")
+            true
+          case _ => false
+        }
+      }
+
+      val responseMerger = builder.add(Merge[SparqlResponse](2).named("merge.sparqlResponse"))
+
+      broadcastRequest ~> queryFilter  ~> sparqlQueryFlow(endpoint)  ~> responseMerger
+      broadcastRequest ~> updateFilter ~> sparqlUpdateFlow(endpoint) ~> responseMerger
+
+      FlowShape(broadcastRequest.in, responseMerger.out)
+
+    } named "flow.sparqlRequestFlow"
+
+  }
+
+  /**
+    * Create a partial flow Graph of sparql requests to results.
+    * {{{
+    *
+    * TODO
+    *
+    * }}}
+    *
+    * @param endpoint the HTTP endpoint of the Sparql triple store server
+    * @param _system the implicit actor system
+    * @param _materializer the actor materializer
+    * @param _context the Futures execution context
+    * @return
+    */
+  def sparqlQueryFlow(
+    endpoint: HttpEndpoint
+  )(implicit
+    _system: ActorSystem,
+    _materializer: ActorMaterializer,
+    _context: ExecutionContext
+  ): Graph[FlowShape[SparqlRequest, SparqlResponse], NotUsed] = {
+
+    GraphDSL.create() { implicit builder =>
+
+      import GraphDSL.Implicits._
+      import endpoint._
+
+      val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).async.named("mapping.sparqlToHttpRequest"))
+
+      val queryConnectionFlow = builder.add(Http().outgoingConnection(host, port).async.named("http.sparqlQuery"))
+
+      val broadcastQueryHttpResponse = builder.add(Broadcast[HttpResponse](2).async.named("broadcast.queryResponse"))
+
+      val resultSetParser = builder.add(Flow[HttpResponse].mapAsync(1)(res => responseToResultSet(res)).async.named("mapping.parseResultSet"))
+
+      val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).async.named("mapping.makeResponseFromHeader"))
+
+      val queryResultZipper = builder.add(ZipWith[ResultSet, SparqlResponse, SparqlResponse](
+        (resultSet, response) =>
+          response.copy(resultSet = Some(resultSet))
+      ).async.named("zipper.queryResultZipper"))
+
+      converter ~> queryConnectionFlow ~> broadcastQueryHttpResponse ~> resultSetParser ~> queryResultZipper.in0
+                                          broadcastQueryHttpResponse ~> resultMaker     ~> queryResultZipper.in1
+
+      FlowShape(converter.in, queryResultZipper.out)
+    } named "flow.sparqlQueryRequest"
+
+  }
+
+  def sparqlUpdateFlow(
+    endpoint: HttpEndpoint
+  )(implicit
+      _system: ActorSystem,
+      _materializer: ActorMaterializer,
+      _context: ExecutionContext
+  ) : Graph[FlowShape[SparqlRequest, SparqlResponse], NotUsed] = {
 
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
       import endpoint._
 
       val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).named("mapping.sparqlToHttpRequest"))
-      val connectionFlow = builder.add(Http().outgoingConnection(host, port).named("http.sparqlRequest"))
-      val parser = builder.add(Flow[HttpResponse].mapAsync(1)(res => responseToResultSet(res)).named("mapping.parseResponse"))
 
-      converter ~> connectionFlow ~> parser
+      val updateConnectionFlow = builder.add(Http().outgoingConnection(host, port).named("http.sparqlUpdate"))
 
-      FlowShape(converter.in, parser.out)
-    } named "flow.sparqlRequest"
+      val broadcastUpdateHttpResponse = builder.add(Broadcast[HttpResponse](2).named("broadcast.updateResponse"))
+      val booleanParser = builder.add(Flow[HttpResponse].mapAsync(1)(res => responseToBoolean(res)).named("mapping.parseBoolean"))
+      val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).named("mapping.makeResponseFromHeader"))
+      val updateResultZipper = builder.add(ZipWith[Boolean, SparqlResponse, SparqlResponse]( (success, response) =>
+        response.copy(
+          success = success
+        )
+      ).named("zipper.updateResultZipper"))
+
+      converter ~> updateConnectionFlow ~> broadcastUpdateHttpResponse ~> booleanParser ~> updateResultZipper.in0
+                                           broadcastUpdateHttpResponse ~> resultMaker   ~> updateResultZipper.in1
+
+      FlowShape(converter.in, updateResultZipper.out)
+    } named "flow.sparqlUpdateRequest"
 
   }
 
-  private def sparqlToRequest(endpoint: HttpEndpoint)(sparql: SparqlStatement): HttpRequest = {
-    makeHttpRequest(endpoint, sparql)
+  private def sparqlToRequest(endpoint: HttpEndpoint)(request: SparqlRequest): HttpRequest = {
+    makeHttpRequest(endpoint, request.statement)
   }
 
   private def makeHttpRequest(endpoint: HttpEndpoint, sparql: SparqlStatement): HttpRequest = sparql match {
-
     case SparqlQuery(HttpMethod.GET, query) =>
       HttpRequest(
         method = HttpMethods.GET,
         uri = endpoint.path + s"$QUERY_URI_PART?$QUERY_PARAM_NAME=${sparql.statement.urlEncode}",
-        makeRequestHeaders(endpoint)
+        Accept(`application/sparql-results+json`) :: makeRequestHeaders(endpoint)
       )
 
     case SparqlQuery(HttpMethod.POST, query) =>
       HttpRequest(
         method = HttpMethods.POST,
         uri = endpoint.path + s"$QUERY_URI_PART",
-        makeRequestHeaders(endpoint)
-      ).withEntity(`application/x-www-form-urlencoded`, s"$QUERY_PARAM_NAME=${sparql.statement.urlEncode}")
+        Accept(`application/sparql-results+json`) :: makeRequestHeaders(endpoint)
+      ).withEntity(
+        `application/x-www-form-urlencoded`.toContentType,
+        s"$QUERY_PARAM_NAME=${sparql.statement.urlEncode}")
 
     case SparqlUpdate(HttpMethod.POST, update) =>
       HttpRequest(
         method = HttpMethods.POST,
         uri = endpoint.path + s"$UPDATE_URI_PART",
         makeRequestHeaders(endpoint)
-      ).withEntity(`application/x-www-form-urlencoded`, s"$UPDATE_PARAM_NAME=${sparql.statement.urlEncode}")
-
+      ).withEntity(
+        `application/x-www-form-urlencoded`.toContentType,
+        s"$UPDATE_PARAM_NAME=${sparql.statement.urlEncode}")
  }
 
   private def makeRequestHeaders(endpoint: HttpEndpoint): List[HttpHeader] = {
@@ -86,8 +258,7 @@ object Builder {
         .authentication
         .map(a => Authorization(BasicHttpCredentials(a.username, a.password)))
 
-    /* add Accept: header to the request */
-    Accept(`application/sparql-results+json`.mediaType) :: auth.toList
+    auth.toList
   }
 
   private def responseToResultSet(response: HttpResponse)(
@@ -98,14 +269,47 @@ object Builder {
   ): Future[ResultSet] = {
 
     response match {
-      case response @ HttpResponse(StatusCodes.OK, _, entity, _)
-        if entity.contentType.mediaType == `application/sparql-results+json`.mediaType =>
-          /* we need to override the content type, because the spray-json parser does not understand */
-          /* anything but 'application/json' */
-          Unmarshal(entity.withContentType(ContentTypes.`application/json`)).to[ResultSet]
+      case HttpResponse(StatusCodes.OK, _, entity, _)
+        if entity.contentType.mediaType == `application/sparql-results+json` =>
+        /* we need to override the content type, because the spray-json parser does not understand */
+        /* anything but 'application/json' */
+        Unmarshal(entity.withContentType(ContentTypes.`application/json`)).to[ResultSet]
+     }
+  }
+
+  private def responseToBoolean(response: HttpResponse)(
+    implicit
+      _system: ActorSystem,
+      _materializer: ActorMaterializer,
+      _executionContext: ExecutionContext
+  ): Future[Boolean] = {
+
+    response match {
+      case HttpResponse(StatusCodes.OK, _, entity, _)
+        if entity.contentType.mediaType == `text/boolean` =>
+        Unmarshal(entity).to[Boolean]
+      case HttpResponse(StatusCodes.OK, headers, entity, protocol) =>
+        println(s"Unexpected response content type: ${entity.contentType} and/or media type: ${entity.contentType.mediaType}")
+        Future.successful(true)
+
+      case x@_ =>
+        println(s"Unexpected response: $x")
+        Future.successful(false)
     }
 
   }
+
+  private def responseToSparqlResponse(response: HttpResponse): SparqlResponse = response match {
+    case HttpResponse(StatusCodes.OK, _, _, _) =>
+      SparqlResponse(success = true)
+    case HttpResponse(status, headers, entity, _) =>
+      val error = SparqlClientRequestFailed(s"Request failed with: ${status}, headers: ${headers.mkString("|")}, message: ${entity})")
+      SparqlResponse(success = false, error = Some(error))
+    case x@_ =>
+      val error = SparqlClientRequestFailed(s"Request failed with unexpected response: ${x})")
+      SparqlResponse(success = false, error = Some(error))
+  }
+
 
   /*           */
   /* CONSTANTS */
@@ -119,6 +323,7 @@ object Builder {
 
   private val FORM_MIME_TYPE = "x-www-form-urlencoded"
   private val SPARQL_RESULTS_MIME_TYPE = "sparql-results+json"
+  private val TEXT_BOOLEAN_MIME_TYPE = "boolean"
 
   /**
     * Media type for Form upload
@@ -127,7 +332,7 @@ object Builder {
     MediaType.applicationWithFixedCharset(
       FORM_MIME_TYPE,
       HttpCharsets.`UTF-8`
-    ).toContentType
+    )
 
   /**
     * Media type for Sparql JSON protocol
@@ -136,6 +341,12 @@ object Builder {
     MediaType.applicationWithFixedCharset(
       SPARQL_RESULTS_MIME_TYPE,
       HttpCharsets.`UTF-8`
-    ).toContentType
+    )
+
+  /**
+    * Media type for text/boolean
+    */
+  private val `text/boolean` =
+    MediaType.text(TEXT_BOOLEAN_MIME_TYPE)
 
 }

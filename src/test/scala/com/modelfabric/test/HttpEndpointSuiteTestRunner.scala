@@ -2,8 +2,8 @@ package com.modelfabric.test
 
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
-import com.modelfabric.sparql.spray.SparqlClientSpec
-import com.modelfabric.sparql.stream.{SparqlRequestFlowSpec, StreamSpec}
+import com.modelfabric.sparql.spray.SpraySparqlClientSpec
+import com.modelfabric.sparql.stream.{StreamSparqlClientSpec, SparqlRequestFlowSpec, StreamSpec}
 import com.modelfabric.sparql.util.{Authentication, HttpEndpoint}
 import com.modelfabric.test.FusekiManager._
 import com.modelfabric.test.Helpers._
@@ -74,7 +74,7 @@ object HttpEndpointSuiteTestRunner {
   * ${SPARQL_ENDPOINT} environment variable to point to that endpoint instead. In this case the local
   * Fuseki server won't be started.
   *
-  * @param _system
+  * @param _system the actor system
   */
 class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
   with WordSpecLike with MustMatchers with ImplicitSender with BeforeAndAfterAll {
@@ -85,7 +85,7 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
 
   val _log = akka.event.Logging(this.system, testActor)
 
-  lazy val fusekiManager = testSystem.actorOf(Props(classOf[FusekiManager], testServerEndpoint), "fuseki-manager")
+  lazy val fusekiManager = system.actorOf(Props(classOf[FusekiManager], testServerEndpoint), "fuseki-manager")
 
   override def beforeAll() {
     if (useFuseki) {
@@ -118,8 +118,9 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
     * @return
     */
   override def nestedSuites = Vector(
-    new SparqlClientSpec(HttpEndpointSuiteTestRunner.testSystem),
-    new StreamSpec(HttpEndpointSuiteTestRunner.testSystem),
-    new SparqlRequestFlowSpec(HttpEndpointSuiteTestRunner.testSystem)
+    new SpraySparqlClientSpec(system),
+    new StreamSpec(system),
+    new SparqlRequestFlowSpec(system),
+    new StreamSparqlClientSpec(system)
   )
 }

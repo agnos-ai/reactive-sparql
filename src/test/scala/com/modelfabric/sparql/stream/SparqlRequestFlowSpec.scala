@@ -33,31 +33,34 @@ class SparqlRequestFlowSpec(val _system: ActorSystem) extends TestKit(_system)
 
     val sparqlRequestFlowUnderTest = Builder.sparqlRequestFlow(testServerEndpoint)
 
-    val ( source, sink ) = TestSource.probe[SparqlQuery]
+    val ( source, sink ) = TestSource.probe[SparqlRequest]
       .via(sparqlRequestFlowUnderTest)
-      .toMat(TestSink.probe[ResultSet])(Keep.both)
+      .toMat(TestSink.probe[SparqlResponse])(Keep.both)
       .run()
 
     "1. Allow a simple SPARQL Select via HTTP GET" in {
 
       sink.request(1)
       source.sendNext {
-        SparqlQuery {
-          s"""
-             |SELECT DISTINCT ?g
-             |WHERE {
-             |  GRAPH ?g {
-             |   ?s ?p ?o .
-             |  }
-             |  FILTER(?g = <urn:test:mfab:data>)
-             |}
-             |LIMIT 1""".stripMargin
+        SparqlRequest {
+          SparqlQuery {
+            s"""
+               |SELECT DISTINCT ?g
+               |WHERE {
+               |  GRAPH ?g {
+               |   ?s ?p ?o .
+               |  }
+               |  FILTER(?g = <urn:test:mfab:data>)
+               |}
+               |LIMIT 1""".stripMargin
+          }
         }
       }
 
+
       sink.expectNext() match {
-        case x@ResultSet(_, _) =>
-          val result = x.results.bindings.head
+        case SparqlResponse(true, Some(ResultSet(_, results)), None) =>
+          val result = results.bindings.head
           println(result.prettyPrint)
           assert(result.asValueMap.get("g") === Some(QuerySolutionValue("uri", None, "urn:test:mfab:data")))
         case x@_ =>
@@ -71,8 +74,9 @@ class SparqlRequestFlowSpec(val _system: ActorSystem) extends TestKit(_system)
 
       sink.request(1)
       source.sendNext {
-        SparqlQuery (HttpMethod.POST,
-          s"""
+        SparqlRequest {
+          SparqlQuery(HttpMethod.POST,
+            s"""
              |SELECT DISTINCT ?g
              |WHERE {
              |  GRAPH ?g {
@@ -81,12 +85,13 @@ class SparqlRequestFlowSpec(val _system: ActorSystem) extends TestKit(_system)
              |  FILTER(?g = <urn:test:mfab:data>)
              |}
              |LIMIT 1""".stripMargin
-        )
+          )
+        }
       }
 
       sink.expectNext() match {
-        case x@ResultSet(_, _) =>
-          val result = x.results.bindings.head
+        case SparqlResponse(true, Some(ResultSet(_, results)), None) =>
+          val result = results.bindings.head
           println(result.prettyPrint)
           assert(result.asValueMap.get("g") === Some(QuerySolutionValue("uri", None, "urn:test:mfab:data")))
         case x@_ =>

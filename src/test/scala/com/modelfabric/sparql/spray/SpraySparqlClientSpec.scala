@@ -1,5 +1,6 @@
 package com.modelfabric.sparql.spray
 
+import com.modelfabric.sparql.SparqlQueries
 import com.modelfabric.sparql.api._
 import com.modelfabric.sparql.spray.client.{SparqlHttpSprayClient, MessageSparqlClientQueryEnd}
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
@@ -16,7 +17,7 @@ import com.modelfabric.sparql.spray.client._
 
 import scala.concurrent.duration._
 
-object SparqlClientSpec {
+object SpraySparqlClientSpec {
   // This may have to be scaled back in the future
   val dbTimeout = 2 seconds
 }
@@ -27,9 +28,9 @@ object SparqlClientSpec {
   * @param _system
   */
 @DoNotDiscover
-class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
+class SpraySparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
   with WordSpecLike with MustMatchers with BeforeAndAfterAll
-  with ImplicitSender {
+  with ImplicitSender with SparqlQueries {
 
   def this() = this(HttpEndpointSuiteTestRunner.testSystem)
 
@@ -37,79 +38,7 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
 
   lazy val client = system.actorOf(Props(classOf[SparqlHttpSprayClient], config))
 
-  implicit val pm = PrefixMapping.extended
-
-  lazy val query1 = new SparqlQuery {
-    override def statement = build(s"""
-    |SELECT ?a ?b ?c
-    |FROM
-    |  <urn:test:mfab:data>
-    |WHERE {
-    | ?a ?b ?c .
-    |}
-    |LIMIT 1
-    |""")
-  }
-
-  lazy val insert1x = new SparqlUpdate {
-    override def statement = build(s"""
-    |WITH <urn:test:mfab:data>
-    |DELETE {
-    |    <urn:uuid:te-36adbd34-2d84-4cd2-b061-6c8550c7d648> skos:inScheme mfab:ConceptScheme-StoryTypeTaxonomy.
-    |    <urn:uuid:te-36adbd34-2d84-4cd2-b061-6c8550c7d648> skos:broader mfab:StoryType-Story
-    |}
-    |INSERT {
-    |    <urn:uuid:te-36adbd34-2d84-4cd2-b061-6c8550c7d648> skos:inScheme mfab:ConceptScheme-StoryTypeTaxonomy.
-    |    <urn:uuid:te-36adbd34-2d84-4cd2-b061-6c8550c7d648> skos:broader mfab:StoryType-Story
-    |}
-    |WHERE {
-    |    <urn:uuid:te-36adbd34-2d84-4cd2-b061-6c8550c7d648> skos:inScheme mfab:ConceptScheme-StoryTypeTaxonomy.
-    |    <urn:uuid:te-36adbd34-2d84-4cd2-b061-6c8550c7d648> skos:broader mfab:StoryType-Story
-    |}""")
-  }
-
-  lazy val insert1 = new SparqlUpdate {
-    override def statement = build(s"""
-    |INSERT DATA {
-    |  GRAPH <urn:test:mfab:data> {
-    |    <urn:test:whatever> foaf:givenName "Bill"
-    |  }
-    |}""")
-  }
-
-  lazy val update = new SparqlUpdate {
-    override def statement = build(s"""
-    |WITH <urn:test:mfab:data>
-    |DELETE {
-    |  ?person foaf:givenName "Bill"
-    |}
-    |INSERT {
-    |  ?person foaf:givenName "William"
-    |}
-    |WHERE {
-    |  ?person foaf:givenName "Bill"
-    |}""")
-  }
-
-  lazy val sparql2 = s"""
-      |SELECT ?g ?b ?c
-      |FROM NAMED <urn:test:mfab:data>
-      |WHERE {
-      |  GRAPH ?g {
-      |    <urn:test:whatever> ?b ?c
-      |  }
-      |}"""
-
-  lazy val query2Get = new SparqlQuery {
-    override def statement = build(sparql2)
-  }
-
-  lazy val query2Post = new SparqlQuery {
-    override def statement = build(sparql2)
-    override def httpMethod = HttpMethod.POST
-  }
-
-  import SparqlClientSpec._
+  import SpraySparqlClientSpec._
 
   def handleSparqlQuerySolution(qs_ : QuerySolution) = {
     system.log.info("Received MessageSparqlClientQuerySolution {}", qs_)
@@ -143,7 +72,7 @@ class SparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
     false
   }
 
-  "The SparqlClient" must {
+  "The Spray Sparql Client" must {
 
     "1. Allow one insert" in {
 

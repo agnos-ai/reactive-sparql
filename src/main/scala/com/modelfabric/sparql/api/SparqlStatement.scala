@@ -6,11 +6,6 @@ import com.modelfabric.sparql.mapper.{SolutionMapper, DefaultSolutionMapper}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-
-object SparqlStatement {
-
-}
-
 /**
  * SparqlStatement is the interface representing all SPARQL statements. Create a
  * subclass of SparqlStatement for each and every statement that you send to the

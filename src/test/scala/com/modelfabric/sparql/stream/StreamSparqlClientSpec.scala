@@ -1,6 +1,7 @@
 package com.modelfabric.sparql.stream
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Keep
 import akka.stream.testkit.scaladsl.{TestSink, TestSource}
@@ -11,6 +12,7 @@ import com.modelfabric.sparql.stream.client.Builder
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 import org.scalatest._
 
+import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -89,7 +91,6 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
 
     "6. Stream must complete gracefully" in {
 
-      sink.request(1)
       source.sendComplete()
       sink.expectComplete()
       sink.expectNoMsg(1 second)
@@ -100,5 +101,9 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
   private def assertSuccessResponse(response: SparqlResponse): Unit = response match {
     case SparqlResponse(true, _, _) => assert(true)
     case x@SparqlResponse(_, _, _) => assert(false, x)
+  }
+
+  override def afterAll(): Unit = {
+    Await.result(Http().shutdownAllConnectionPools(), 5 seconds)
   }
 }

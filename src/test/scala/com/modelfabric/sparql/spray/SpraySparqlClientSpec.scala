@@ -19,7 +19,7 @@ import scala.concurrent.duration._
 
 object SpraySparqlClientSpec {
   // This may have to be scaled back in the future
-  val dbTimeout = 2 seconds
+  val dbTimeout = 5 seconds
 }
 
 /**

@@ -50,6 +50,12 @@ object Builder {
     *                +-----------------------------------------------+
     * }}}
     *
+    * Use this flow if you have a larger set of requests to run and you don't necessarily
+    * care in what order do the query responses arrive.
+    *
+    * Note: this builder uses the connection-level API, so every parallel sub-stream will
+    * materialize and use it's own connection.
+    *
     * @param endpoint the HTTP endpoint of the Sparql triple store server
     * @param parallelism the number of concurrent streams to use
     * @param _system the implicit actor system
@@ -166,7 +172,7 @@ object Builder {
 
       val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).async.named("mapping.sparqlToHttpRequest"))
 
-      val queryConnectionFlow = builder.add(Http().outgoingConnection(host, port).async.named("http.sparqlQuery"))
+      val queryConnectionFlow = builder.add(Http().outgoingConnection(host, port).async.named("http.sparqlQueryConnection"))
 
       val broadcastQueryHttpResponse = builder.add(Broadcast[HttpResponse](2).async.named("broadcast.queryResponse"))
 

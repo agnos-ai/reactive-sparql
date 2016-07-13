@@ -67,6 +67,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
 
     }
 
+    // JC: it's not clear it's inserted in test 1 or 2.
     "4. Get the results just inserted via HTTP POST" in {
 
       sink.request(1)

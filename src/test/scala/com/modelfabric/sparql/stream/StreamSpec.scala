@@ -29,6 +29,7 @@ import akka.testkit.TestKit
 class StreamSpec(val _system: ActorSystem) extends TestKit(_system)
   with WordSpecLike with MustMatchers with BeforeAndAfterAll {
 
+  // JC: why this constructor is required?
   def this() = this(HttpEndpointSuiteTestRunner.testSystem)
   implicit val testMaterializer = ActorMaterializer()
 

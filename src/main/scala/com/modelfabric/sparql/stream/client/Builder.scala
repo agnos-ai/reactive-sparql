@@ -52,6 +52,7 @@ object Builder {
     *
     * Use this flow if you have a larger set of requests to run and you don't necessarily
     * care in what order do the query responses arrive.
+    * JC: as we discussed, there is probably no such case.
     *
     * Note: this builder uses the connection-level API, so every parallel sub-stream will
     * materialize and use it's own connection.
@@ -134,6 +135,7 @@ object Builder {
 
       val responseMerger = builder.add(Merge[SparqlResponse](2).named("merge.sparqlResponse"))
 
+      // JC: are the broadcast and filter necessary? or it can be just a if else logic when building the flow?
       broadcastRequest ~> queryFilter  ~> sparqlQueryFlow(endpoint)  ~> responseMerger
       broadcastRequest ~> updateFilter ~> sparqlUpdateFlow(endpoint) ~> responseMerger
 
@@ -172,6 +174,8 @@ object Builder {
 
       val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).async.named("mapping.sparqlToHttpRequest"))
 
+      // JC: this will get a new connection, better to use Host-Level api or Request-Level api (if we'll connect to triple store multiple servers),
+      // they both use connection pool. http://doc.akka.io/docs/akka/current/scala/http/client-side/index.html
       val queryConnectionFlow = builder.add(Http().outgoingConnection(host, port).async.named("http.sparqlQueryConnection"))
 
       val broadcastQueryHttpResponse = builder.add(Broadcast[HttpResponse](2).async.named("broadcast.queryResponse"))
@@ -205,6 +209,7 @@ object Builder {
       import GraphDSL.Implicits._
       import endpoint._
 
+      // JC: why all stages in sparqlQueryFlow are async, but not here? do we need to make all of them async?
       val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).named("mapping.sparqlToHttpRequest"))
 
       val updateConnectionFlow = builder.add(Http().outgoingConnection(host, port).named("http.sparqlUpdate"))
@@ -230,6 +235,7 @@ object Builder {
     makeHttpRequest(endpoint, request.statement)
   }
 
+  // JC: not good OO design. I think it's better to create a new class SparqlEndpoint
   private def makeHttpRequest(endpoint: HttpEndpoint, sparql: SparqlStatement): HttpRequest = sparql match {
     case SparqlQuery(HttpMethod.GET, query) =>
       HttpRequest(
@@ -241,6 +247,7 @@ object Builder {
     case SparqlQuery(HttpMethod.POST, query) =>
       HttpRequest(
         method = HttpMethods.POST,
+        // JC: QUERY_URI_PART is a string, can be concatenated directly
         uri = endpoint.path + s"$QUERY_URI_PART",
         Accept(`application/sparql-results+json`) :: makeRequestHeaders(endpoint)
       ).withEntity(
@@ -257,6 +264,7 @@ object Builder {
         s"$UPDATE_PARAM_NAME=${sparql.statement.urlEncode}")
  }
 
+  // JC: the meothdo name could be more specific
   private def makeRequestHeaders(endpoint: HttpEndpoint): List[HttpHeader] = {
     /* create the Basic authentication header */
     /* NOTE: Support for other authentication methods is not currently necessary, but could be added later */
@@ -310,6 +318,7 @@ object Builder {
 
   private def responseToSparqlResponse(response: HttpResponse): SparqlResponse = response match {
     case HttpResponse(StatusCodes.OK, _, _, _) =>
+      // JC: can we also extract ResultSet here, instead of broadcast then zip?
       SparqlResponse(success = true)
     case HttpResponse(status, headers, entity, _) =>
       val error = SparqlClientRequestFailed(s"Request failed with: ${status}, headers: ${headers.mkString("|")}, message: ${entity})")
@@ -323,7 +332,7 @@ object Builder {
   /*           */
   /* CONSTANTS */
   /* --------- */
-
+  // JC: these are same for all triple store??
   private val QUERY_URI_PART = "/query"
   private val QUERY_PARAM_NAME = "query"
 

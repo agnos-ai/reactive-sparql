@@ -47,6 +47,7 @@ object SparqlPagingParams {
   }
 }
 
+// JC: not used class?
 abstract class SparqlPagedQuery(
   val itemsToOrderBy : List[String] = List()
 )(implicit pm : PrefixMapping, pagingParams : SparqlPagingParams) extends SparqlQuery()(pm) {

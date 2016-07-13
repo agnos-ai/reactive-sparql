@@ -232,6 +232,7 @@ class PrefixMapping {
    * Head:Tail is subject to mapping if Head is in the prefix mapping. So, if
    * someone takes it into their heads to define eg "http" or "ftp" we have problems.
    */
+  // JC: not used?
   def expandPrefix(prefixed : String) : String = {
 
     val colon = prefixed.indexOf(':')
@@ -265,6 +266,7 @@ class PrefixMapping {
    * </p>
    * @see com.hp.hpl.jena.shared.PrefixMapping#qnameFor(java.lang.String)
    */
+  // JC: not used?
   def qnameFor(uri : String) : String = {
 
     val split = splitNamespace(uri)

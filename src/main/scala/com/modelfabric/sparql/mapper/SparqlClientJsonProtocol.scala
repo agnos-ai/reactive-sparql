@@ -22,6 +22,7 @@ object SparqlClientJsonProtocol extends SprayJsonSupport with DefaultJsonProtoco
     }
   }
 
+  // JC: add some comments when these formats are used?
   implicit val format2 = jsonFormat(ResultSetResults, "bindings")
   implicit val format1 = jsonFormat(ResultSetVars, "vars")
   implicit val format3 = jsonFormat2(ResultSet)

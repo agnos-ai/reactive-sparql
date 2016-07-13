@@ -36,12 +36,14 @@ object FusekiManager {
     var process: Option[Process] = None
 
     override def run(): Unit = {
+      // JC: another option is to call org.apache.jena.fuseki.cmd.FusekiCmd.main(args), instead of starting a process
       val path = new org.apache.jena.fuseki.Fuseki().getClass.getProtectionDomain.getCodeSource.getLocation.getPath
       val cmd = s"java -jar $path --port=$port --mem --update $resource"
       println(s"Launching Fuseki Server: $cmd")
       process = Some(Runtime.getRuntime.exec(cmd))
     }
 
+    // JC: Java Thread class has start method. Why define a new method??
     def startServer(): Unit = {
       start()
     }
@@ -89,6 +91,9 @@ class FusekiManager(val endpoint: HttpEndpoint) extends Actor with ActorLogging 
         fusekiRunner.startServer()
       }
       /* start pinging the server and issue StartOk to the sender when ping is successful */
+      // JC: it's not clear that the logic is to ping fureki 10 times to check if it's available.
+      // I think it's better to define two states for the actor. The Ping class is used for multiple purpose,
+      // with multiple parameters to control behavior, not straightforward to understand
       self ! Ping(sender, sendOnSuccess = StartOk, sendOnFailure = StartError)
 
     case x @ Ping(originalSender, sendOnSuccess, sendOnFailure, pingInterval, stopOnSuccess, 0) =>
@@ -123,15 +128,15 @@ class FusekiManager(val endpoint: HttpEndpoint) extends Actor with ActorLogging 
       val originalSender = sender
       log.info(s"Sending: $shutdownReq")
       pipeline(shutdownReq) onComplete {
-      case Success(HttpResponse(StatusCodes.OK, _, _, _)) =>
-        self ! SoftShutdownRequested(originalSender)
-      case x @ _ =>
-        /* The Fuseki actually has not implemented the shutdown call yet,
-         * so we just do a hard shutdown, which effectively means killing the spawned process.
-         */
-        log.warning(s"soft shutdown failed with: $x, will attempt a hard kill")
-        self ! HardShutdownRequested(originalSender)
-    }
+        case Success(HttpResponse(StatusCodes.OK, _, _, _)) =>
+          self ! SoftShutdownRequested(originalSender)
+        case x @ _ =>
+          /* The Fuseki actually has not implemented the shutdown call yet,
+           * so we just do a hard shutdown, which effectively means killing the spawned process.
+           */
+          log.warning(s"soft shutdown failed with: $x, will attempt a hard kill")
+          self ! HardShutdownRequested(originalSender)
+      }
 
     case SoftShutdownRequested(originalSender) =>
       /* soft shutdown succeeds if pings start failing eventually */

@@ -11,6 +11,8 @@ import scala.language.postfixOps
 /**
  * Provides helper and utility functions for tests.
  */
+// JC: According to me, 'Helpers' is not a valid class/object name.
+// the only place this object is used is in HttpEndpointSuiteTestRunner. I'm sure whatever defined here can be moved over.
 object Helpers {
 
   val webActorName = "service-web"

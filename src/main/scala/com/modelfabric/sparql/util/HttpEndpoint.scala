@@ -143,10 +143,14 @@ case class HttpEndpoint(protocol: String, host: String, port: Int, path: String,
 }
 
 /**
-  * Internal representation of use authentication credential.
+  * Internal representation of the HTTP endpoint's user authentication.
+  */
+sealed trait Authentication
+
+/**
+  * Basic HTTP authentication credential (username & "cleartext" password) .
   *
   * @param username
   * @param password
   */
-case class Authentication(username: String, password: String)
-
+case class BasicAuthentication(username: String, password: String) extends Authentication

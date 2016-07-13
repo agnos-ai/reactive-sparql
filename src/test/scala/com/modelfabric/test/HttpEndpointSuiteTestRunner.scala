@@ -4,7 +4,7 @@ import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
 import com.modelfabric.sparql.spray.SpraySparqlClientSpec
 import com.modelfabric.sparql.stream.{StreamSparqlClientSpec, SparqlRequestFlowSpec, StreamSpec}
-import com.modelfabric.sparql.util.{Authentication, HttpEndpoint}
+import com.modelfabric.sparql.util.{BasicAuthentication, HttpEndpoint}
 import com.modelfabric.test.FusekiManager._
 import com.modelfabric.test.Helpers._
 import com.typesafe.config.ConfigFactory
@@ -23,7 +23,7 @@ object HttpEndpointSuiteTestRunner {
   val sparqlServerEndpointUser: String = sys.env.getOrElse(sparqlServerEndpointUserKey, "admin")
   val sparqlServerEndpointPassword: String = sys.env.getOrElse(sparqlServerEndpointPasswordKey, "admin")
 
-  lazy val sparqlServerEndpointAuthentication = Authentication(sparqlServerEndpointUser, sparqlServerEndpointPassword)
+  lazy val sparqlServerEndpointAuthentication = BasicAuthentication(sparqlServerEndpointUser, sparqlServerEndpointPassword)
 
   val useFuseki: Boolean = sparqlServerEndpoint.isEmpty
 

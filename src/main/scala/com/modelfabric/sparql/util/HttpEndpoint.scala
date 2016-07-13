@@ -133,10 +133,10 @@ case class HttpEndpoint(protocol: String, host: String, port: Int, path: String,
     * Shows the desired fully qualified URL of the endpoint built from the individual components
     */
   val url: String = s"$protocol://$host${
-    port match {
-      case 80 => ""
-      case 443 => ""
-      case x => s":$x"
+    (protocol, port) match {
+      case ("http", 80) => ""
+      case ("https", 443) => ""
+      case (p, x) => s":$x"
     }
   }$path"
 

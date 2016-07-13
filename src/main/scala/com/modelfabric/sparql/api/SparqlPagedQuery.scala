@@ -48,7 +48,8 @@ object SparqlPagingParams {
 }
 
 abstract class SparqlPagedQuery(
-    val itemsToOrderBy : List[String] = List())(implicit pm : PrefixMapping, pagingParams : SparqlPagingParams) extends SparqlQuery()(pm) {
+  val itemsToOrderBy : List[String] = List()
+)(implicit pm : PrefixMapping, pagingParams : SparqlPagingParams) extends SparqlQuery()(pm) {
 
   val limit = pagingParams.limit
   val offset = pagingParams.offset

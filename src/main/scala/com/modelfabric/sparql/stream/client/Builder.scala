@@ -13,7 +13,7 @@ import com.modelfabric.sparql.api.HttpMethod
 import com.modelfabric.sparql.api._
 import com.modelfabric.sparql.mapper.SparqlClientJsonProtocol._
 
-import com.modelfabric.sparql.util.HttpEndpoint
+import com.modelfabric.sparql.util.{BasicAuthentication, HttpEndpoint}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -260,10 +260,13 @@ object Builder {
 
   private def makeRequestHeaders(endpoint: HttpEndpoint): List[HttpHeader] = {
     /* create the Basic authentication header */
+    /* NOTE: Support for other authentication methods is not currently necessary, but could be added later */
     val auth: Option[Authorization] =
       endpoint
         .authentication
-        .map(a => Authorization(BasicHttpCredentials(a.username, a.password)))
+        .map {
+          case BasicAuthentication(username, password) => Authorization(BasicHttpCredentials(username, password))
+        }
 
     auth.toList
   }

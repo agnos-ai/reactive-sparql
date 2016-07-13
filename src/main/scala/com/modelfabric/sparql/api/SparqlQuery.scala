@@ -11,6 +11,7 @@ object SparqlQuery {
     * @return
     */
   def apply(sparql: String)(implicit _pm : PrefixMapping): SparqlQuery = {
+    // JC: why not just create two constructors in SparqlQuery, and make it concrete
     new SparqlQuery() { override val statement = build(sparql) }
   }
 
@@ -34,6 +35,7 @@ object SparqlQuery {
     * @param query
     * @return
     */
+  // JC: if we define SparqlQuery as a case class, then we don't need to define this unapply method
   def unapply(query: SparqlQuery): Option[(HttpMethod, String)] = {
     Some((query.httpMethod, query.statement))
   }

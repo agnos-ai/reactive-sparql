@@ -16,6 +16,7 @@ case class SparqlRequest(statement: SparqlStatement) extends Request
 /**
   * "Is-Alive" request
   */
+// JC: not used
 case object PingRequest extends Request
 
 /**
@@ -39,6 +40,7 @@ case class SparqlResponse(
   * "Is-Alive" response
   * @param success
   */
+// JC: not used
 case class PingResponse(success: Boolean = true) extends Response
 
 

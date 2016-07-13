@@ -3,6 +3,7 @@ package com.modelfabric.sparql.api
 /**
  * Defines the most generic namespaces as constants
  */
+// JC: it's only used in PrefixMapping. I think it's better move this object there
 object NamespaceConstants {
 
   val PREFIX_RDFS = "rdfs"

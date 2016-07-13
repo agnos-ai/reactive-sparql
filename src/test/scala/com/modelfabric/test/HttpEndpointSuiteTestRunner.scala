@@ -19,6 +19,7 @@ object HttpEndpointSuiteTestRunner {
   val sparqlServerEndpointUserKey = "SPARQL_ENDPOINT_USER"
   val sparqlServerEndpointPasswordKey = "SPARQL_ENDPOINT_PASSWORD"
 
+  // JC: all these authentication, database name should be encapsulated in a SparqlEndpoint or SparqlConnection, similar to JDBC Connection,  class (to be created)
   val sparqlServerEndpoint: Option[String] = sys.env.get(sparqlServerEndpointKey)
   val sparqlServerEndpointUser: String = sys.env.getOrElse(sparqlServerEndpointUserKey, "admin")
   val sparqlServerEndpointPassword: String = sys.env.getOrElse(sparqlServerEndpointPasswordKey, "admin")
@@ -33,6 +34,7 @@ object HttpEndpointSuiteTestRunner {
   }
 
   val config = {
+    // JC: type = "HttpSpray" ?
     ConfigFactory.parseString(
       s"""
          |akka.loggers = ["akka.testkit.TestEventListener"]

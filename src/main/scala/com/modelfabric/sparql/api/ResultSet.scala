@@ -12,6 +12,7 @@ case class ResultSetResults(bindings : List[QuerySolution])
 
 case class ResultSet(head : ResultSetVars, results : ResultSetResults)
 
+// JC: looks like `type` is not used
 case class QuerySolutionValue(`type` : String, datatype : Option[String] = None, value : String = null) {
 
   def asString : String = DatatypeConverter.parseString(value)

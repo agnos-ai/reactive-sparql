@@ -134,6 +134,7 @@ object Builder {
 
       val responseMerger = builder.add(Merge[SparqlResponse](2).named("merge.sparqlResponse"))
 
+      // JC: is the filter necessary? or it can be just a if else logic when building the flow?
       broadcastRequest ~> queryFilter  ~> sparqlQueryFlow(endpoint)  ~> responseMerger
       broadcastRequest ~> updateFilter ~> sparqlUpdateFlow(endpoint) ~> responseMerger
 

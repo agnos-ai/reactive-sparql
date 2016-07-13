@@ -77,6 +77,7 @@ object HttpEndpointSuiteTestRunner {
   * @param _system the actor system
   */
 class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
+  // JC: don't really need all these traits here
   with WordSpecLike with MustMatchers with ImplicitSender with BeforeAndAfterAll {
 
   import HttpEndpointSuiteTestRunner._
@@ -90,6 +91,7 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
   override def beforeAll() {
     if (useFuseki) {
       fusekiManager ! Start
+      // JC: expectMsgType is a simpler solution
       fishForMessage(20 seconds, "Allowing Fuseki Server to start up") {
         case StartOk =>
           true

@@ -72,6 +72,9 @@ object HttpEndpoint {
     * @param path
     * @return
     */
+  // JC: really don't like the logic of this method. environmentEndpoint is matched with the EndpointRegex multiple times
+  // to extract different parts of the URL. should be done only once.
+  // Andy why not use URL class in Java? https://docs.oracle.com/javase/7/docs/api/java/net/URL.html
   def apply(host: String, port: Integer, path: String, authentication: Option[Authentication] = None): HttpEndpoint =
     new HttpEndpoint(defaultProtocol, host, port, path, authentication)
 

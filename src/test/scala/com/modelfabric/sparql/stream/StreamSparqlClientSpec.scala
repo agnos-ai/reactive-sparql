@@ -33,7 +33,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
   import HttpEndpointSuiteTestRunner._
 
   "The Akka-Streams Sparql Client" must {
-    val sparqlRequestFlowUnderTest = Builder.loadBalancedDisorderedSparqlRequestFlow(testServerEndpoint, 8)
+    val sparqlRequestFlowUnderTest = Builder.sparqlRequestFlow(testServerEndpoint)
 
     val ( source, sink ) = TestSource.probe[SparqlRequest]
       .via(sparqlRequestFlowUnderTest)
@@ -63,8 +63,9 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
       sink.request(1)
       source.sendNext(SparqlRequest(query2Get))
 
-      sink.expectNext() == SparqlResponse( success = true, Some(query2Result),None)
-
+      sink.expectNext() match {
+        case SparqlResponse (_, true, Some (query2Result), None) => assert(true)
+      }
     }
 
     // JC: it's not clear it's inserted in test 1 or 2.
@@ -73,37 +74,49 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
       sink.request(1)
       source.sendNext(SparqlRequest(query2Post))
 
-      sink.expectNext() == SparqlResponse( success = true, Some(query2Result),None)
+      sink.expectNext() match {
+        case SparqlResponse (_, true, Some (query2Result), None) => assert(true)
+      }
 
     }
 
-    "5. Stream must accept a heavy load" in {
+    "5. Stream must accept a 'heavy' load" in {
 
-      val numRequests = 10
-      sink.request(numRequests)
+      val numRequests = 20
+
       for( i <- 0 until numRequests) {
+        sink.request(1)
         println(s"sending request $i")
         source.sendNext(SparqlRequest(query2Get))
       }
 
-      assert(sink.expectNextN(numRequests).size === numRequests)
+      val x = for (
+        i <- 0 until numRequests;
+        response = sink.expectNext(3 seconds)
+      ) yield {
+        response match {
+          case SparqlResponse(_, true, _, _) => true
+          case _ => false
+        }
+      }
+
+      assert(x.count(b => b) === numRequests)
 
     }
 
-/* FIXME: the stream does not want to complete with Fuseki!!!
+    //FIXME: the stream does not want to complete with Fuseki!!!
     "6. Stream must complete gracefully" in {
 
       source.sendComplete()
       sink.expectComplete()
       sink.expectNoMsg(1 second)
     }
-*/
 
   }
 
   private def assertSuccessResponse(response: SparqlResponse): Unit = response match {
-    case SparqlResponse(true, _, _) => assert(true)
-    case x@SparqlResponse(_, _, _) => assert(false, x)
+    case SparqlResponse(_, true, _, _) => assert(true)
+    case x@SparqlResponse(_, _, _, _) => assert(false, x)
   }
 
   override def afterAll(): Unit = {

@@ -16,6 +16,7 @@ import com.modelfabric.sparql.mapper.SparqlClientJsonProtocol._
 import com.modelfabric.sparql.util.{BasicAuthentication, HttpEndpoint}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 object Builder {
 
@@ -53,8 +54,8 @@ object Builder {
     * Use this flow if you have a larger set of requests to run and you don't necessarily
     * care in what order do the query responses arrive.
     *
-    * Note: this builder uses the connection-level API, so every parallel sub-stream will
-    * materialize and use it's own connection.
+    * Note: this builder uses the host-level API, so every parallel sub-stream will
+    * use a connection from a configured pool.
     *
     * @param endpoint the HTTP endpoint of the Sparql triple store server
     * @param parallelism the number of concurrent streams to use
@@ -172,11 +173,11 @@ object Builder {
 
       val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).async.named("mapping.sparqlToHttpRequest"))
 
-      val queryConnectionFlow = builder.add(Http().outgoingConnection(host, port).async.named("http.sparqlQueryConnection"))
+      val queryConnectionFlow = builder.add(Http().cachedHostConnectionPool[SparqlRequest](host, port).async.named("http.sparqlQueryConnection"))
 
-      val broadcastQueryHttpResponse = builder.add(Broadcast[HttpResponse](2).async.named("broadcast.queryResponse"))
+      val broadcastQueryHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).async.named("broadcast.queryResponse"))
 
-      val resultSetParser = builder.add(Flow[HttpResponse].mapAsync(1)(res => responseToResultSet(res)).async.named("mapping.parseResultSet"))
+      val resultSetParser = builder.add(Flow[(Try[HttpResponse],SparqlRequest)].mapAsync(1)(res => responseToResultSet(res)).async.named("mapping.parseResultSet"))
 
       val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).async.named("mapping.makeResponseFromHeader"))
 
@@ -207,10 +208,10 @@ object Builder {
 
       val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).named("mapping.sparqlToHttpRequest"))
 
-      val updateConnectionFlow = builder.add(Http().outgoingConnection(host, port).named("http.sparqlUpdate"))
+      val updateConnectionFlow = builder.add(Http().cachedHostConnectionPool[SparqlRequest](host, port).named("http.sparqlUpdate"))
 
-      val broadcastUpdateHttpResponse = builder.add(Broadcast[HttpResponse](2).named("broadcast.updateResponse"))
-      val booleanParser = builder.add(Flow[HttpResponse].mapAsync(1)(res => responseToBoolean(res)).named("mapping.parseBoolean"))
+      val broadcastUpdateHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).named("broadcast.updateResponse"))
+      val booleanParser = builder.add(Flow[(Try[HttpResponse], SparqlRequest)].mapAsync(1)(res => responseToBoolean(res)).named("mapping.parseBoolean"))
       val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).named("mapping.makeResponseFromHeader"))
       val updateResultZipper = builder.add(ZipWith[Boolean, SparqlResponse, SparqlResponse]( (success, response) =>
         response.copy(
@@ -226,8 +227,8 @@ object Builder {
 
   }
 
-  private def sparqlToRequest(endpoint: HttpEndpoint)(request: SparqlRequest): HttpRequest = {
-    makeHttpRequest(endpoint, request.statement)
+  private def sparqlToRequest(endpoint: HttpEndpoint)(request: SparqlRequest): (HttpRequest, SparqlRequest) = {
+    (makeHttpRequest(endpoint, request.statement), request)
   }
 
   private def makeHttpRequest(endpoint: HttpEndpoint, sparql: SparqlStatement): HttpRequest = sparql match {
@@ -270,7 +271,7 @@ object Builder {
     auth.toList
   }
 
-  private def responseToResultSet(response: HttpResponse)(
+  private def responseToResultSet(response: (Try[HttpResponse], SparqlRequest))(
     implicit
       _system: ActorSystem,
       _materializer: ActorMaterializer,
@@ -278,7 +279,7 @@ object Builder {
   ): Future[ResultSet] = {
 
     response match {
-      case HttpResponse(StatusCodes.OK, _, entity, _)
+      case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _)
         if entity.contentType.mediaType == `application/sparql-results+json` =>
         /* we need to override the content type, because the spray-json parser does not understand */
         /* anything but 'application/json' */
@@ -286,7 +287,7 @@ object Builder {
      }
   }
 
-  private def responseToBoolean(response: HttpResponse)(
+  private def responseToBoolean(response: (Try[HttpResponse], SparqlRequest))(
     implicit
       _system: ActorSystem,
       _materializer: ActorMaterializer,
@@ -294,11 +295,14 @@ object Builder {
   ): Future[Boolean] = {
 
     response match {
-      case HttpResponse(StatusCodes.OK, _, entity, _)
+      case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _)
         if entity.contentType.mediaType == `text/boolean` =>
         Unmarshal(entity).to[Boolean]
-      case HttpResponse(StatusCodes.OK, headers, entity, protocol) =>
+      case (Success(HttpResponse(StatusCodes.OK, headers, entity, protocol)), _) =>
         println(s"Unexpected response content type: ${entity.contentType} and/or media type: ${entity.contentType.mediaType}")
+        Future.successful(true)
+      case (Success(HttpResponse(status, headers, entity, protocol)), _) =>
+        println(s"Unexpected response status: ${status}")
         Future.successful(true)
 
       case x@_ =>
@@ -308,17 +312,16 @@ object Builder {
 
   }
 
-  private def responseToSparqlResponse(response: HttpResponse): SparqlResponse = response match {
-    case HttpResponse(StatusCodes.OK, _, _, _) =>
-      SparqlResponse(success = true)
-    case HttpResponse(status, headers, entity, _) =>
+  private def responseToSparqlResponse(response: (Try[HttpResponse], SparqlRequest)): SparqlResponse = response match {
+    case (Success(HttpResponse(StatusCodes.OK, _, _, _)), request) =>
+      SparqlResponse(success = true, request = request)
+    case (Success(HttpResponse(status, headers, entity, _)), request) =>
       val error = SparqlClientRequestFailed(s"Request failed with: ${status}, headers: ${headers.mkString("|")}, message: ${entity})")
-      SparqlResponse(success = false, error = Some(error))
-    case x@_ =>
-      val error = SparqlClientRequestFailed(s"Request failed with unexpected response: ${x})")
-      SparqlResponse(success = false, error = Some(error))
+      SparqlResponse(success = false, request = request, error = Some(error))
+    case (Failure(throwable), request) =>
+      val error = SparqlClientRequestFailedWithError("Request failed on the HTTP layer", throwable)
+      SparqlResponse(success = false, request = request, error = Some(error))
   }
-
 
   /*           */
   /* CONSTANTS */

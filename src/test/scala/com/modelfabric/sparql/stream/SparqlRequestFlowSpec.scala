@@ -59,7 +59,7 @@ class SparqlRequestFlowSpec(val _system: ActorSystem) extends TestKit(_system)
 
 
       sink.expectNext() match {
-        case SparqlResponse(true, Some(ResultSet(_, results)), None) =>
+        case SparqlResponse(request, true, Some(ResultSet(_, results)), None) =>
           val result = results.bindings.head
           println(result.prettyPrint)
           assert(result.asValueMap.get("g") === Some(QuerySolutionValue("uri", None, "urn:test:mfab:data")))
@@ -90,7 +90,7 @@ class SparqlRequestFlowSpec(val _system: ActorSystem) extends TestKit(_system)
       }
 
       sink.expectNext() match {
-        case SparqlResponse(true, Some(ResultSet(_, results)), None) =>
+        case SparqlResponse(request, true, Some(ResultSet(_, results)), None) =>
           val result = results.bindings.head
           println(result.prettyPrint)
           assert(result.asValueMap.get("g") === Some(QuerySolutionValue("uri", None, "urn:test:mfab:data")))

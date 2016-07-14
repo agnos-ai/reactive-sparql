@@ -20,75 +20,7 @@ import scala.util.{Failure, Success, Try}
 
 object Builder {
 
-  /**
-    * Create a partial flow Graph of sparql requests to results.
-    * {{{
-    *                +----------------------------------------------+
-    *                | Load-balanced Disordered Sparql Request Flow |
-    *                |                                              |
-    *                |  +-----+        +----------+        +-----+  |
-    *                |  |     |        |          |        |     |  |
-    *                |  |     | ~Out~> | Request1 | ~Out~> |     |  |
-    *                |  |     |        |          |        |     |  |
-    *                |  |     |        +----------+        |     |  |
-    *                |  |     |                            |     |  |
-    *                |  |     |        +----------+        |     |  |
-    *                |  |     |        |          |        |     |  |
-    *                |  |  B  | ~Out~> | Request2 | ~Out~> |  M  |  |
-    *                |  |  a  |        |          |        |  e  |  |
-    *                |  |  l  |        +----------+        |  r  |  |
-    * SparqlRequest ~~> |  a  |                            |  g  | ~~> SparqlResponse
-    *                |  |  n  |             .              |  e  |  |
-    *                |  |  c  |             .              |     |  |
-    *                |  |  e  |             .              |     |  |
-    *                |  |     |                            |     |  |
-    *                |  |     |        +----------+        |     |  |
-    *                |  |     |        |          |        |     |  |
-    *                |  |     | ~Out~> | RequestN | ~Out~> |     |  |
-    *                |  |     |        |          |        |     |  |
-    *                |  +-----+        +----------+        +-----+  |
-    *                |                                              |
-    *                +-----------------------------------------------+
-    * }}}
-    *
-    * Use this flow if you have a larger set of requests to run and you don't necessarily
-    * care in what order do the query responses arrive.
-    *
-    * Note: this builder uses the host-level API, so every parallel sub-stream will
-    * use a connection from a configured pool.
-    *
-    * @param endpoint the HTTP endpoint of the Sparql triple store server
-    * @param parallelism the number of concurrent streams to use
-    * @param _system the implicit actor system
-    * @param _materializer the actor materializer
-    * @param _context the Futures execution context
-    * @return
-    */
-  def loadBalancedDisorderedSparqlRequestFlow(
-    endpoint: HttpEndpoint,
-    parallelism: Int
-  )(implicit
-      _system: ActorSystem,
-      _materializer: ActorMaterializer,
-      _context: ExecutionContext
-  ) : Graph[FlowShape[SparqlRequest, SparqlResponse], NotUsed] = {
-
-    GraphDSL.create() { implicit builder =>
-      import GraphDSL.Implicits._
-
-      val dispatcher = builder.add(Balance[SparqlRequest](parallelism))
-      val merger = builder.add(Merge[SparqlResponse](parallelism))
-      for ( i <- 0 until parallelism) {
-        dispatcher.out(i) ~> sparqlRequestFlow(endpoint) ~> merger.in(i)
-      }
-
-      FlowShape(dispatcher.in, merger.out)
-
-    } named "flow.loadBalancedDisorderedSparqlRequestFlow"
-
-  }
-
-  /**
+ /**
     * Create a partial flow Graph of sparql requests to results.
     * {{{
     *

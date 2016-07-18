@@ -11,9 +11,6 @@ trait Request extends SparqlClientProtocol
   * Represents a single Sparql request to be sent to the triple store.
   *
   * @param statement the sparql statement string, any | margins will be stripped automatically
-  * @param context the context object the request carries with it, can be anything, but most
-  *                likely it will be an identity object or an actor reference of the caller
-  *                to enable proper asynchronous processing
   */
 case class SparqlRequest(statement: SparqlStatement) extends Request
 

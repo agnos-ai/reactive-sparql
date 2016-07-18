@@ -10,8 +10,11 @@ import spray.json.{DefaultJsonProtocol, JsObject, JsValue, RootJsonFormat}
   */
 object SparqlClientJsonProtocol extends SprayJsonSupport with DefaultJsonProtocol with PredefinedFromEntityUnmarshallers with PredefinedFromStringUnmarshallers {
 
+  /**
+    * A set if JSON parsers form "query results" format compliant
+    * with https://www.w3.org/TR/2013/REC-sparql11-results-json-20130321/
+    */
   implicit val format4 = jsonFormat3(QuerySolutionValue)
-
   implicit object format5 extends RootJsonFormat[QuerySolution] {
     def write(c : QuerySolution) = JsObject()
     def read(row : JsValue) = read(row.asInstanceOf[JsObject])
@@ -21,8 +24,6 @@ object SparqlClientJsonProtocol extends SprayJsonSupport with DefaultJsonProtoco
       })
     }
   }
-
-  // JC: add some comments when these formats are used?
   implicit val format2 = jsonFormat(ResultSetResults, "bindings")
   implicit val format1 = jsonFormat(ResultSetVars, "vars")
   implicit val format3 = jsonFormat2(ResultSet)

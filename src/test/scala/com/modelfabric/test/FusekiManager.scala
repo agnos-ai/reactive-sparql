@@ -43,7 +43,6 @@ object FusekiManager {
       process = Some(Runtime.getRuntime.exec(cmd))
     }
 
-    // JC: Java Thread class has start method. Why define a new method??
     def startServer(): Unit = {
       start()
     }
@@ -94,6 +93,8 @@ class FusekiManager(val endpoint: HttpEndpoint) extends Actor with ActorLogging 
       // JC: it's not clear that the logic is to ping fureki 10 times to check if it's available.
       // I think it's better to define two states for the actor. The Ping class is used for multiple purpose,
       // with multiple parameters to control behavior, not straightforward to understand
+      //SSZ: True, but again, this is a test class that does the work for us already. I would not worry
+      // about making it more understandable, unless you really think it would add more value?
       self ! Ping(sender, sendOnSuccess = StartOk, sendOnFailure = StartError)
 
     case x @ Ping(originalSender, sendOnSuccess, sendOnFailure, pingInterval, stopOnSuccess, 0) =>

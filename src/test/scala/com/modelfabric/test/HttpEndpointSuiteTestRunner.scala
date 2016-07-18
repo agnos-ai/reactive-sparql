@@ -6,7 +6,6 @@ import com.modelfabric.sparql.spray.SpraySparqlClientSpec
 import com.modelfabric.sparql.stream.{StreamSparqlClientSpec, SparqlRequestFlowSpec, StreamSpec}
 import com.modelfabric.sparql.util.{BasicAuthentication, HttpEndpoint}
 import com.modelfabric.test.FusekiManager._
-import com.modelfabric.test.Helpers._
 import com.typesafe.config.ConfigFactory
 import org.scalatest._
 
@@ -19,7 +18,6 @@ object HttpEndpointSuiteTestRunner {
   val sparqlServerEndpointUserKey = "SPARQL_ENDPOINT_USER"
   val sparqlServerEndpointPasswordKey = "SPARQL_ENDPOINT_PASSWORD"
 
-  // JC: all these authentication, database name should be encapsulated in a SparqlEndpoint or SparqlConnection, similar to JDBC Connection,  class (to be created)
   val sparqlServerEndpoint: Option[String] = sys.env.get(sparqlServerEndpointKey)
   val sparqlServerEndpointUser: String = sys.env.getOrElse(sparqlServerEndpointUserKey, "admin")
   val sparqlServerEndpointPassword: String = sys.env.getOrElse(sparqlServerEndpointPasswordKey, "admin")
@@ -79,39 +77,11 @@ object HttpEndpointSuiteTestRunner {
   * @param _system the actor system
   */
 class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
-  // JC: don't really need all these traits here
-  with WordSpecLike with MustMatchers with ImplicitSender with BeforeAndAfterAll {
+  with ImplicitSender with Suite with BeforeAndAfterAll {
 
   import HttpEndpointSuiteTestRunner._
 
   def this() = this(HttpEndpointSuiteTestRunner.testSystem)
-
-  val _log = akka.event.Logging(this.system, testActor)
-
-  lazy val fusekiManager = system.actorOf(Props(classOf[FusekiManager], testServerEndpoint), "fuseki-manager")
-
-  override def beforeAll() {
-    if (useFuseki) {
-      fusekiManager ! Start
-      // JC: expectMsgType is a simpler solution
-      fishForMessage(20 seconds, "Allowing Fuseki Server to start up") {
-        case StartOk =>
-          true
-
-        case x@_ =>
-          _log.info(s"Received unexpected message: $x")
-          false
-      }
-    }
-  }
-
-  override def afterAll() {
-    if (useFuseki) {
-      fusekiManager ! Shutdown
-      expectMsg(20 seconds, "Allowing Fuseki Server to shut down", ShutdownOk)
-    }
-    shutdownSystem
-  }
 
   /**
     * Add your Suites to be run here.
@@ -127,4 +97,35 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
     new SparqlRequestFlowSpec(system),
     new StreamSparqlClientSpec(system)
   )
+
+  val _log = akka.event.Logging(this.system, testActor)
+
+  lazy val fusekiManager = system.actorOf(Props(classOf[FusekiManager], testServerEndpoint), "fuseki-manager")
+
+  override def beforeAll() {
+    if (useFuseki) {
+      fusekiManager ! Start
+      expectMsg(20 seconds, StartOk)
+    }
+  }
+
+  override def afterAll() {
+    if (useFuseki) {
+      fusekiManager ! Shutdown
+      expectMsg(20 seconds, "Allowing Fuseki Server to shut down", ShutdownOk)
+    }
+    shutdownSystem
+  }
+
+  /**
+    * Shutdown the system if it hasn't been done so already.
+    *
+    * @param system The ActorSystem currently in use.
+    */
+  def shutdownSystem(implicit system: ActorSystem) {
+    system.terminate()
+    // Give the OS some time to clean up the actor system. This sucks.
+    Thread.sleep(250)
+  }
+
 }

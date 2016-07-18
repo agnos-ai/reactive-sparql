@@ -68,7 +68,6 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
       }
     }
 
-    // JC: it's not clear it's inserted in test 1 or 2.
     "4. Get the results just inserted via HTTP POST" in {
 
       sink.request(1)
@@ -104,7 +103,6 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
 
     }
 
-    //FIXME: the stream does not want to complete with Fuseki!!!
     "6. Stream must complete gracefully" in {
 
       source.sendComplete()

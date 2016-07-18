@@ -23,7 +23,6 @@ object SparqlUpdate {
 
 }
 
-// JC: is it necessory to make the class abstract?
 abstract class SparqlUpdate()(
     implicit pm : PrefixMapping) extends SparqlStatement()(pm) {
 

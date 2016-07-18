@@ -35,7 +35,6 @@ object SparqlQuery {
     * @param query
     * @return
     */
-  // JC: if we define SparqlQuery as a case class, then we don't need to define this unapply method
   def unapply(query: SparqlQuery): Option[(HttpMethod, String)] = {
     Some((query.httpMethod, query.statement))
   }

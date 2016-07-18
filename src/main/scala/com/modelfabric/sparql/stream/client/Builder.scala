@@ -67,7 +67,6 @@ object Builder {
 
       val responseMerger = builder.add(Merge[SparqlResponse](2).named("merge.sparqlResponse"))
 
-      // JC: are the broadcast and filter necessary? or it can be just a if else logic when building the flow?
       broadcastRequest ~> queryFilter  ~> sparqlQueryFlow(endpoint)  ~> responseMerger
       broadcastRequest ~> updateFilter ~> sparqlUpdateFlow(endpoint) ~> responseMerger
 
@@ -139,19 +138,18 @@ object Builder {
       import GraphDSL.Implicits._
       import endpoint._
 
-      // JC: why all stages in sparqlQueryFlow are async, but not here? do we need to make all of them async?
-      val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).named("mapping.sparqlToHttpRequest"))
+      val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).async.named("mapping.sparqlToHttpRequest"))
 
-      val updateConnectionFlow = builder.add(Http().cachedHostConnectionPool[SparqlRequest](host, port).named("http.sparqlUpdate"))
+      val updateConnectionFlow = builder.add(Http().cachedHostConnectionPool[SparqlRequest](host, port).async.named("http.sparqlUpdate"))
 
-      val broadcastUpdateHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).named("broadcast.updateResponse"))
-      val booleanParser = builder.add(Flow[(Try[HttpResponse], SparqlRequest)].mapAsync(1)(res => responseToBoolean(res)).named("mapping.parseBoolean"))
-      val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).named("mapping.makeResponseFromHeader"))
+      val broadcastUpdateHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).async.named("broadcast.updateResponse"))
+      val booleanParser = builder.add(Flow[(Try[HttpResponse], SparqlRequest)].mapAsync(1)(res => responseToBoolean(res)).async.named("mapping.parseBoolean"))
+      val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).async.named("mapping.makeResponseFromHeader"))
       val updateResultZipper = builder.add(ZipWith[Boolean, SparqlResponse, SparqlResponse]( (success, response) =>
         response.copy(
           success = success
         )
-      ).named("zipper.updateResultZipper"))
+      ).async.named("zipper.updateResultZipper"))
 
       converter ~> updateConnectionFlow ~> broadcastUpdateHttpResponse ~> booleanParser ~> updateResultZipper.in0
                                            broadcastUpdateHttpResponse ~> resultMaker   ~> updateResultZipper.in1
@@ -166,19 +164,20 @@ object Builder {
   }
 
   // JC: not good OO design. I think it's better to create a new class SparqlEndpoint
+  // SSZ: not sure what you mean by that Jian? HttpEndpoint is BTW a class that abstracts spray/akka-http out of the
+  // picture so the API is independent of the underlying implementation.
   private def makeHttpRequest(endpoint: HttpEndpoint, sparql: SparqlStatement): HttpRequest = sparql match {
     case SparqlQuery(HttpMethod.GET, query) =>
       HttpRequest(
         method = HttpMethods.GET,
-        uri = endpoint.path + s"$QUERY_URI_PART?$QUERY_PARAM_NAME=${sparql.statement.urlEncode}",
+        uri = s"${endpoint.path}$QUERY_URI_PART?$QUERY_PARAM_NAME=${sparql.statement.urlEncode}",
         Accept(`application/sparql-results+json`) :: makeRequestHeaders(endpoint)
       )
 
     case SparqlQuery(HttpMethod.POST, query) =>
       HttpRequest(
         method = HttpMethods.POST,
-        // JC: QUERY_URI_PART is a string, can be concatenated directly
-        uri = endpoint.path + s"$QUERY_URI_PART",
+        uri = s"${endpoint.path}$QUERY_URI_PART",
         Accept(`application/sparql-results+json`) :: makeRequestHeaders(endpoint)
       ).withEntity(
         `application/x-www-form-urlencoded`.toContentType,
@@ -187,14 +186,15 @@ object Builder {
     case SparqlUpdate(HttpMethod.POST, update) =>
       HttpRequest(
         method = HttpMethods.POST,
-        uri = endpoint.path + s"$UPDATE_URI_PART",
+        uri = s"${endpoint.path}$UPDATE_URI_PART",
         makeRequestHeaders(endpoint)
       ).withEntity(
         `application/x-www-form-urlencoded`.toContentType,
         s"$UPDATE_PARAM_NAME=${sparql.statement.urlEncode}")
  }
 
-  // JC: the meothdo name could be more specific
+  // JC: the method name could be more specific
+  //SSZ: this is on purpose generic as adding authentication is not the only thing that could be adding.
   private def makeRequestHeaders(endpoint: HttpEndpoint): List[HttpHeader] = {
     /* create the Basic authentication header */
     /* NOTE: Support for other authentication methods is not currently necessary, but could be added later */
@@ -252,7 +252,6 @@ object Builder {
 
   private def responseToSparqlResponse(response: (Try[HttpResponse], SparqlRequest)): SparqlResponse = response match {
     case (Success(HttpResponse(StatusCodes.OK, _, _, _)), request) =>
-    // JC: can we also extract ResultSet here, instead of broadcast then zip?
       SparqlResponse(success = true, request = request)
     case (Success(HttpResponse(status, headers, entity, _)), request) =>
       val error = SparqlClientRequestFailed(s"Request failed with: ${status}, headers: ${headers.mkString("|")}, message: ${entity})")
@@ -266,6 +265,7 @@ object Builder {
   /* CONSTANTS */
   /* --------- */
   // JC: these are same for all triple store??
+  //SSZ: AFAIK yes: https://www.w3.org/TR/sparql11-protocol/
   private val QUERY_URI_PART = "/query"
   private val QUERY_PARAM_NAME = "query"
 

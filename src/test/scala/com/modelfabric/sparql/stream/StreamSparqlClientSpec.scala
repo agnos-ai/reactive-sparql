@@ -40,7 +40,23 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
       .toMat(TestSink.probe[SparqlResponse])(Keep.both)
       .run()
 
-    "1. Allow one insert" in {
+    "1. Clear the data" in {
+
+      sink.request(1)
+      source.sendNext(SparqlRequest(delete))
+
+      assertSuccessResponse(sink.expectNext())
+
+      sink.request(1)
+      source.sendNext(SparqlRequest(query1))
+
+      sink.expectNext() match {
+        case SparqlResponse (_, true, Some (emptyResult), None) => assert(true)
+      }
+
+    }
+
+    "2. Allow one insert" in {
 
       sink.request(1)
       source.sendNext(SparqlRequest(insert1))
@@ -49,7 +65,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
 
     }
 
-    "2. Allow for an update" in {
+    "3. Allow for an update" in {
 
       sink.request(1)
       source.sendNext(SparqlRequest(update))
@@ -58,7 +74,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
 
     }
 
-    "3. Get the results just inserted via HTTP GET" in {
+    "4. Get the results just inserted via HTTP GET" in {
 
       sink.request(1)
       source.sendNext(SparqlRequest(query2Get))
@@ -68,7 +84,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
       }
     }
 
-    "4. Get the results just inserted via HTTP POST" in {
+    "5. Get the results just inserted via HTTP POST" in {
 
       sink.request(1)
       source.sendNext(SparqlRequest(query2Post))
@@ -79,9 +95,9 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
 
     }
 
-    "5. Stream must accept a 'heavy' load" in {
+    "6. Stream must accept a 'heavy' load" in {
 
-      val numRequests = 20
+      val numRequests = 8
 
       for( i <- 0 until numRequests) {
         sink.request(1)
@@ -103,7 +119,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
 
     }
 
-    "6. Stream must complete gracefully" in {
+    "7. Stream must complete gracefully" in {
 
       source.sendComplete()
       sink.expectComplete()

@@ -5,7 +5,14 @@ import com.modelfabric.sparql.api._
 trait SparqlQueries {
   implicit val pm = PrefixMapping.extended
 
-  lazy val query1 = SparqlQuery { s"""
+  lazy val delete = SparqlUpdate { """
+    |WITH <urn:test:mfab:data>
+    |DELETE { ?a ?b ?c . }
+    |WHERE { ?a ?b ?c . }
+    |"""
+  }
+
+  lazy val query1 = SparqlQuery { """
     |SELECT ?a ?b ?c
     |FROM
     |  <urn:test:mfab:data>
@@ -16,7 +23,7 @@ trait SparqlQueries {
     |"""
   }
 
-  lazy val insert1x = SparqlUpdate { s"""
+  lazy val insert1x = SparqlUpdate { """
     |WITH <urn:test:mfab:data>
     |DELETE {
     |    <urn:uuid:te-36adbd34-2d84-4cd2-b061-6c8550c7d648> skos:inScheme mfab:ConceptScheme-StoryTypeTaxonomy.
@@ -33,7 +40,7 @@ trait SparqlQueries {
   }
 
 
-  lazy val insert1 = SparqlUpdate { s"""
+  lazy val insert1 = SparqlUpdate { """
     |INSERT DATA {
     |  GRAPH <urn:test:mfab:data> {
     |    <urn:test:whatever> foaf:givenName "Bill"
@@ -41,7 +48,7 @@ trait SparqlQueries {
     |}"""
   }
 
-  lazy val update = SparqlUpdate { s"""
+  lazy val update = SparqlUpdate { """
     |WITH <urn:test:mfab:data>
     |DELETE {
     |  ?person foaf:givenName "Bill"
@@ -54,7 +61,7 @@ trait SparqlQueries {
     |}"""
   }
 
-  lazy val select2 = { s"""
+  lazy val select2 = { """
     |SELECT ?g ?b ?c
     |FROM NAMED <urn:test:mfab:data>
     |WHERE {
@@ -73,5 +80,9 @@ trait SparqlQueries {
       "q"-> QuerySolutionValue("uri",None,"urn:test:mfab:data"),
       "b" -> QuerySolutionValue("uri",None,"http://xmlns.com/foaf/0.1/givenName"),
       "c" -> QuerySolutionValue("literal",None,"William"))))))
+
+  lazy val emptyResult = ResultSet(
+    ResultSetVars(List("g", "b", "c")),
+    ResultSetResults(Nil))
 
 }

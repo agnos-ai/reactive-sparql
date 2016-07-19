@@ -74,7 +74,18 @@ class SpraySparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
 
   "The Spray Sparql Client" must {
 
-    "1. Allow one insert" in {
+    "1. Clear the data" in {
+
+      client ! delete
+
+      fishForMessage(dbTimeout, "a. wait for MessageSparqlClientUpdateSuccessful") {
+        case MessageSparqlClientUpdateSuccessful(_) => handleSparqlUpdateSuccessful
+        case msg @ MessageSparqlStatementFailed(_, _, _) => handleSparqlClientError(msg.statement, msg.response)
+        case msg @ _ => handleUnknownMessage(msg)
+      }
+    }
+
+    "2. Allow one insert" in {
 
       client ! insert1
 
@@ -85,7 +96,7 @@ class SpraySparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
       }
     }
 
-    "2. Allow for an update" in {
+    "3. Allow for an update" in {
 
       client ! update
 
@@ -96,7 +107,7 @@ class SpraySparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
        }
     }
 
-    "3. Get the results just inserted via HTTP GET" in {
+    "4. Get the results just inserted via HTTP GET" in {
 
       client ! query2Get
 
@@ -112,7 +123,7 @@ class SpraySparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
       }
   }
 
-    "4. Get the results just inserted via HTTP POST" in {
+    "5. Get the results just inserted via HTTP POST" in {
 
       client ! query2Post
 

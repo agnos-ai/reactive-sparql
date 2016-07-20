@@ -47,7 +47,6 @@ object HttpEndpointSuiteTestRunner {
          |  seed-nodes = []
          |}
          |sparql.client {
-         |  type = "HttpSpray"
          |  endpoint = "${testServerEndpoint.url}"
          |  userId = "admin"
          |  password = "admin"

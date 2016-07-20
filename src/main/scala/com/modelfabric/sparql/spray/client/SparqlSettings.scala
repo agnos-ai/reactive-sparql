@@ -3,11 +3,9 @@ package com.modelfabric.sparql.spray.client
 import akka.actor.{ActorRefFactory, ActorSystem}
 import com.typesafe.config.{ConfigFactory, Config}
 import spray.util._
-import SparqlClientType.SparqlClientType
 
 case class SparqlSettings(
   sparqlEndPoint : Option[String],                            // application.conf -> sparql.client-endpoint
-  clientType: SparqlClientType = SparqlClientType.HttpSpray,  // application.conf -> sparql.client-type
   userId: Option[String],                                     // application.conf -> sparql.client-userId
   password: Option[String]                                    // application.conf -> sparql.client-password
 ) {
@@ -29,14 +27,12 @@ object SparqlSettings {
 
     val c = config.withFallback(ConfigFactory.defaultReference(getClass.getClassLoader))
 
-    val sparqlClientType = SparqlClientType.values.find(_.toString == (c getString "type"))
     val endPoint = Some(c getString "endpoint")
     val userId = Some(c getString "userId")
     val password = Some(c getString "password")
 
     SparqlSettings(
       endPoint,
-      sparqlClientType.getOrElse(SparqlClientType.HttpSpray),
       userId,
       password
     )

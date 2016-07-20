@@ -32,8 +32,6 @@ class SpraySparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
   with WordSpecLike with MustMatchers with BeforeAndAfterAll
   with ImplicitSender with SparqlQueries {
 
-  def this() = this(HttpEndpointSuiteTestRunner.testSystem)
-
   def config = SparqlClientConfig(_system)
 
   lazy val client = system.actorOf(Props(classOf[SparqlHttpSprayClient], config))

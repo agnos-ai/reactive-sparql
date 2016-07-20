@@ -25,7 +25,6 @@ import scala.language.postfixOps
 class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
   with WordSpecLike with MustMatchers with BeforeAndAfterAll with SparqlQueries {
 
-  def this() = this(HttpEndpointSuiteTestRunner.testSystem)
   implicit val testMaterializer = ActorMaterializer()
   implicit val executionContext = _system.dispatcher
   implicit val prefixMapping = PrefixMapping.none

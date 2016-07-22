@@ -11,7 +11,7 @@ object HttpEndpoint {
     * Get an HTTP endpoint bound to 'localhost' where a free port is automatically assigned
     * and can be used to be bound to.
     *
-    * The generated endpoint will be '''http://localhost:${assigned-port}${path}'''
+    * The generated endpoint will be '''http://localhost:{assigned-port}{path}'''
     *
     * @param path the desired path part for the endpoint
     * @return
@@ -21,7 +21,7 @@ object HttpEndpoint {
 
   /**
     * Construct an endpoint from a string URL representation,
-    * which corresponds to '''[${protocol}://]${host}[:${port}][${path}]'''
+    * which corresponds to '''[{protocol}://]{host}[:{port}][{path}]'''
     * Protocol, port and path are optional. Default protocol is http://,
     * default port is 80, the default path is empty.
     *
@@ -33,7 +33,7 @@ object HttpEndpoint {
 
   /**
     * Construct an endpoint from a string URL representation,
-    * which corresponds to '''[${protocol}://]${host}[:${port}][${path}]'''
+    * which corresponds to '''[{protocol}://]{host}[:{port}][{path}]'''
     * Protocol, port and path are optional. Default protocol is http://,
     * default port is 80, the default path is empty.
     *

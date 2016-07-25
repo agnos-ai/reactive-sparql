@@ -95,11 +95,9 @@ trait SparqlQueries {
     * from the Sparql ResultSet (QuerySolution) via providing the implementation for
     * the ResultMapper and SolutionMapper.
     */
-  object Person extends ResultMapper[Person] with SolutionMapper[Person] {
+  object Person extends ResultMapper[Person] {
     override def map(qs: QuerySolution): Person = {
-      val uri = qs.uri("g")
-      val name = qs.string("c")
-      Person(uri.get, name.get)
+      Person(qs.uri("g").get, qs.string("c").get)
     }
   }
   case class Person(id: URI, name: String) extends SparqlResult

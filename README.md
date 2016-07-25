@@ -8,8 +8,8 @@ but we're currently migrating it to work akka-streams, so we will use akka-http 
 
 # Usage
 
-```
-/* Prepare the Implicit environment for Akka-Streams */
+```scala
+/* Prepare the implicit environment for Akka-Streams */
 implicit val system = ActorSystem("test-system")
 implicit val materializer = ActorMaterializer()
 implicit val executionContext = _system.dispatcher
@@ -28,17 +28,16 @@ case class Person(id: URI, name: String) extends SparqlResult
 
 /* Create a bespoke SparqlQuery with a mapping to a Person */
 val mappingQuery2Get = SparqlQuery( """
-  SELECT ?g ?b ?c
-  FROM NAMED <urn:test:mfab:data>
-  WHERE {
-    GRAPH ?g {
-      <urn:test:whatever> ?b ?c
-    }
-  }""", mapping = Person) :: Nil
+  |SELECT ?g ?b ?c
+  |FROM NAMED <urn:test:mfab:data>
+  |WHERE {
+  |  GRAPH ?g {
+  |   <urn:test:whatever> ?b ?c
+  |  }
+  |}""", mapping = Person) :: Nil
 
 /* Create the Flow and Probes */
 val sparqlRequestFlowUnderTest = Builder.sparqlRequestFlow(testServerEndpoint)
-
 val (source, sink) = TestSource.probe[SparqlRequest]
   .via(sparqlRequestFlowUnderTest)
   .toMat(TestSink.probe[SparqlResponse])(Keep.both)
@@ -47,10 +46,8 @@ val (source, sink) = TestSource.probe[SparqlRequest]
 /* Send the request to the stream and expect the result */
 sink.request(1)
 source.sendNext(SparqlRequest(mappingQuery2Get))
-
 sink.expectNext(receiveTimeout) match {
   case SparqlResponse (_, true, mappedQuery2Result, None) => assert(true)
   case r@SparqlResponse(_, _, _, _) => assert(false, r)
 }
-
 ```

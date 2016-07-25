@@ -107,7 +107,7 @@ trait SparqlQueries {
   lazy val mappingQuery2Get = SparqlQuery( select2, mapping = Person)
   lazy val mappingQuery2Post = SparqlQuery( select2, method = POST, mapping = Person)
 
-  lazy val mappedQuery2Result = Person(uri("urn:test:mfab:data"), "William")
+  lazy val mappedQuery2Result = Person(uri("urn:test:mfab:data"), "William") :: Nil
 
   /**
     * TODO: Move this to the string extensions in modelfabric/scala-utils project.

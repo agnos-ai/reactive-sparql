@@ -1,5 +1,7 @@
 package com.modelfabric.sparql.api
 
+import com.modelfabric.sparql.api.HttpMethod.GET
+
 
 object SparqlQuery {
 
@@ -18,15 +20,22 @@ object SparqlQuery {
   /**
     * Construct a SparqlQuery from the passed string and implicit prefix mappings.
     *
-    * @param method the HTTP method to use
     * @param sparql the query string
+    * @param method the HTTP method to use
+    * @param mapping the Result Set mapping to use, defaults to ResultSets
     * @param _pm prefix mappings from the current scope
     * @return
     */
-  def apply(method: HttpMethod, sparql: String)(implicit _pm : PrefixMapping): SparqlQuery = {
+  def apply(
+    sparql: String,
+    method: HttpMethod = GET,
+    mapping: ResultMapper[_] = ResultSetMapper
+  )(implicit _pm : PrefixMapping): SparqlQuery = {
+
     new SparqlQuery() {
       override val httpMethod = method
       override val statement = build(sparql)
+      override val resultMapper = mapping
     }
   }
 
@@ -35,8 +44,8 @@ object SparqlQuery {
     * @param query
     * @return
     */
-  def unapply(query: SparqlQuery): Option[(HttpMethod, String)] = {
-    Some((query.httpMethod, query.statement))
+  def unapply(query: SparqlQuery): Option[(HttpMethod, String, ResultMapper[_])] = {
+    Some((query.httpMethod, query.statement, query.resultMapper.asInstanceOf[ResultMapper[_ <: SparqlResult]]))
   }
 
 }
@@ -49,5 +58,13 @@ object SparqlQuery {
 abstract class SparqlQuery()(implicit _pm : PrefixMapping) extends SparqlStatement()(_pm) {
 
   def query = statement
+
+  /**
+    * @return a result mapper that is aware of how to map a result set to objects of a specific type.
+    *         Objects may be maps of fields and values or case class instances, for example.
+    */
+  def resultMapper : ResultMapper[_] = ResultSetMapper
+
+
 
 }

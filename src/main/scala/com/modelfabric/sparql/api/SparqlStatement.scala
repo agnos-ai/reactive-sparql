@@ -25,12 +25,6 @@ abstract class SparqlStatement()(implicit val pm : PrefixMapping) {
    */
   def httpMethod: HttpMethod = HttpMethod.GET
 
-  /**
-   * @return a solution mapper that is aware of how to map query solutions to objects of a specific type.
-   *         Objects may be maps of fields and values or case class instances, for example.
-   */
-  def solutionMapper : SolutionMapper[_] = DefaultSolutionMapper
-
   protected def build(statement_ : String) : String = s"""
     |${pm.sparql}
     ${statement_}

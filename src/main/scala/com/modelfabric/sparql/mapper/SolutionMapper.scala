@@ -15,6 +15,6 @@ trait SolutionMapper[T] {
    * @param querySolution solution containing the data.
    * @return the extracted data.
    */
-  def map(querySolution : QuerySolution) : T
+  def map(querySolution : QuerySolution): T
 }
 

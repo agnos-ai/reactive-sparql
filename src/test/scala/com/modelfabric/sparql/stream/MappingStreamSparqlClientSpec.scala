@@ -24,7 +24,7 @@ import scala.language.postfixOps
   * @param _system the actor system
   */
 @DoNotDiscover
-class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
+class MappingStreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
   with WordSpecLike with MustMatchers with BeforeAndAfterAll with SparqlQueries {
 
   implicit val testMaterializer = ActorMaterializer()
@@ -66,61 +66,30 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
 
     }
 
-    "3. Allow for an update" in {
+    "3. Get the MAPPED results just inserted via HTTP GET" in {
 
       sink.request(1)
-      source.sendNext(SparqlRequest(update))
-
-      assertSuccessResponse(sink.expectNext())
-
-    }
-
-    "4. Get the results just inserted via HTTP GET" in {
-
-      sink.request(1)
-      source.sendNext(SparqlRequest(query2Get))
+      source.sendNext(SparqlRequest(mappingQuery2Get))
 
       sink.expectNext() match {
-        case SparqlResponse (_, true, query2Result, None) => assert(true)
+        case SparqlResponse (_, true, mappedQuery2Result, None) => assert(true)
+        case r@SparqlResponse(_, _, _, _) => assert(false, r)
       }
     }
 
-    "5. Get the results just inserted via HTTP POST" in {
+    "4. Get the MAPPED results just inserted via HTTP POST" in {
 
       sink.request(1)
-      source.sendNext(SparqlRequest(query2Post))
+      source.sendNext(SparqlRequest(mappingQuery2Post))
 
       sink.expectNext() match {
-        case SparqlResponse (_, true, query2Result, None) => assert(true)
+        case SparqlResponse (_, true, mappedQuery2Result, None) => assert(true)
+        case r@SparqlResponse(_, _, _, _) => assert(false, r)
       }
 
     }
 
-    "6. Stream must accept a 'heavy' load" in {
-
-      val numRequests = 8
-
-      for( i <- 0 until numRequests) {
-        sink.request(1)
-        println(s"sending request $i")
-        source.sendNext(SparqlRequest(query2Get))
-      }
-
-      val x = for (
-        i <- 0 until numRequests;
-        response = sink.expectNext(3 seconds)
-      ) yield {
-        response match {
-          case SparqlResponse(_, true, _, _) => true
-          case _ => false
-        }
-      }
-
-      assert(x.count(b => b) === numRequests)
-
-    }
-
-    "7. Stream must complete gracefully" in {
+    "5. Stream must complete gracefully" in {
 
       source.sendComplete()
       sink.expectComplete()

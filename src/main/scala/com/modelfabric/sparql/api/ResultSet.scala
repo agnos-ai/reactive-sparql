@@ -6,13 +6,27 @@ package com.modelfabric.sparql.api
 import java.net.URI
 import javax.xml.bind.DatatypeConverter
 
+import com.modelfabric.sparql.mapper.SolutionMapper
+
+trait SparqlResult
+
+trait ResultMapper[T <: SparqlResult] extends SolutionMapper[T] {
+  def map(result: ResultSet): List[T] = result.results.bindings.map { b =>
+    map(b)
+  }
+}
+
+object ResultSetMapper extends ResultMapper[ResultSet] {
+  override def map(result: ResultSet): List[ResultSet] = result :: Nil
+  override def map(querySolution: QuerySolution): ResultSet = null //this is ugly
+}
+
+case class ResultSet(head : ResultSetVars, results : ResultSetResults) extends SparqlResult
+
 case class ResultSetVars(vars : List[String])
 
 case class ResultSetResults(bindings : List[QuerySolution])
 
-case class ResultSet(head : ResultSetVars, results : ResultSetResults)
-
-// JC: looks like `type` is not used
 case class QuerySolutionValue(`type` : String, datatype : Option[String] = None, value : String = null) {
 
   def asString : String = DatatypeConverter.parseString(value)
@@ -50,7 +64,13 @@ case class QuerySolutionValue(`type` : String, datatype : Option[String] = None,
   }
 }
 
-case class  QuerySolution(values : Map[String, QuerySolutionValue]) {
+/**
+  * The default query solution, used to unmarshal the 'application/sparql-results+json'
+  * server response.
+  *
+  * @param values
+  */
+case class QuerySolution(values : Map[String, QuerySolutionValue]) {
 
   def uri(var_ : String) : Option[URI] = values get var_ map (_.asUri)
 

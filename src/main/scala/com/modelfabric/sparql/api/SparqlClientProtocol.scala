@@ -30,13 +30,13 @@ trait Response extends SparqlClientProtocol
   *
   * @param request the underlying request object is returned with the response
   * @param success true if the sparql statement execution succeeded
-  * @param resultSet
+  * @param result
   * @param error
   */
 case class SparqlResponse(
   request: SparqlRequest,
   success: Boolean = true,
-  resultSet: Option[ResultSet] = None,
+  result: List[SparqlResult] = Nil,
   error: Option[SparqlClientError] = None) extends Response
 
 /**

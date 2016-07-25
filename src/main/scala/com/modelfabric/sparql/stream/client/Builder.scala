@@ -49,8 +49,7 @@ object Builder {
 
       val queryFilter = builder.add {
         Flow[SparqlRequest].filter {
-          case r@SparqlRequest(SparqlQuery(_,_)) =>
-            println(s"Handling QUERY: $r")
+          case r@SparqlRequest(SparqlQuery(_,_,_)) =>
             true
           case _ => false
         }
@@ -59,7 +58,6 @@ object Builder {
       val updateFilter = builder.add {
         Flow[SparqlRequest].filter {
           case r@SparqlRequest(SparqlUpdate(_,_)) =>
-            println(s"Handling UPDATE: $r")
             true
           case _ => false
         }
@@ -104,22 +102,18 @@ object Builder {
       import endpoint._
 
       val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).async.named("mapping.sparqlToHttpRequest"))
-
       val queryConnectionFlow = builder.add(Http().cachedHostConnectionPool[SparqlRequest](host, port).async.named("http.sparqlQueryConnection"))
-
       val broadcastQueryHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).async.named("broadcast.queryResponse"))
-
       val resultSetParser = builder.add(Flow[(Try[HttpResponse],SparqlRequest)].mapAsync(1)(res => responseToResultSet(res)).async.named("mapping.parseResultSet"))
-
+      val resultSetMapper = builder.add(Flow.fromFunction(resultSetToMappedResult).async.named("mapping.mapResultSet"))
       val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).async.named("mapping.makeResponseFromHeader"))
-
-      val queryResultZipper = builder.add(ZipWith[ResultSet, SparqlResponse, SparqlResponse](
-        (resultSet, response) =>
-          response.copy(resultSet = Some(resultSet))
+      val queryResultZipper = builder.add(ZipWith[List[SparqlResult], SparqlResponse, SparqlResponse](
+        (result, response) =>
+          response.copy(result = result)
       ).async.named("zipper.queryResultZipper"))
 
-      converter ~> queryConnectionFlow ~> broadcastQueryHttpResponse ~> resultSetParser ~> queryResultZipper.in0
-                                          broadcastQueryHttpResponse ~> resultMaker     ~> queryResultZipper.in1
+      converter ~> queryConnectionFlow ~> broadcastQueryHttpResponse ~> resultSetParser ~> resultSetMapper ~> queryResultZipper.in0
+                                          broadcastQueryHttpResponse ~> resultMaker                        ~> queryResultZipper.in1
 
       FlowShape(converter.in, queryResultZipper.out)
     } named "flow.sparqlQueryRequest"
@@ -139,9 +133,7 @@ object Builder {
       import endpoint._
 
       val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).async.named("mapping.sparqlToHttpRequest"))
-
       val updateConnectionFlow = builder.add(Http().cachedHostConnectionPool[SparqlRequest](host, port).async.named("http.sparqlUpdate"))
-
       val broadcastUpdateHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).async.named("broadcast.updateResponse"))
       val booleanParser = builder.add(Flow[(Try[HttpResponse], SparqlRequest)].mapAsync(1)(res => responseToBoolean(res)).async.named("mapping.parseBoolean"))
       val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).async.named("mapping.makeResponseFromHeader"))
@@ -167,14 +159,14 @@ object Builder {
   // SSZ: not sure what you mean by that Jian? HttpEndpoint is BTW a class that abstracts spray/akka-http out of the
   // picture so the API is independent of the underlying implementation.
   private def makeHttpRequest(endpoint: HttpEndpoint, sparql: SparqlStatement): HttpRequest = sparql match {
-    case SparqlQuery(HttpMethod.GET, query) =>
+    case SparqlQuery(HttpMethod.GET, query, _) =>
       HttpRequest(
         method = HttpMethods.GET,
         uri = s"${endpoint.path}$QUERY_URI_PART?$QUERY_PARAM_NAME=${sparql.statement.urlEncode}",
         Accept(`application/sparql-results+json`) :: makeRequestHeaders(endpoint)
       )
 
-    case SparqlQuery(HttpMethod.POST, query) =>
+    case SparqlQuery(HttpMethod.POST, query, _) =>
       HttpRequest(
         method = HttpMethods.POST,
         uri = s"${endpoint.path}$QUERY_URI_PART",
@@ -213,16 +205,36 @@ object Builder {
       _system: ActorSystem,
       _materializer: ActorMaterializer,
       _executionContext: ExecutionContext
-  ): Future[ResultSet] = {
+  ): Future[(ResultSet, SparqlRequest)] = {
 
     response match {
-      case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _)
+      case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), request)
         if entity.contentType.mediaType == `application/sparql-results+json` =>
         /* we need to override the content type, because the spray-json parser does not understand */
         /* anything but 'application/json' */
-        Unmarshal(entity.withContentType(ContentTypes.`application/json`)).to[ResultSet]
+        Unmarshal(entity.withContentType(ContentTypes.`application/json`)).to[ResultSet] map {
+          (_, request)
+        }
      }
   }
+
+  private def resultSetToMappedResult(resultSet: (ResultSet, SparqlRequest))(
+    implicit
+    _system: ActorSystem,
+    _materializer: ActorMaterializer,
+    _executionContext: ExecutionContext
+  ): List[SparqlResult] = {
+
+    resultSet match {
+      case (r, SparqlRequest(SparqlQuery(_,_,mapper))) =>
+        val o = mapper.map(r)
+        println(s"mapped $r to $o")
+
+        o.asInstanceOf[List[SparqlResult]]
+    }
+
+  }
+
 
   private def responseToBoolean(response: (Try[HttpResponse], SparqlRequest))(
     implicit

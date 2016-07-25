@@ -18,7 +18,7 @@ object BuildSettings {
     scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.8", "-language:implicitConversions", "-language:postfixOps", "-Xlint", "-Xfatal-warnings"),
     incOptions    := incOptions.value.withNameHashing(nameHashing     = true),
     ivyScala      := ivyScala.value map { _.copy(overrideScalaVersion = true) },
-    parallelExecution in Test := true
+    parallelExecution in Test := false
   ) ++ Defaults.itSettings ++ Revolver.settings
 }
 

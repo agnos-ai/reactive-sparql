@@ -31,6 +31,8 @@ class MappingStreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_s
   implicit val executionContext = _system.dispatcher
   implicit val prefixMapping = PrefixMapping.none
 
+  val receiveTimeout = 5 seconds
+
   import HttpEndpointSuiteTestRunner._
 
   "The Akka-Streams Sparql Client" must {
@@ -46,12 +48,12 @@ class MappingStreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_s
       sink.request(1)
       source.sendNext(SparqlRequest(delete))
 
-      assertSuccessResponse(sink.expectNext())
+      assertSuccessResponse(sink.expectNext(receiveTimeout))
 
       sink.request(1)
       source.sendNext(SparqlRequest(query1))
 
-      sink.expectNext() match {
+      sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, emptyResult, None) => assert(true)
       }
 
@@ -62,7 +64,7 @@ class MappingStreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_s
       sink.request(1)
       source.sendNext(SparqlRequest(insert1))
 
-      assertSuccessResponse(sink.expectNext())
+      assertSuccessResponse(sink.expectNext(receiveTimeout))
 
     }
 
@@ -71,7 +73,7 @@ class MappingStreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_s
       sink.request(1)
       source.sendNext(SparqlRequest(mappingQuery2Get))
 
-      sink.expectNext() match {
+      sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, mappedQuery2Result, None) => assert(true)
         case r@SparqlResponse(_, _, _, _) => assert(false, r)
       }
@@ -82,7 +84,7 @@ class MappingStreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_s
       sink.request(1)
       source.sendNext(SparqlRequest(mappingQuery2Post))
 
-      sink.expectNext() match {
+      sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, mappedQuery2Result, None) => assert(true)
         case r@SparqlResponse(_, _, _, _) => assert(false, r)
       }
@@ -93,7 +95,7 @@ class MappingStreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_s
 
       source.sendComplete()
       sink.expectComplete()
-      sink.expectNoMsg(1 second)
+      sink.expectNoMsg(receiveTimeout)
     }
 
   }

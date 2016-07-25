@@ -227,10 +227,9 @@ object Builder {
 
     resultSet match {
       case (r, SparqlRequest(SparqlQuery(_,_,mapper))) =>
-        val o = mapper.map(r)
-        println(s"mapped $r to $o")
-
-        o.asInstanceOf[List[SparqlResult]]
+        mapper
+          .map(r)
+          .asInstanceOf[List[SparqlResult]]
     }
 
   }
@@ -251,7 +250,7 @@ object Builder {
         println(s"Unexpected response content type: ${entity.contentType} and/or media type: ${entity.contentType.mediaType}")
         Future.successful(true)
       case (Success(HttpResponse(status, headers, entity, protocol)), _) =>
-        println(s"Unexpected response status: ${status}")
+        println(s"Unexpected response status: $status")
         Future.successful(true)
 
       case x@_ =>
@@ -266,7 +265,7 @@ object Builder {
     case (Success(HttpResponse(StatusCodes.OK, _, _, _)), request) =>
       SparqlResponse(success = true, request = request)
     case (Success(HttpResponse(status, headers, entity, _)), request) =>
-      val error = SparqlClientRequestFailed(s"Request failed with: ${status}, headers: ${headers.mkString("|")}, message: ${entity})")
+      val error = SparqlClientRequestFailed(s"Request failed with: $status, headers: ${headers.mkString("|")}, message: $entity)")
       SparqlResponse(success = false, request = request, error = Some(error))
     case (Failure(throwable), request) =>
       val error = SparqlClientRequestFailedWithError("Request failed on the HTTP layer", throwable)

@@ -31,6 +31,8 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
   implicit val executionContext = _system.dispatcher
   implicit val prefixMapping = PrefixMapping.none
 
+  val receiveTimeout = 5 seconds
+
   import HttpEndpointSuiteTestRunner._
 
   "The Akka-Streams Sparql Client" must {
@@ -46,12 +48,12 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
       sink.request(1)
       source.sendNext(SparqlRequest(delete))
 
-      assertSuccessResponse(sink.expectNext())
+      assertSuccessResponse(sink.expectNext(receiveTimeout))
 
       sink.request(1)
       source.sendNext(SparqlRequest(query1))
 
-      sink.expectNext() match {
+      sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, emptyResult, None) => assert(true)
       }
 
@@ -62,7 +64,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
       sink.request(1)
       source.sendNext(SparqlRequest(insert1))
 
-      assertSuccessResponse(sink.expectNext())
+      assertSuccessResponse(sink.expectNext(receiveTimeout))
 
     }
 
@@ -71,7 +73,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
       sink.request(1)
       source.sendNext(SparqlRequest(update))
 
-      assertSuccessResponse(sink.expectNext())
+      assertSuccessResponse(sink.expectNext(receiveTimeout))
 
     }
 
@@ -80,7 +82,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
       sink.request(1)
       source.sendNext(SparqlRequest(query2Get))
 
-      sink.expectNext() match {
+      sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, query2Result, None) => assert(true)
       }
     }
@@ -90,7 +92,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
       sink.request(1)
       source.sendNext(SparqlRequest(query2Post))
 
-      sink.expectNext() match {
+      sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, query2Result, None) => assert(true)
       }
 
@@ -108,7 +110,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
 
       val x = for (
         i <- 0 until numRequests;
-        response = sink.expectNext(3 seconds)
+        response = sink.expectNext(receiveTimeout)
       ) yield {
         response match {
           case SparqlResponse(_, true, _, _) => true
@@ -124,7 +126,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
 
       source.sendComplete()
       sink.expectComplete()
-      sink.expectNoMsg(1 second)
+      sink.expectNoMsg(receiveTimeout)
     }
 
   }

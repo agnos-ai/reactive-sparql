@@ -12,16 +12,14 @@ but we're currently migrating it to work akka-streams, so we will use akka-http 
 /* Prepare the implicit environment for Akka-Streams */
 implicit val system = ActorSystem("test-system")
 implicit val materializer = ActorMaterializer()
-implicit val executionContext = _system.dispatcher
+implicit val executionContext = system.dispatcher
 implicit val prefixMapping = PrefixMapping.none
 val receiveTimeout: FiniteDuration = 3 seconds
 
 /* Define domain case class and mappings */
-object Person extends ResultMapper[Person] with SolutionMapper[Person] {
+object Person extends ResultMapper[Person] {
   override def map(qs: QuerySolution): Person = {
-    val uri = qs.uri("g")
-    val name = qs.string("c")
-    Person(uri.get, name.get)
+    Person(qs.uri("g").get, qs.string("c").get)
   }
 }
 case class Person(id: URI, name: String) extends SparqlResult

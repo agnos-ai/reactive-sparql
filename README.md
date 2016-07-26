@@ -32,7 +32,7 @@ val mappingQuery2Get = SparqlQuery( """
   |  GRAPH ?g {
   |   <urn:test:whatever> ?b ?c
   |  }
-  |}""", mapping = Person) :: Nil
+  |}""", mapping = Person)
 
 /* Create the Flow and Probes */
 val sparqlRequestFlowUnderTest = Builder.sparqlRequestFlow(testServerEndpoint)

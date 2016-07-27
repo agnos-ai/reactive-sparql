@@ -45,7 +45,7 @@ val (source, sink) = TestSource.probe[SparqlRequest]
 sink.request(1)
 source.sendNext(SparqlRequest(mappingQuery2Get))
 sink.expectNext(receiveTimeout) match {
-  case SparqlResponse (_, true, mappedQuery2Result, None) => assert(true)
+  case SparqlResponse(_, true, mappedQuery2Result, None) => assert(true)
   case r@SparqlResponse(_, _, _, _) => assert(false, r)
 }
 ```

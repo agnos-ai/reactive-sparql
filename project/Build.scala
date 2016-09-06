@@ -5,13 +5,11 @@ import spray.revolver.RevolverPlugin._
 
 object BuildSettings {
   val buildOrganization = "com.modelfabric"
-  val buildVersion      = "0.1.0-SNAPSHOT"
   val buildScalaVersion = Version.scala
   val buildExportJars   = true
 
   val buildSettings = Seq (
     organization  := buildOrganization,
-    version       := buildVersion,
     scalaVersion  := buildScalaVersion,
     exportJars    := buildExportJars,
     shellPrompt := { state => "sbt [%s]> ".format(Project.extract(state).currentProject.id) },

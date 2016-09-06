@@ -45,7 +45,7 @@ object SparqlQuery {
     * @return
     */
   def unapply(query: SparqlQuery): Option[(HttpMethod, String, ResultMapper[_])] = {
-    Some((query.httpMethod, query.statement, query.resultMapper.asInstanceOf[ResultMapper[_ <: SparqlResult]]))
+    Some((query.httpMethod, query.statement, query.resultMapper))
   }
 
 }

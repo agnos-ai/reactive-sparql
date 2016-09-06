@@ -1,7 +1,6 @@
 package com.modelfabric.sparql.api
 
 import com.modelfabric.extension.StringExtensions._
-import com.modelfabric.sparql.mapper.{SolutionMapper, DefaultSolutionMapper}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -13,7 +12,7 @@ import scala.language.postfixOps
  *
  * By the way, this also goes for some non SPARQL statements such as some Graph API statements
  */
-abstract class SparqlStatement()(implicit val pm : PrefixMapping) {
+abstract class SparqlStatement[T]()(implicit val pm : PrefixMapping) extends Request[T] {
 
   /**
    * @return the SPARQL statement in executable form

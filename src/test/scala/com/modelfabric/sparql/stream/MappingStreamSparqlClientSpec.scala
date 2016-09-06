@@ -36,11 +36,12 @@ class MappingStreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_s
   import HttpEndpointSuiteTestRunner._
 
   "The Akka-Streams Sparql Client" must {
-    val sparqlRequestFlowUnderTest = Builder.sparqlRequestFlow(testServerEndpoint)
+    val sparqlQueryFlowUnderTest = Builder.sparqlQueryFlow(testServerEndpoint)
+    val sparqlUpdateFlowUnderTest = Builder.sparqlUpdateFlow(testServerEndpoint)
 
-    val ( source, sink ) = TestSource.probe[SparqlRequest]
-      .via(sparqlRequestFlowUnderTest)
-      .toMat(TestSink.probe[SparqlResponse])(Keep.both)
+    val ( source, sink ) = TestSource.probe[SparqlUpdateRequest]
+      .via(sparqlUpdateFlowUnderTest)
+      .toMat(TestSink.probe[SparqlResponse[Boolean]])(Keep.both)
       .run()
 
     "1. Clear the data" in {

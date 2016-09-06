@@ -58,7 +58,7 @@ class SpraySparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
     true
   }
 
-  def handleSparqlClientError(statement_ : SparqlStatement, response_ : Option[HttpResponse]) = {
+  def handleSparqlClientError(statement_ : SparqlStatement[_], response_ : Option[HttpResponse]) = {
     system.log.error("Error '{}' occurred for SPARQL statement: {}",
                      response_.getOrElse(HttpResponse(status = StatusCodes.RequestTimeout)).status.defaultMessage,
                      statement_.statement)

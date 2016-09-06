@@ -20,8 +20,8 @@ case class MessageSparqlClientQueryEnd(sparql : SparqlQuery, rs : ResultSet) ext
 
 case class MessageSparqlClientUpdateSuccessful(sparql : SparqlUpdate) extends MessageSparqlClient
 
-case class MessageSparqlStatementFailed(
-  statement : SparqlStatement,
+case class MessageSparqlStatementFailed[T](
+  statement : SparqlStatement[T],
   response : Option[HttpResponse],
   error : Option[Throwable]) extends MessageSparqlClient
 
@@ -38,10 +38,10 @@ abstract class SparqlClient(
   extends UnknownMessageHandler
 {
 
-  def execute(requestor_ : ActorRef, sparql_ : SparqlStatement)
+  def execute(requestor_ : ActorRef, sparql_ : SparqlStatement[_])
 
   def localReceive : Receive = {
-    case sparql_ : SparqlStatement ⇒ execute(sender, sparql_)
+    case sparql_ : SparqlStatement[_] ⇒ execute(sender, sparql_)
   }
 
   def receive = localReceive orElse unknownMessage

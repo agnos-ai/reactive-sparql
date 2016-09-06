@@ -81,7 +81,7 @@ object SparqlHttpSprayClient {
     factory : ActorRefFactory,
     config : SparqlClientConfig,
     requestor : ActorRef,
-    statement : SparqlStatement,
+    statement : SparqlStatement[_],
     retry : Int) = {
     val props = statement match {
       case statement : SparqlQuery ⇒
@@ -99,7 +99,7 @@ object SparqlHttpSprayClient {
 class SparqlHttpSprayClient(
     config : SparqlClientConfig) extends SparqlClient(config) {
 
-  override def execute(requestor_ : ActorRef, statement_ : SparqlStatement) {
+  override def execute(requestor_ : ActorRef, statement_ : SparqlStatement[_]) {
     createActor(context, config, requestor_, statement_, 0)
   }
 }
@@ -112,7 +112,7 @@ private case class MessageConnect(attempt : Int)
  */
 private sealed abstract class ExtendedSparqlStatement(
     protected val requestor : ActorRef,
-    protected val statement : SparqlStatement,
+    protected val statement : SparqlStatement[_],
     protected val config : SparqlClientConfig) extends Actor with ActorLogging {
 
   import context.dispatcher

@@ -100,10 +100,10 @@ trait SparqlQueries {
       Person(qs.uri("g").get, qs.string("c").get)
     }
   }
-  case class Person(id: URI, name: String) extends SparqlResult
+  case class Person(id: URI, name: String)
 
-  lazy val mappingQuery2Get = SparqlQuery( select2, mapping = Person)
-  lazy val mappingQuery2Post = SparqlQuery( select2, method = POST, mapping = Person)
+  lazy val mappingQuery2Get = SparqlQuery(select2, mapping = Person)
+  lazy val mappingQuery2Post = SparqlQuery(select2, method = POST, mapping = Person)
 
   lazy val mappedQuery2Result = Person(uri("urn:test:mfab:data"), "William") :: Nil
 

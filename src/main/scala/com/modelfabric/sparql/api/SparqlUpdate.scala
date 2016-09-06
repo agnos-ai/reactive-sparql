@@ -24,7 +24,7 @@ object SparqlUpdate {
 }
 
 abstract class SparqlUpdate()(
-    implicit pm : PrefixMapping) extends SparqlStatement()(pm) {
+    implicit pm : PrefixMapping) extends SparqlStatement[Boolean]()(pm) {
 
   lazy val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
 
@@ -33,4 +33,5 @@ abstract class SparqlUpdate()(
   protected def formatDate(date : java.util.Date) = {
     formatter.format(date)
   }
+
 }

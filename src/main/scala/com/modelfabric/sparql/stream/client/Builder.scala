@@ -20,60 +20,6 @@ import scala.util.{Failure, Success, Try}
 
 object Builder {
 
- /**
-    * Create a partial flow Graph of sparql requests to results.
-    * {{{
-    *
-    * TODO
-    *
-    * }}}
-    *
-    * @param endpoint the HTTP endpoint of the Sparql triple store server
-    * @param _system the implicit actor system
-    * @param _materializer the actor materializer
-    * @param _context the Futures execution context
-    * @return
-    */
-  def sparqlRequestFlow(
-    endpoint: HttpEndpoint
-  )(implicit
-      _system: ActorSystem,
-      _materializer: ActorMaterializer,
-      _context: ExecutionContext
-  ) : Graph[FlowShape[SparqlRequest, SparqlResponse], NotUsed] = {
-
-    GraphDSL.create() { implicit builder =>
-      import GraphDSL.Implicits._
-
-      val broadcastRequest = builder.add(Broadcast[SparqlRequest](2))
-
-      val queryFilter = builder.add {
-        Flow[SparqlRequest].filter {
-          case r@SparqlRequest(SparqlQuery(_,_,_)) =>
-            true
-          case _ => false
-        }
-      }
-
-      val updateFilter = builder.add {
-        Flow[SparqlRequest].filter {
-          case r@SparqlRequest(SparqlUpdate(_,_)) =>
-            true
-          case _ => false
-        }
-      }
-
-      val responseMerger = builder.add(Merge[SparqlResponse](2).named("merge.sparqlResponse"))
-
-      broadcastRequest ~> queryFilter  ~> sparqlQueryFlow(endpoint)  ~> responseMerger
-      broadcastRequest ~> updateFilter ~> sparqlUpdateFlow(endpoint) ~> responseMerger
-
-      FlowShape(broadcastRequest.in, responseMerger.out)
-
-    } named "flow.sparqlRequestFlow"
-
-  }
-
   /**
     * Create a partial flow Graph of sparql requests to results.
     * {{{
@@ -88,29 +34,29 @@ object Builder {
     * @param _context the Futures execution context
     * @return
     */
-  def sparqlQueryFlow(
+  def sparqlQueryFlow[T](
     endpoint: HttpEndpoint
   )(implicit
     _system: ActorSystem,
     _materializer: ActorMaterializer,
     _context: ExecutionContext
-  ): Graph[FlowShape[SparqlRequest, SparqlResponse], NotUsed] = {
+  ): Graph[FlowShape[Request[T], Response[T]], NotUsed] = {
 
     GraphDSL.create() { implicit builder =>
 
       import GraphDSL.Implicits._
       import endpoint._
 
-      val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).async.named("mapping.sparqlToHttpRequest"))
-      val queryConnectionFlow = builder.add(Http().cachedHostConnectionPool[SparqlRequest](host, port).async.named("http.sparqlQueryConnection"))
-      val broadcastQueryHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).async.named("broadcast.queryResponse"))
-      val resultSetParser = builder.add(Flow[(Try[HttpResponse],SparqlRequest)].mapAsync(1)(res => responseToResultSet(res)).async.named("mapping.parseResultSet"))
-      val resultSetMapper = builder.add(Flow.fromFunction(resultSetToMappedResult).async.named("mapping.mapResultSet"))
-      val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).async.named("mapping.makeResponseFromHeader"))
-      val queryResultZipper = builder.add(ZipWith[List[SparqlResult], SparqlResponse, SparqlResponse](
+      val converter =                  builder.add(Flow.fromFunction(sparqlToRequest[T](endpoint)).async.named("mapping.sparqlToHttpRequest"))
+      val queryConnectionFlow =        builder.add(Http().cachedHostConnectionPool[Request[T]](host, port).async.named("http.sparqlQueryConnection"))
+      val broadcastQueryHttpResponse = builder.add(Broadcast[(Try[HttpResponse], Request[T])](2).async.named("broadcast.queryResponse"))
+      val resultSetParser =            builder.add(Flow[(Try[HttpResponse],Request[T])].mapAsync(1)(res => responseToResultSet[T](res)).async.named("mapping.parseResultSet"))
+      val resultSetMapper =            builder.add(Flow.fromFunction(resultSetToMappedResult[T]).async.named("mapping.mapResultSet"))
+      val resultMaker =                builder.add(Flow.fromFunction(responseToResponse[T]).async.named("mapping.makeResponseFromHeader"))
+      val queryResultZipper =          builder.add(ZipWith[T, Response[T], Response[T]](
         (result, response) =>
-          response.copy(result = result)
-      ).async.named("zipper.queryResultZipper"))
+          response.copy(result = Success(result))
+      ).async.named("zipper.queryResultZipper")) // TODO: Failure???
 
       converter ~> queryConnectionFlow ~> broadcastQueryHttpResponse ~> resultSetParser ~> resultSetMapper ~> queryResultZipper.in0
                                           broadcastQueryHttpResponse ~> resultMaker                        ~> queryResultZipper.in1
@@ -126,20 +72,20 @@ object Builder {
       _system: ActorSystem,
       _materializer: ActorMaterializer,
       _context: ExecutionContext
-  ) : Graph[FlowShape[SparqlRequest, SparqlResponse], NotUsed] = {
+  ) : Graph[FlowShape[Request[Boolean], Response[Boolean]], NotUsed] = {
 
     GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
       import endpoint._
 
-      val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).async.named("mapping.sparqlToHttpRequest"))
-      val updateConnectionFlow = builder.add(Http().cachedHostConnectionPool[SparqlRequest](host, port).async.named("http.sparqlUpdate"))
-      val broadcastUpdateHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).async.named("broadcast.updateResponse"))
-      val booleanParser = builder.add(Flow[(Try[HttpResponse], SparqlRequest)].mapAsync(1)(res => responseToBoolean(res)).async.named("mapping.parseBoolean"))
-      val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).async.named("mapping.makeResponseFromHeader"))
-      val updateResultZipper = builder.add(ZipWith[Boolean, SparqlResponse, SparqlResponse]( (success, response) =>
+      val converter = builder.add(Flow.fromFunction(sparqlToRequest[Boolean](endpoint)).async.named("mapping.sparqlToHttpRequest"))
+      val updateConnectionFlow = builder.add(Http().cachedHostConnectionPool[Request[Boolean]](host, port).async.named("http.sparqlUpdate"))
+      val broadcastUpdateHttpResponse = builder.add(Broadcast[(Try[HttpResponse], Request[Boolean])](2).async.named("broadcast.updateResponse"))
+      val booleanParser = builder.add(Flow[(Try[HttpResponse], Request[Boolean])].mapAsync(1)(res => responseToBoolean(res)).async.named("mapping.parseBoolean"))
+      val resultMaker = builder.add(Flow.fromFunction(responseToResponse[Boolean]).async.named("mapping.makeResponseFromHeader"))
+      val updateResultZipper = builder.add(ZipWith[Boolean, Response[Boolean], Response[Boolean]]( (bodyStatus, response) =>
         response.copy(
-          success = success
+          result = Success(bodyStatus) // TODO: Failure???
         )
       ).async.named("zipper.updateResultZipper"))
 
@@ -151,14 +97,15 @@ object Builder {
 
   }
 
-  private def sparqlToRequest(endpoint: HttpEndpoint)(request: SparqlRequest): (HttpRequest, SparqlRequest) = {
-    (makeHttpRequest(endpoint, request.statement), request)
+  private def sparqlToRequest[T](endpoint: HttpEndpoint)(request: Request[T]): (HttpRequest, Request[T]) = request match {
+    case statement: SparqlStatement[T] =>
+      (makeHttpRequest(endpoint, statement), request)
   }
 
   // JC: not good OO design. I think it's better to create a new class SparqlEndpoint
   // SSZ: not sure what you mean by that Jian? HttpEndpoint is BTW a class that abstracts spray/akka-http out of the
   // picture so the API is independent of the underlying implementation.
-  private def makeHttpRequest(endpoint: HttpEndpoint, sparql: SparqlStatement): HttpRequest = sparql match {
+  private def makeHttpRequest[T](endpoint: HttpEndpoint, sparql: SparqlStatement[T]): HttpRequest = sparql match {
     case SparqlQuery(HttpMethod.GET, query, _) =>
       HttpRequest(
         method = HttpMethods.GET,
@@ -200,12 +147,12 @@ object Builder {
     auth.toList
   }
 
-  private def responseToResultSet(response: (Try[HttpResponse], SparqlRequest))(
+  private def responseToResultSet[T](response: (Try[HttpResponse], Request[T]))(
     implicit
       _system: ActorSystem,
       _materializer: ActorMaterializer,
       _executionContext: ExecutionContext
-  ): Future[(ResultSet, SparqlRequest)] = {
+  ): Future[(ResultSet, Request[T])] = {
 
     response match {
       case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), request)
@@ -218,24 +165,24 @@ object Builder {
      }
   }
 
-  private def resultSetToMappedResult(resultSet: (ResultSet, SparqlRequest))(
+  private def resultSetToMappedResult[T](resultSet: (ResultSet, Request[T]))(
     implicit
     _system: ActorSystem,
     _materializer: ActorMaterializer,
     _executionContext: ExecutionContext
-  ): List[SparqlResult] = {
+  ): List[T] = {
 
     resultSet match {
-      case (r, SparqlRequest(SparqlQuery(_,_,mapper))) =>
+      case (r, SparqlQuery(_,_,mapper)) =>
         mapper
           .map(r)
-          .asInstanceOf[List[SparqlResult]]
+          .asInstanceOf[List[T]]
     }
 
   }
 
 
-  private def responseToBoolean(response: (Try[HttpResponse], SparqlRequest))(
+  private def responseToBoolean(response: (Try[HttpResponse], Request[Boolean]))(
     implicit
       _system: ActorSystem,
       _materializer: ActorMaterializer,
@@ -261,15 +208,14 @@ object Builder {
   }
 
 
-  private def responseToSparqlResponse(response: (Try[HttpResponse], SparqlRequest)): SparqlResponse = response match {
+  private def responseToResponse[T](response: (Try[HttpResponse], Request[T])): Response[T] = response match {
     case (Success(HttpResponse(StatusCodes.OK, _, _, _)), request) =>
-      SparqlResponse(success = true, request = request)
+      Response[T](request = request, result = Failure[T](null))
     case (Success(HttpResponse(status, headers, entity, _)), request) =>
-      val error = SparqlClientRequestFailed(s"Request failed with: $status, headers: ${headers.mkString("|")}, message: $entity)")
-      SparqlResponse(success = false, request = request, error = Some(error))
+      val error = IllegalResponseException(s"Request failed with: $status, headers: ${headers.mkString("|")}, message: $entity)")
+      Response[T](request = request, result = Failure[T](error))
     case (Failure(throwable), request) =>
-      val error = SparqlClientRequestFailedWithError("Request failed on the HTTP layer", throwable)
-      SparqlResponse(success = false, request = request, error = Some(error))
+      Response[T](request = request, result = Failure[T](throwable))
   }
 
   /*           */

@@ -8,10 +8,8 @@ import javax.xml.bind.DatatypeConverter
 
 import com.modelfabric.sparql.mapper.SolutionMapper
 
-trait SparqlResult
-
-trait ResultMapper[T <: SparqlResult] extends SolutionMapper[T] {
-  def map(result: ResultSet): List[T] = result.results.bindings.map { b =>
+trait ResultMapper[T] extends SolutionMapper[T] {
+  def map(result: ResultSet): T = result.results.bindings.map { b =>
     map(b)
   }
 }
@@ -21,7 +19,7 @@ object ResultSetMapper extends ResultMapper[ResultSet] {
   override def map(querySolution: QuerySolution): ResultSet = null //this is ugly
 }
 
-case class ResultSet(head : ResultSetVars, results : ResultSetResults) extends SparqlResult
+case class ResultSet(head : ResultSetVars, results : ResultSetResults)
 
 case class ResultSetVars(vars : List[String])
 

@@ -20,6 +20,46 @@ object BuildSettings {
   ) ++ Defaults.itSettings ++ Revolver.settings
 }
 
+object PublishingSettings {
+
+  lazy val jenkinsMavenSettings = Seq(
+    publishMavenStyle       := true,
+    publishArtifact in Test := false,
+    pomIncludeRepository    := { _ => false },
+    publishTo := {
+      val artifactory = "http://artifactory-ndc.bnymellon.net/artifactory/"
+      if (isSnapshot.value) {
+        Some("snapshots" at artifactory + "libs-snapshot-local")
+      } else {
+        Some("releases" at artifactory + "libs-release-local")
+      }
+    },
+    pomExtra := {
+      <scm>
+        <url>https://github.com/modelfabric/reactive-sparql.git</url>
+        <connection>scm:git:https://github.com/modelfabric/reactive-sparql.git</connection>
+      </scm>
+        <developers>
+          <developer>
+            <id>jgeluk</id>
+            <name>Jacobus Geluk</name>
+            <url>https://github.com/orgs/modelfabric/people/jgeluk</url>
+          </developer>
+          <developer>
+            <id>JianChen123</id>
+            <name>Jian Chen</name>
+            <url>https://github.com/orgs/modelfabric/people/JianChen123</url>
+          </developer>
+          <developer>
+            <id>szaniszlo</id>
+            <name>Stefan Szaniszlo</name>
+            <url>https://github.com/orgs/modelfabric/people/szaniszlo</url>
+          </developer>
+        </developers>
+    }
+  )
+}
+
 object Version {
 
   val scala      = "2.11.8"
@@ -58,6 +98,7 @@ object Library {
 object Build extends sbt.Build {
 
   import BuildSettings._
+  import PublishingSettings._
   import Library._
   import plugins._
 
@@ -69,6 +110,7 @@ object Build extends sbt.Build {
   lazy val project = Project("reactive-sparql", file("."))
     .configs(IntegrationTest)
     .settings(buildSettings: _*)
+    .settings(jenkinsMavenSettings: _*)
     .settings(name := "reactive-sparql")
     .settings(libraryDependencies ++= projectDependencies)
 } 

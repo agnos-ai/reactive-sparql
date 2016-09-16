@@ -49,7 +49,7 @@ object Builder {
 
       val queryFilter = builder.add {
         Flow[SparqlRequest].filter {
-          case r@SparqlRequest(SparqlQuery(_,_,_)) =>
+          case r@SparqlRequest(SparqlQuery(_,_,_,_)) =>
             true
           case _ => false
         }
@@ -159,21 +159,21 @@ object Builder {
   // SSZ: not sure what you mean by that Jian? HttpEndpoint is BTW a class that abstracts spray/akka-http out of the
   // picture so the API is independent of the underlying implementation.
   private def makeHttpRequest(endpoint: HttpEndpoint, sparql: SparqlStatement): HttpRequest = sparql match {
-    case SparqlQuery(HttpMethod.GET, query, _) =>
+    case SparqlQuery(HttpMethod.GET, query, _, reasoning) =>
       HttpRequest(
         method = HttpMethods.GET,
-        uri = s"${endpoint.path}$QUERY_URI_PART?$QUERY_PARAM_NAME=${sparql.statement.urlEncode}",
+        uri = s"${endpoint.path}$QUERY_URI_PART?$QUERY_PARAM_NAME=${sparql.statement.urlEncode}&$REASONING_PARAM_NAME=$reasoning",
         Accept(`application/sparql-results+json`) :: makeRequestHeaders(endpoint)
       )
 
-    case SparqlQuery(HttpMethod.POST, query, _) =>
+    case SparqlQuery(HttpMethod.POST, query, _, reasoning) =>
       HttpRequest(
         method = HttpMethods.POST,
         uri = s"${endpoint.path}$QUERY_URI_PART",
         Accept(`application/sparql-results+json`) :: makeRequestHeaders(endpoint)
       ).withEntity(
         `application/x-www-form-urlencoded`.toContentType,
-        s"$QUERY_PARAM_NAME=${sparql.statement.urlEncode}")
+        s"$QUERY_PARAM_NAME=${sparql.statement.urlEncode}&$REASONING_PARAM_NAME=$reasoning")
 
     case SparqlUpdate(HttpMethod.POST, update) =>
       HttpRequest(
@@ -226,7 +226,7 @@ object Builder {
   ): List[SparqlResult] = {
 
     resultSet match {
-      case (r, SparqlRequest(SparqlQuery(_,_,mapper))) =>
+      case (r, SparqlRequest(SparqlQuery(_,_,mapper,_))) =>
         mapper
           .map(r)
           .asInstanceOf[List[SparqlResult]]
@@ -279,6 +279,7 @@ object Builder {
   //SSZ: AFAIK yes: https://www.w3.org/TR/sparql11-protocol/
   private val QUERY_URI_PART = "/query"
   private val QUERY_PARAM_NAME = "query"
+  private val REASONING_PARAM_NAME = "reasoning"
 
   private val UPDATE_URI_PART = "/update"
   private val UPDATE_PARAM_NAME = "update"

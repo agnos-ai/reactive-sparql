@@ -6,7 +6,7 @@ import com.modelfabric.sparql.api.HttpMethod.GET
 object SparqlQuery {
 
   /**
-    * Construct a SparqlQuery from the passed string and implicit prefix mappings.
+    * Construct a SparqlQuery from the passed string and implicit prefix mappings with reasoning disabled by default.
     *
     * @param sparql the query string
     * @param _pm prefix mappings from the current scope
@@ -23,19 +23,23 @@ object SparqlQuery {
     * @param sparql the query string
     * @param method the HTTP method to use
     * @param mapping the Result Set mapping to use, defaults to ResultSets
+    * @param reasoningEnabled set to true to enable reasoning
     * @param _pm prefix mappings from the current scope
     * @return
     */
   def apply(
     sparql: String,
     method: HttpMethod = GET,
-    mapping: ResultMapper[_] = ResultSetMapper
+    mapping: ResultMapper[_] = ResultSetMapper,
+    reasoningEnabled: Boolean = false
+
   )(implicit _pm : PrefixMapping): SparqlQuery = {
 
     new SparqlQuery() {
       override val httpMethod = method
       override val statement = build(sparql)
       override val resultMapper = mapping
+      override val reasoning = reasoningEnabled
     }
   }
 
@@ -44,8 +48,8 @@ object SparqlQuery {
     * @param query
     * @return
     */
-  def unapply(query: SparqlQuery): Option[(HttpMethod, String, ResultMapper[_])] = {
-    Some((query.httpMethod, query.statement, query.resultMapper.asInstanceOf[ResultMapper[_ <: SparqlResult]]))
+  def unapply(query: SparqlQuery): Option[(HttpMethod, String, ResultMapper[_], Boolean)] = {
+    Some((query.httpMethod, query.statement, query.resultMapper.asInstanceOf[ResultMapper[_ <: SparqlResult]], query.reasoning))
   }
 
 }
@@ -65,6 +69,5 @@ abstract class SparqlQuery()(implicit _pm : PrefixMapping) extends SparqlStateme
     */
   def resultMapper : ResultMapper[_] = ResultSetMapper
 
-
-
+  def reasoning = false
 }

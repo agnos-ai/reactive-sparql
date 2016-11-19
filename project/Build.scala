@@ -75,6 +75,7 @@ object Version {
   val spray      = "1.3.3"
   val javaxWsRs  = "1.1.1"
   val jersey     = "1.19"
+  val bananaRdf  = "0.8.4"
   val logback    = "1.1.4"
   val scalaTest  = "2.2.5"
   val fuseki     = "2.4.0"
@@ -94,6 +95,7 @@ object Library {
   val javaxWsRs         = "javax.ws.rs"       %  "jsr311-api"                        % Version.javaxWsRs
   val jerseyCore        = "com.sun.jersey"    %  "jersey-core"                       % Version.jersey
   val jerseyClient      = "com.sun.jersey"    %  "jersey-client"                     % Version.jersey
+  val bananaRdf         = "org.w3"            %% "banana-rdf"                        % Version.bananaRdf
   val logbackClassic    = "ch.qos.logback"    %  "logback-classic"                   % Version.logback
   val scalaTest         = "org.scalatest"     %% "scalatest"                         % Version.scalaTest   % "it,test"
   val akkaTestkit       = "com.typesafe.akka" %% "akka-testkit"                      % Version.akka        % "it,test"

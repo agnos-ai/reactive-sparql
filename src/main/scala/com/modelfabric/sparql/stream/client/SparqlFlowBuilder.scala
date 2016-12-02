@@ -92,8 +92,8 @@ trait SparqlFlowBuilder {
 
       val responseMerger = builder.add(Merge[SparqlResponse](2).named("merge.sparqlResponse"))
 
-      partition.out(0) ~> sparqlQueryFlow(endpoint)  ~> responseMerger.in(0)
-      partition.out(1) ~> sparqlUpdateFlow(endpoint) ~> responseMerger.in(1)
+      partition ~> sparqlQueryFlow(endpoint)  ~> responseMerger
+      partition ~> sparqlUpdateFlow(endpoint) ~> responseMerger
 
       FlowShape(partition.in, responseMerger.out)
 

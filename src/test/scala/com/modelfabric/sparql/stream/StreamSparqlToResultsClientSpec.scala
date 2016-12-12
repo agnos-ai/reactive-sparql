@@ -1,7 +1,5 @@
 package com.modelfabric.sparql.stream
 
-import java.net.URI
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
@@ -10,7 +8,7 @@ import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestKit
 import com.modelfabric.sparql.SparqlQueries
 import com.modelfabric.sparql.api._
-import com.modelfabric.sparql.stream.client.SparqlFlowBuilder
+import com.modelfabric.sparql.stream.client.{SparqlQueryToResultsFlowBuilder, SparqlRequestFlowBuilder}
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 import org.scalatest._
 
@@ -24,8 +22,8 @@ import scala.language.postfixOps
   * @param _system the actor system
   */
 @DoNotDiscover
-class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
-  with WordSpecLike with MustMatchers with BeforeAndAfterAll with SparqlQueries with SparqlFlowBuilder {
+class StreamSparqlToResultsClientSpec(val _system: ActorSystem) extends TestKit(_system)
+  with WordSpecLike with MustMatchers with BeforeAndAfterAll with SparqlQueries with SparqlRequestFlowBuilder {
 
   implicit val materializer = ActorMaterializer()(system)
   implicit val dispatcher = system.dispatcher

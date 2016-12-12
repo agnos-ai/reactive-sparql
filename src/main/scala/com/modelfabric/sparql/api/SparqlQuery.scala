@@ -71,3 +71,5 @@ abstract class SparqlQuery()(implicit _pm : PrefixMapping) extends SparqlStateme
 
   def reasoning = false
 }
+
+case class SparqlGraphConstruct(statement: String)(implicit _pm: PrefixMapping) extends SparqlStatement()(_pm)

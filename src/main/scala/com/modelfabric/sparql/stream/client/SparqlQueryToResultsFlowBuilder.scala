@@ -61,7 +61,7 @@ trait SparqlQueryToResultsFlowBuilder extends SparqlClientHelpers {
   private def responseToResultSet(response: (Try[HttpResponse], SparqlRequest)): Future[(ResultSet, SparqlRequest)] = {
     response match {
       case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), request)
-        if entity.contentType == `application/sparql-results+json` =>
+        if entity.contentType.mediaType == `application/sparql-results+json`.mediaType =>
         /* we need to override the content type, because the spray-json parser does not understand */
         /* anything but 'application/json' */
         Unmarshal(entity.withContentType(ContentTypes.`application/json`)).to[ResultSet] map {

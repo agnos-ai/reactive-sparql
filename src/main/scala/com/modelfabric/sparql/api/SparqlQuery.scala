@@ -32,7 +32,6 @@ object SparqlQuery {
     method: HttpMethod = GET,
     mapping: ResultMapper[_] = ResultSetMapper,
     reasoningEnabled: Boolean = false
-
   )(implicit _pm : PrefixMapping): SparqlQuery = {
 
     new SparqlQuery() {
@@ -71,5 +70,3 @@ abstract class SparqlQuery()(implicit _pm : PrefixMapping) extends SparqlStateme
 
   def reasoning = false
 }
-
-case class SparqlGraphConstruct(statement: String)(implicit _pm: PrefixMapping) extends SparqlStatement()(_pm)

@@ -11,9 +11,10 @@ object SparqlUpdate {
     * @param _pm prefix mappings from the current scope
     * @return
     */
-  def apply(sparql: String)(implicit _pm : PrefixMapping): SparqlUpdate = {
+  def apply(sparql: String)(
+    implicit _pm : PrefixMapping): SparqlUpdate = {
     new SparqlUpdate() {
-      override val statement = build(sparql)
+      override val statement: String = build(sparql)
     }
   }
 
@@ -24,11 +25,11 @@ object SparqlUpdate {
 }
 
 abstract class SparqlUpdate()(
-    implicit pm : PrefixMapping) extends SparqlStatement()(pm) {
+  implicit _pm: PrefixMapping) extends SparqlStatement()(_pm) {
 
   lazy val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
 
-  override def httpMethod = HttpMethod.POST
+  override val httpMethod = HttpMethod.POST
 
   protected def formatDate(date : java.util.Date) = {
     formatter.format(date)

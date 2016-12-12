@@ -2,7 +2,7 @@ package com.modelfabric.sparql.stream.client
 
 import akka.stream.FlowShape
 import akka.stream.scaladsl.{Flow, GraphDSL, Merge, Partition}
-import com.modelfabric.sparql.api.{SparqlQuery, SparqlRequest, SparqlResponse, SparqlUpdate}
+import com.modelfabric.sparql.api.{SparqlModelConstruct, _}
 import com.modelfabric.sparql.util.HttpEndpoint
 
 
@@ -26,15 +26,17 @@ trait SparqlRequestFlowBuilder extends SparqlQueryToResultsFlowBuilder
     Flow.fromGraph(GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
-      val partition = builder.add(Partition[SparqlRequest](2, {
+      val partition = builder.add(Partition[SparqlRequest](3, {
         case SparqlRequest(SparqlQuery(_,_,_,_)) => 0
         case SparqlRequest(SparqlUpdate(_,_)) => 1
+        case SparqlRequest(SparqlModelConstruct(_,_)) => 2
       }))
 
-      val responseMerger = builder.add(Merge[SparqlResponse](2).named("merge.sparqlResponse"))
+      val responseMerger = builder.add(Merge[SparqlResponse](3).named("merge.sparqlResponse"))
 
       partition ~> sparqlQueryFlow(endpoint)  ~> responseMerger
       partition ~> sparqlUpdateFlow(endpoint) ~> responseMerger
+      partition ~> sparqlModelConstructFlow(endpoint) ~> responseMerger
 
       FlowShape(partition.in, responseMerger.out)
 

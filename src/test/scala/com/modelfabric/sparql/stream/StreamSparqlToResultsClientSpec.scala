@@ -12,7 +12,7 @@ import com.modelfabric.sparql.stream.client.{SparqlQueryToResultsFlowBuilder, Sp
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 import org.scalatest._
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -23,13 +23,14 @@ import scala.language.postfixOps
   */
 @DoNotDiscover
 class StreamSparqlToResultsClientSpec(val _system: ActorSystem) extends TestKit(_system)
-  with WordSpecLike with MustMatchers with BeforeAndAfterAll with SparqlQueries with SparqlRequestFlowBuilder {
+  with WordSpecLike with MustMatchers with BeforeAndAfterAll
+  with SparqlQueries with SparqlRequestFlowBuilder {
 
-  implicit val materializer = ActorMaterializer()(system)
-  implicit val dispatcher = system.dispatcher
-  implicit val prefixMapping = PrefixMapping.none
+  implicit val materializer: ActorMaterializer = ActorMaterializer()(system)
+  implicit val dispatcher: ExecutionContext = system.dispatcher
+  implicit val prefixMapping: PrefixMapping = PrefixMapping.none
 
-  val receiveTimeout = 5 seconds
+  implicit val receiveTimeout: FiniteDuration = 5 seconds
 
   import HttpEndpointSuiteTestRunner._
 
@@ -124,7 +125,6 @@ class StreamSparqlToResultsClientSpec(val _system: ActorSystem) extends TestKit(
 
       source.sendComplete()
       sink.expectComplete()
-      sink.expectNoMsg(receiveTimeout)
     }
 
   }

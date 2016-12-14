@@ -42,4 +42,21 @@ object SparqlClientConstants {
     */
   val `text/boolean`: ContentType.NonBinary =
     MediaType.text(TEXT_BOOLEAN_MIME_TYPE).toContentType(HttpCharsets.`UTF-8`)
+
+  /**
+    * Content Type for application/ld+json
+    */
+  val `application/ld+json`: ContentType.NonBinary = MediaType.applicationWithFixedCharset("ld+json", HttpCharsets.`UTF-8`).toContentType
+
+  /**
+    * Content Type for text/x-nquads and application/n-quads
+    */
+  val `text/x-nquads`: ContentType.NonBinary = MediaType.text("x-nquads").toContentType(HttpCharsets.`UTF-8`)
+  val `application/n-quads`: ContentType.NonBinary = MediaType.applicationWithFixedCharset("n-quads", HttpCharsets.`UTF-8`).toContentType
+
+  /**
+    * Content Type for text/turtle
+    */
+  val `text/turtle`: ContentType.NonBinary = MediaType.text("turtle").toContentType(HttpCharsets.`UTF-8`)
+
 }

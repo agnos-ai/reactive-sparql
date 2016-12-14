@@ -36,7 +36,7 @@ class MappingStreamSparqlToResultsClientSpec(val _system: ActorSystem) extends T
   import HttpEndpointSuiteTestRunner._
 
   "The Akka-Streams Sparql Client" must {
-    val sparqlRequestFlowUnderTest = sparqlRequestFlow(testServerEndpoint)
+    val sparqlRequestFlowUnderTest = sparqlRequestFlow(testServerEndpoint).log("requestFlowLogger")
 
     val ( source, sink ) = TestSource.probe[SparqlRequest]
       .via(sparqlRequestFlowUnderTest)
@@ -54,7 +54,7 @@ class MappingStreamSparqlToResultsClientSpec(val _system: ActorSystem) extends T
       source.sendNext(SparqlRequest(query1))
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, emptyResult, None) => assert(true)
+        case SparqlResponse (_, true, result, None) => assert(result === emptyResult)
       }
 
     }
@@ -74,7 +74,7 @@ class MappingStreamSparqlToResultsClientSpec(val _system: ActorSystem) extends T
       source.sendNext(SparqlRequest(mappingQuery2Get))
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, mappedQuery2Result, None) => assert(true)
+        case SparqlResponse (_, true, result, None) => assert(result === mappedQuery1Result)
         case r@SparqlResponse(_, _, _, _) => assert(false, r)
       }
     }
@@ -85,7 +85,7 @@ class MappingStreamSparqlToResultsClientSpec(val _system: ActorSystem) extends T
       source.sendNext(SparqlRequest(mappingQuery2Post))
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, mappedQuery2Result, None) => assert(true)
+        case SparqlResponse (_, true, result, None) => assert(result === mappedQuery1Result)
         case r@SparqlResponse(_, _, _, _) => assert(false, r)
       }
 
@@ -95,7 +95,6 @@ class MappingStreamSparqlToResultsClientSpec(val _system: ActorSystem) extends T
 
       source.sendComplete()
       sink.expectComplete()
-      sink.expectNoMsg(receiveTimeout)
     }
 
   }

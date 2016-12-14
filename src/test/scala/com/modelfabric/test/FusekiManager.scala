@@ -38,7 +38,7 @@ object FusekiManager {
     override def run(): Unit = {
       // JC: another option is to call org.apache.jena.fuseki.cmd.FusekiCmd.main(args), instead of starting a process
       val path = new org.apache.jena.fuseki.Fuseki().getClass.getProtectionDomain.getCodeSource.getLocation.getPath
-      val cmd = s"java -jar $path --port=$port --mem --update $resource"
+      val cmd = s"java -Xms1g -Xmx1g -jar $path --port=$port --mem --update $resource"
       println(s"Launching Fuseki Server: $cmd")
       process = Some(Runtime.getRuntime.exec(cmd))
     }

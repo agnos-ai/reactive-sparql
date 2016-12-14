@@ -28,7 +28,7 @@ abstract class SparqlStatement()(implicit val pm : PrefixMapping) {
   protected def build(statement_ : String) : String = s"""
     |${pm.sparql}
     ${statement_}
-  """.trim.stripped
+  """.stripped.trim
 
   override def toString = super.toString + ":\n" + statement
 

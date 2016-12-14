@@ -75,6 +75,7 @@ object Version {
   val spray      = "1.3.3"
   val javaxWsRs  = "1.1.1"
   val jersey     = "1.19"
+  val rdf4j      = "2.1.2"
   val logback    = "1.1.4"
   val scalaTest  = "2.2.5"
   val fuseki     = "2.4.0"
@@ -95,6 +96,7 @@ object Library {
   val jerseyCore        = "com.sun.jersey"    %  "jersey-core"                       % Version.jersey
   val jerseyClient      = "com.sun.jersey"    %  "jersey-client"                     % Version.jersey
   val logbackClassic    = "ch.qos.logback"    %  "logback-classic"                   % Version.logback
+  val rdf4jRuntime     = "org.eclipse.rdf4j" % "rdf4j-runtime"                       % Version.rdf4j withSources()
   val scalaTest         = "org.scalatest"     %% "scalatest"                         % Version.scalaTest   % "it,test"
   val akkaTestkit       = "com.typesafe.akka" %% "akka-testkit"                      % Version.akka        % "it,test"
   val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit"               % Version.akka        % "it,test"
@@ -110,7 +112,7 @@ object Build extends sbt.Build {
 
   val projectDependencies = Seq(
     scalaUtils, akkaActor, akkaStream, akkaHttpCore, akkaHttpExp, akkaHttpSprayJson, akkaSlf4j,
-    sprayClient, sprayJson, javaxWsRs, jerseyCore, jerseyClient,
+    sprayClient, sprayJson, javaxWsRs, jerseyCore, jerseyClient, rdf4jRuntime,
     logbackClassic, scalaTest, akkaTestkit, akkaStreamTestkit, fusekiServer)
 
   lazy val project = Project("reactive-sparql", file("."))

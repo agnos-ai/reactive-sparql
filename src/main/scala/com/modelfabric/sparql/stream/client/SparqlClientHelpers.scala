@@ -1,7 +1,11 @@
 package com.modelfabric.sparql.stream.client
 
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpMethod => _, _}
 import akka.http.scaladsl.model.headers.{Accept, Authorization, BasicHttpCredentials}
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.Flow
 import com.modelfabric.sparql.api._
 import com.modelfabric.sparql.stream.client.SparqlClientConstants._
 import com.modelfabric.sparql.util.{BasicAuthentication, HttpEndpoint}
@@ -12,6 +16,13 @@ import scala.util.{Failure, Success, Try}
 trait SparqlClientHelpers {
 
   import com.modelfabric.extension.StringExtensions._
+
+  implicit val system: ActorSystem
+  implicit val materializer: ActorMaterializer
+
+  def pooledHttpClientFlow(endpoint: HttpEndpoint): Flow[(HttpRequest, SparqlRequest), (Try[HttpResponse], SparqlRequest), _] = {
+    Http().cachedHostConnectionPool[SparqlRequest](endpoint.host, endpoint.port)
+  }
 
   def sparqlToRequest(endpoint: HttpEndpoint)(request: SparqlRequest): (HttpRequest, SparqlRequest) = {
     (makeHttpRequest(endpoint, request.statement), request)
@@ -24,7 +35,7 @@ trait SparqlClientHelpers {
     case SparqlQuery(HttpMethod.GET, query, _, reasoning) =>
       HttpRequest(
         method = HttpMethods.GET,
-        uri = s"${endpoint.path}$QUERY_URI_PART?$QUERY_PARAM_NAME=${sparql.statement.urlEncode}&$REASONING_PARAM_NAME=$reasoning",
+        uri = s"${endpoint.path}$QUERY_URI_PART?$QUERY_PARAM_NAME=${query.urlEncode}&$REASONING_PARAM_NAME=$reasoning",
         Accept(`application/sparql-results+json`.mediaType) :: makeRequestHeaders(endpoint)
       )
 
@@ -35,16 +46,28 @@ trait SparqlClientHelpers {
         Accept(`application/sparql-results+json`.mediaType) :: makeRequestHeaders(endpoint)
       ).withEntity(
         `application/x-www-form-urlencoded`,
-        s"$QUERY_PARAM_NAME=${sparql.statement.urlEncode}&$REASONING_PARAM_NAME=$reasoning")
+        s"$QUERY_PARAM_NAME=${query.urlEncode}&$REASONING_PARAM_NAME=$reasoning"
+      )
+
+    case SparqlModelConstruct(HttpMethod.POST, query, reasoning) =>
+      HttpRequest(
+        method = HttpMethods.POST,
+        uri = s"${endpoint.path}$QUERY_URI_PART",
+        Accept(`application/n-quads`.mediaType) :: makeRequestHeaders(endpoint)
+        //Accept(`text/x-nquads`.mediaType) :: makeRequestHeaders(endpoint)
+      ).withEntity(
+        `application/x-www-form-urlencoded`,
+        s"$QUERY_PARAM_NAME=${query.urlEncode}&$REASONING_PARAM_NAME=$reasoning"
+      )
 
     case SparqlUpdate(HttpMethod.POST, update) =>
       HttpRequest(
         method = HttpMethods.POST,
         uri = s"${endpoint.path}$UPDATE_URI_PART",
-        Accept(ContentTypes.`text/plain(UTF-8)`.mediaType) :: makeRequestHeaders(endpoint)
+        Accept(`text/boolean`.mediaType) :: makeRequestHeaders(endpoint)
       ).withEntity(
         `application/x-www-form-urlencoded`,
-        s"$UPDATE_PARAM_NAME=${sparql.statement.urlEncode}")
+        s"$UPDATE_PARAM_NAME=${update.urlEncode}")
   }
 
   // JC: the method name could be more specific

@@ -55,15 +55,15 @@ trait SparqlUpdateFlowBuilder extends SparqlClientHelpers {
       case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _)
         if entity.contentType == `text/boolean` =>
         Unmarshal(entity).to[Boolean]
-      case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) =>
-        println(s"Unexpected response content type: ${entity.contentType} and/or media type: ${entity.contentType.mediaType}")
+      case (Success(HttpResponse(StatusCodes.OK, _, _, _)), _) =>
+        //println(s"WARING: Unexpected response content type: ${entity.contentType} and/or media type: ${entity.contentType.mediaType}")
         Future.successful(true)
       case (Success(HttpResponse(status, _, _, _)), _) =>
-        println(s"Unexpected response status: $status")
-        Future.successful(true)
+        println()
+        Future.failed(new IllegalArgumentException(s"Unexpected response status: $status"))
       case x@_ =>
         println(s"Unexpected response: $x")
-        Future.successful(false)
+        Future.failed(new IllegalArgumentException(s"Unexpected response: $x"))
     }
   }
 

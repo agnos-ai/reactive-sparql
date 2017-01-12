@@ -32,14 +32,14 @@ trait SparqlClientHelpers {
   // SSZ: not sure what you mean by that Jian? HttpEndpoint is BTW a class that abstracts spray/akka-http out of the
   // picture so the API is independent of the underlying implementation.
   def makeHttpRequest(endpoint: HttpEndpoint, sparql: SparqlStatement): HttpRequest = sparql match {
-    case SparqlQuery(HttpMethod.GET, query, _, reasoning) =>
+    case SparqlQuery(HttpMethod.GET, query, _, reasoning,_) =>
       HttpRequest(
         method = HttpMethods.GET,
         uri = s"${endpoint.path}$QUERY_URI_PART?$QUERY_PARAM_NAME=${query.urlEncode}&$REASONING_PARAM_NAME=$reasoning",
         Accept(`application/sparql-results+json`.mediaType) :: makeRequestHeaders(endpoint)
       )
 
-    case SparqlQuery(HttpMethod.POST, query, _, reasoning) =>
+    case SparqlQuery(HttpMethod.POST, query, _, reasoning, _) =>
       HttpRequest(
         method = HttpMethods.POST,
         uri = s"${endpoint.path}$QUERY_URI_PART",

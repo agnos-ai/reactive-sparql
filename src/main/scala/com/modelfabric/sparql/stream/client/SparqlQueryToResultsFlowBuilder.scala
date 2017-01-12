@@ -78,7 +78,7 @@ trait SparqlQueryToResultsFlowBuilder extends SparqlClientHelpers {
   ): List[SparqlResult] = {
 
     resultSet match {
-      case (r, SparqlRequest(SparqlQuery(_,_,mapper,_))) =>
+      case (r, SparqlRequest(SparqlQuery(_,_,mapper,_,_))) =>
         mapper
           .map(r)
           .asInstanceOf[List[SparqlResult]]

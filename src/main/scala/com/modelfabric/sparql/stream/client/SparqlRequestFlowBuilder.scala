@@ -27,7 +27,7 @@ trait SparqlRequestFlowBuilder extends SparqlQueryToResultsFlowBuilder
       import GraphDSL.Implicits._
 
       val partition = builder.add(Partition[SparqlRequest](3, {
-        case SparqlRequest(SparqlQuery(_,_,_,_)) => 0
+        case SparqlRequest(SparqlQuery(_,_,_,_,_)) => 0
         case SparqlRequest(SparqlUpdate(_,_)) => 1
         case SparqlRequest(SparqlModelConstruct(_,_,_)) => 2
       }))

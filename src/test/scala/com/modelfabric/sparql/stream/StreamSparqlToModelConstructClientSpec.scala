@@ -73,7 +73,7 @@ class StreamSparqlToModelConstructClientSpec(val _system: ActorSystem) extends T
       sink.request(1)
       source.sendNext(
         SparqlRequest(
-          SparqlModelConstruct(graphIRIs = modelAlternateGraphIri :: Nil)(PrefixMapping.standard)
+          SparqlModelConstruct(graphIRIs = modelAlternateGraphIri :: Nil)
         )
       )
 
@@ -90,7 +90,7 @@ class StreamSparqlToModelConstructClientSpec(val _system: ActorSystem) extends T
       sink.request(1)
       source.sendNext(
         SparqlRequest(
-          SparqlModelConstruct()(PrefixMapping.standard)
+          SparqlModelConstruct()
         )
       )
 
@@ -109,7 +109,7 @@ class StreamSparqlToModelConstructClientSpec(val _system: ActorSystem) extends T
         SparqlRequest(
           SparqlModelConstruct(
             resourceIRIs = modelResourceIri("0") :: Nil
-          )(PrefixMapping.standard)
+          )
         )
       )
 
@@ -128,7 +128,7 @@ class StreamSparqlToModelConstructClientSpec(val _system: ActorSystem) extends T
         SparqlRequest(
           SparqlModelConstruct(
             propertyIRIs = uri(PrefixMapping.standard.getNsPrefixURI("rdfs") + "label") :: Nil
-          )(PrefixMapping.standard)
+          )
         )
       )
 

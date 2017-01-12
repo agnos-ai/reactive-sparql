@@ -1,7 +1,7 @@
 package com.modelfabric.sparql.stream.client
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.{ContentType, HttpHeader, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{ContentType, HttpResponse, StatusCodes}
 import akka.stream.{ActorMaterializer, FlowShape}
 import akka.stream.scaladsl.{Broadcast, Flow, Framing, GraphDSL, Source, ZipWith}
 import akka.util.ByteString
@@ -32,6 +32,8 @@ trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
   implicit val system: ActorSystem
   implicit val materializer: ActorMaterializer
   implicit val dispatcher: ExecutionContext
+
+  type Sparql = String
 
   def sparqlModelConstructFlow(
     endpoint: HttpEndpoint
@@ -97,7 +99,8 @@ trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
     }
   }
 
-  val responseToPagingModelFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, _] = Flow[(Try[HttpResponse], SparqlRequest)]
+  //@deprecated
+  private val responseToPagingModelFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, _] = Flow[(Try[HttpResponse], SparqlRequest)]
     .flatMapConcat {
       case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) => entity.withoutSizeLimit().getDataBytes()
     }

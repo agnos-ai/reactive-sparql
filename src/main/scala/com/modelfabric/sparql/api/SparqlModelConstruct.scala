@@ -2,22 +2,14 @@ package com.modelfabric.sparql.api
 
 import java.net.URI
 
-//TODO: refactor the SparqlPagingParams classes to work with these
-abstract class PagingParams() {
-  val offset: Option[Long] = None
-  val limit: Option[Long] = None
-}
-case object NoPaging extends PagingParams
-case class ConstructPaging(override val offset: Option[Long], override val limit: Option[Long]) extends PagingParams
-
 object SparqlModelConstruct {
   def apply(resourceIRIs: Seq[URI] = Nil,
             propertyIRIs: Seq[URI] = Nil,
             graphIRIs: Seq[URI] = Nil,
             reasoningEnabled: Boolean = false)(
-    implicit _pm: PrefixMapping = PrefixMapping.none, _paging: PagingParams = NoPaging
+    implicit _paging: PagingParams = NoPaging
   ): SparqlModelConstruct = {
-    new SparqlModelConstruct()(_pm) {
+    new SparqlModelConstruct()(PrefixMapping.standard) {
 
       private def values(binding: String, iris: Seq[URI]): String = {
         def mkIRIs(iris: Seq[URI]): String = {
@@ -74,6 +66,7 @@ object SparqlModelConstruct {
         """.stripMargin.trim
       }
 
+      // this won't work when n-quads or n-triples are required to be returned via HTTP from the triple store.
       private val graphConstructViaSelect = {
         s"""
            |SELECT ?resourceIri ?propertyIri ?value ?graphIri

@@ -3,7 +3,7 @@ package com.modelfabric.test
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
 import com.modelfabric.sparql.spray.SpraySparqlClientSpec
-import com.modelfabric.sparql.stream.{MappingStreamSparqlClientSpec, StreamSparqlClientSpec, StreamSpec}
+import com.modelfabric.sparql.stream.{MappingStreamSparqlToResultsClientSpec, StreamSparqlToModelConstructClientSpec, StreamSparqlToResultsClientSpec, StreamSpec}
 import com.modelfabric.sparql.util.{BasicAuthentication, HttpEndpoint}
 import com.modelfabric.test.FusekiManager._
 import com.typesafe.config.ConfigFactory
@@ -91,10 +91,11 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
     * @return
     */
   override def nestedSuites = Vector(
+    new StreamSparqlToModelConstructClientSpec(system),
     new SpraySparqlClientSpec(system),
     new StreamSpec(system),
-    new StreamSparqlClientSpec(system),
-    new MappingStreamSparqlClientSpec(system)
+    new StreamSparqlToResultsClientSpec(system),
+    new MappingStreamSparqlToResultsClientSpec(system)
   )
 
   val _log = akka.event.Logging(this.system, testActor)

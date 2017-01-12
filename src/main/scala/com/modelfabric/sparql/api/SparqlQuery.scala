@@ -32,14 +32,14 @@ object SparqlQuery {
     method: HttpMethod = GET,
     mapping: ResultMapper[_] = ResultSetMapper,
     reasoningEnabled: Boolean = false
-
-  )(implicit _pm : PrefixMapping): SparqlQuery = {
+  )(implicit _pm : PrefixMapping = PrefixMapping.none, _paging: PagingParams = PagingParams.Defaults): SparqlQuery = {
 
     new SparqlQuery() {
       override val httpMethod = method
       override val statement = build(sparql)
       override val resultMapper = mapping
       override val reasoning = reasoningEnabled
+      //override val paging = _paging
     }
   }
 
@@ -48,8 +48,8 @@ object SparqlQuery {
     * @param query
     * @return
     */
-  def unapply(query: SparqlQuery): Option[(HttpMethod, String, ResultMapper[_], Boolean)] = {
-    Some((query.httpMethod, query.statement, query.resultMapper.asInstanceOf[ResultMapper[_ <: SparqlResult]], query.reasoning))
+  def unapply(query: SparqlQuery): Option[(HttpMethod, String, ResultMapper[_], Boolean, PagingParams)] = {
+    Some((query.httpMethod, query.statement, query.resultMapper.asInstanceOf[ResultMapper[_ <: SparqlResult]], query.reasoning, query.paging))
   }
 
 }
@@ -70,4 +70,6 @@ abstract class SparqlQuery()(implicit _pm : PrefixMapping) extends SparqlStateme
   def resultMapper : ResultMapper[_] = ResultSetMapper
 
   def reasoning = false
+
+  def paging = NoPaging
 }

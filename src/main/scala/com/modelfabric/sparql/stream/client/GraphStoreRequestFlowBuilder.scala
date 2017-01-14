@@ -1,10 +1,11 @@
 package com.modelfabric.sparql.stream.client
 
-import java.io.StringWriter
+import java.io.{StringReader, StringWriter}
 import java.net.{URI, URL}
 import java.nio.file.Path
 
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.headers.Accept
 import akka.http.scaladsl.model.{HttpEntity, _}
 import akka.stream.scaladsl.{FileIO, Flow, Source}
 import akka.util.ByteString
@@ -13,8 +14,8 @@ import com.modelfabric.sparql.util.HttpEndpoint
 import org.eclipse.rdf4j.model.Model
 import org.eclipse.rdf4j.rio.{RDFFormat, Rio}
 
-import scala.concurrent.Future
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
+import scala.concurrent.duration._
 
 
 object GraphStoreRequestFlowBuilder {
@@ -24,6 +25,7 @@ object GraphStoreRequestFlowBuilder {
     */
   val successfulHttpResponseStatusCodes: Set[StatusCode] = {
     Set(
+      StatusCodes.OK,
       StatusCodes.Created,
       StatusCodes.Accepted,
       StatusCodes.NoContent,
@@ -60,12 +62,72 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
 
   import GraphStoreRequestFlowBuilder._
 
-  def graphStoreRequestFlow(
-    endpoint: HttpEndpoint
-  ): Flow[GraphStoreRequest, GraphStoreResponse, _] = {
-      Flow.fromFunction(graphStoreOpToRequest(endpoint))
-        .via(Http().cachedHostConnectionPool[GraphStoreRequest](endpoint.host, endpoint.port))
-        .mapAsync(numberOfCpuCores)(s => responseToResult(s._1, s._2))
+  /**
+    * If this is set to true (default) then the response entity is "strictified", i.e. all chunks are loaded
+    * into memory in one go.
+    */
+  val useStrictByteStringStrategy = true
+
+  /**
+    * How long to wait for a [[HttpEntity.Strict]] to appear when processing the [[HttpEntity]]
+    */
+  val strictEntityReadTimeout: FiniteDuration = 60 seconds
+
+  def graphStoreRequestFlow(endpoint: HttpEndpoint): Flow[GraphStoreRequest, GraphStoreResponse, _] = {
+    Flow
+      .fromFunction(graphStoreOpToRequest(endpoint))
+      .via(Http().cachedHostConnectionPool[GraphStoreRequest](endpoint.host, endpoint.port))
+      .flatMapConcat {
+      case (Success(response), request) =>
+        val gsr = GraphStoreResponse(
+          request,
+          success = calculateSuccess(response.status),
+          statusCode = response.status.intValue,
+          statusText = response.status.reason
+        )
+        makeModelSource(response.entity).map( s => gsr.copy(model = s)).take(1)
+
+      case (Failure(error), _) =>
+        throw error //fail the stream, there is nothing we can do
+    }
+  }
+
+  def makeModelSource(entity: HttpEntity): Source[Option[Model], Any] = {
+    if ( entity.isKnownEmpty()
+      || entity.contentType.mediaType != `application/n-quads`.mediaType) {
+      entity.discardBytes()
+      Source.single(None)
+    } else if ( !useStrictByteStringStrategy) {
+      // TODO: mapping over the data bytes stream won't work because the stream will never emit for empty entities
+      entity.dataBytes
+        .map { bs =>
+          val reader = new StringReader(bs.utf8String)
+          val mt = Try(Rio.parse(reader, "", RDFFormat.NQUADS))
+          println(mt.toString)
+          mt.toOption
+        }
+    } else if (useStrictByteStringStrategy) {
+      // this workaround does seem to be alright, because chunked resonses have a limited size
+      Source.single(entity.withoutSizeLimit())
+        .mapAsync(numberOfCpuCores)(_.toStrict(strictEntityReadTimeout))
+        .map { bs =>
+          val reader = new StringReader(bs.data.utf8String)
+          val mt = Try(Rio.parse(reader, "", RDFFormat.NQUADS))
+          println(mt.toString)
+          mt.toOption
+        }
+    } else {
+      // unreachable code, but IntelliJ is dumb for not seeing that
+      ???
+    }
+  }
+
+  def calculateSuccess(statusCode: StatusCode): Boolean = {
+    if (successfulHttpResponseStatusCodes.contains(statusCode)) true
+    else if (failingHttpResponseStatusCodes.contains(statusCode)) false
+    else {
+      throw SparqlClientRequestFailed(s"request failed with status code: $statusCode")
+    }
   }
 
   def graphStoreOpToRequest(endpoint: HttpEndpoint)(graphStoreRequest: GraphStoreRequest): (HttpRequest, GraphStoreRequest) = {
@@ -74,25 +136,36 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
 
   def makeHttpRequest(endpoint: HttpEndpoint, request: GraphStoreRequest): HttpRequest = {
     request match {
-      case DropGraph(graphUri, ApiHttpMethod.DELETE) =>
+
+      case GetGraphM(graphUri, method) =>
         HttpRequest(
-          method = HttpMethods.DELETE,
+          method = mapHttpMethod(method),
           uri = s"${endpoint.path}${mapGraphOptionToPath(graphUri)}"
+        ).withHeaders(
+          Accept(`application/n-quads`.mediaType)
+          :: makeRequestHeaders(endpoint)
         )
-      case InsertGraphFromModel(model, format, graphUri, method) =>
+
+      case DropGraphM(graphUri, method) =>
+        HttpRequest(
+          method = mapHttpMethod(method),
+          uri = s"${endpoint.path}${mapGraphOptionToPath(graphUri)}"
+        ).withHeaders(makeRequestHeaders(endpoint))
+
+      case InsertGraphFromModelM(model, format, graphUri, method) =>
         makeInsertGraphHttpRequest(endpoint, method, graphUri, mapGraphContentType(format)) {
           () => makeGraphSource(model, format)
         }
-      case InsertGraphFromURL(url, format, graphUri, method) =>
+
+      case InsertGraphFromURLM(url, format, graphUri, method) =>
         makeInsertGraphHttpRequest(endpoint, method, graphUri, mapGraphContentType(format)) {
           () => makeGraphSource(url, format)
         }
-/*
-      case InsertGraphFromPath(path, format, graphUri, method) =>
+
+      case InsertGraphFromPathM(path, format, graphUri, method) =>
         makeInsertGraphHttpRequest(endpoint, method, graphUri, mapGraphContentType(format)) {
           () => makeGraphSource(path, format)
         }
-*/
     }
   }
 
@@ -109,7 +182,9 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
     HttpRequest(
       method = mapHttpMethod(method),
       uri = s"${endpoint.path}${mapGraphOptionToPath(graphUri)}"
-    ).withEntity(
+    )
+    .withHeaders(makeRequestHeaders(endpoint))
+    .withEntity(
       entity = HttpEntity(
         contentType = contentType,
         data = entitySourceCreator()
@@ -118,15 +193,16 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
   }
 
   private def mapGraphOptionToPath(graphUri: Option[URI]): String = graphUri match {
-    case Some(uri) => s"?${GRAPH_PARAM_NAME}=${uri.toString.urlEncode}"
+    case Some(uri) => s"?$GRAPH_PARAM_NAME=${uri.toString.urlEncode}"
     case None      => s"?$DEFAULT_PARAM_NAME"
 
   }
 
   private def mapGraphContentType(format: RDFFormat): ContentType = format match {
-    case f: RDFFormat if f == RDFFormat.NQUADS => `application/n-quads`
-    case f: RDFFormat if f == RDFFormat.TURTLE => `text/turtle`
-    case f: RDFFormat if f == RDFFormat.JSONLD => `application/ld+json`
+    case f: RDFFormat if f == RDFFormat.NTRIPLES => `application/n-triples`
+    case f: RDFFormat if f == RDFFormat.NQUADS   => `application/n-quads`
+    case f: RDFFormat if f == RDFFormat.TURTLE   => `text/turtle`
+    case f: RDFFormat if f == RDFFormat.JSONLD   => `application/ld+json`
   }
 
   private def makeGraphSource(model: Model, format: RDFFormat): Source[ByteString, Any] = {
@@ -145,20 +221,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
   }
 
   private def makeGraphSource(filePath: Path, format: RDFFormat): Source[ByteString, Any] = {
-
     FileIO.fromPath(filePath)
-  }
-
-  private def responseToResult(response: Try[HttpResponse], request: GraphStoreRequest): Future[GraphStoreResponse] = {
-    responseToBoolean((response, request), successfulHttpResponseStatusCodes, failingHttpResponseStatusCodes)
-      .map( result =>
-        GraphStoreResponse(
-          request,
-          success = result._1,
-          statusCode =  result._2.intValue,
-          statusText =  result._2.reason
-        )
-      )
   }
 
 }

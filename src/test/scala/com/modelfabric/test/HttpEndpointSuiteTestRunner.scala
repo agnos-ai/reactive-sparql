@@ -101,7 +101,7 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
 
   val _log = akka.event.Logging(this.system, testActor)
 
-  lazy val fusekiManager = system.actorOf(Props(classOf[FusekiManager], testServerEndpoint), "fuseki-manager")
+  private lazy val fusekiManager = system.actorOf(Props(classOf[FusekiManager], testServerEndpoint), "fuseki-manager")
 
   override def beforeAll() {
     if (useFuseki) {

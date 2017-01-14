@@ -91,7 +91,7 @@ trait SparqlClientHelpers {
 
   def responseToSparqlResponse(response: (Try[HttpResponse], SparqlRequest)): SparqlResponse = response match {
     case (Success(HttpResponse(StatusCodes.OK, _, _, _)), request) =>
-      SparqlResponse(success = true, request = request)
+      SparqlResponse(request = request)
     case (Success(HttpResponse(status, headers, entity, _)), request) =>
       val error = SparqlClientRequestFailed(s"Request failed with: $status, headers: ${headers.mkString("|")}, message: $entity)")
       SparqlResponse(success = false, request = request, error = Some(error))
@@ -100,28 +100,19 @@ trait SparqlClientHelpers {
       SparqlResponse(success = false, request = request, error = Some(error))
   }
 
-  protected def responseToBoolean
-  (
-    response: (Try[HttpResponse], _),
-    successStatuses: Set[StatusCode] = Set.empty,
-    failureStatuses: Set[StatusCode] = Set.empty
-  ): Future[(Boolean, StatusCode)] = {
+  protected def responseToBoolean(response: (Try[HttpResponse], _)): Future[Boolean] = {
     response match {
       case (Success(HttpResponse(status, _, entity, _)), _)
         if status == StatusCodes.OK && entity.contentType == `text/boolean` =>
-        Unmarshal(entity).to[Boolean].map( (_, status) )
+        Unmarshal(entity).to[Boolean]
       case (Success(HttpResponse(status, _, _, _)), _) if status == StatusCodes.OK =>
         //println(s"WARING: Unexpected response content type: ${entity.contentType} and/or media type: ${entity.contentType.mediaType}")
-        Future.successful((true, status))
-      case (Success(HttpResponse(status, _, _, _)), _)  if successStatuses.contains(status) =>
-        Future.successful((true, status))
-      case (Success(HttpResponse(status, _, _, _)), _)  if failureStatuses.contains(status) =>
-        Future.successful((false, status))
+        Future.successful(true)
       case (Success(HttpResponse(status, _, _, _)), _) =>
-        Future.failed(new IllegalArgumentException(s"Unexpected response status: $status"))
+        Future.failed(SparqlClientRequestFailed(s"Unexpected response status: $status"))
       case x@_ =>
         println(s"Unexpected response: $x")
-        Future.failed(new IllegalArgumentException(s"Unexpected response: $x"))
+        Future.failed(SparqlClientRequestFailed(s"Unexpected response: $x"))
     }
   }
 

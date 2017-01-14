@@ -52,7 +52,7 @@ trait SparqlQueries {
 
   lazy val graphIri = uri("urn:test:mfab:data")
   lazy val whateverIri = uri("urn:test:whatever")
-  lazy val propertyIri = uri("foaf:givenName")
+  lazy val propertyIri = uri("http://xmlns.com/foaf/0.1/givenName")
 
 
   lazy val insert1 = SparqlUpdate { s"""
@@ -79,7 +79,7 @@ trait SparqlQueries {
   }
 
   lazy val select1 = {s"""
-    |SELECT ?g ?a ?b ?c
+    |SELECT ?a ?b ?c
     |WHERE {
     |   VALUES ?a { <$whateverIri> }
     |  ?a ?b ?c
@@ -97,15 +97,24 @@ trait SparqlQueries {
     |}"""
   }
 
+  lazy val query1Get = SparqlQuery(select1)
+
   lazy val query2Get = SparqlQuery(select2)
   lazy val query2Post = SparqlQuery(select2, method = HttpMethod.POST)
+
+  lazy val query1Result: List[ResultSet] = ResultSet(
+    ResultSetVars(List("a", "b", "c")),
+    ResultSetResults(List(QuerySolution(Map(
+      "a"-> QuerySolutionValue("uri",None,s"$whateverIri"),
+      "b" -> QuerySolutionValue("uri",None,s"$propertyIri"),
+      "c" -> QuerySolutionValue("literal",None,"William")))))) :: Nil
 
   lazy val query2Result: List[ResultSet] = ResultSet(
     ResultSetVars(List("g", "a", "b", "c")),
     ResultSetResults(List(QuerySolution(Map(
       "g"-> QuerySolutionValue("uri",None,s"$graphIri"),
       "a"-> QuerySolutionValue("uri",None,s"$whateverIri"),
-      "b" -> QuerySolutionValue("uri",None,"http://xmlns.com/foaf/0.1/givenName"),
+      "b" -> QuerySolutionValue("uri",None,s"$propertyIri"),
       "c" -> QuerySolutionValue("literal",None,"William")))))) :: Nil
 
   lazy val emptyResult: List[ResultSet] = ResultSet(

@@ -59,6 +59,11 @@ object SparqlClientConstants {
   val `application/n-quads`: ContentType.NonBinary = MediaType.applicationWithFixedCharset("n-quads", HttpCharsets.`UTF-8`).toContentType
 
   /**
+    * Content Type for application/n-triples
+    */
+  val `application/n-triples`: ContentType.NonBinary = MediaType.applicationWithFixedCharset("n-quads", HttpCharsets.`UTF-8`).toContentType
+
+  /**
     * Content Type for text/turtle
     */
   val `text/turtle`: ContentType.NonBinary = MediaType.text("turtle").toContentType(HttpCharsets.`UTF-8`)

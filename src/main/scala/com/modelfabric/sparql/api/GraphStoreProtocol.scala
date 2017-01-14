@@ -69,8 +69,8 @@ case class DropGraph(graphUri: Option[URI]) extends GraphStoreRequest {
 
 /**
   * Represents an operation to insert graph(s) via the graph-store protocol.
-  * @param graphUri an optional graph IRI specifier, will be added as the value of the "?graph=uri"
-  *                 query parameter
+  * @param graphUri    an optional graph IRI specifier, will be added as the value of the "?graph=uri"
+  *                    query parameter
   * @param mergeGraphs merge if true, replace graph if false
   *
   * @see [[https://www.w3.org/TR/2013/REC-sparql11-http-rdf-update-20130321/#http-post]]
@@ -122,7 +122,7 @@ object InsertGraphFromURLM {
 
 /**
   * Used to insert RDF contents from a file or another resource into the triple store.
-  * @param url the URL of the file to use
+  * @param url         the URL of the file to use
   * @param modelFormat the RDF format to use, supporting all formats available in [[org.eclipse.rdf4j.rio.Rio]]
   * @param graphUri    an optional graph Uri, will insert into the default graph if no graph is specified.
   *                    NB: if the incoming RDF is in "quads" format, i.e. [[NQUADS]] or [[JSONLD]], the graph
@@ -147,7 +147,7 @@ object InsertGraphFromPathM {
 
 /**
   * Used to insert RDF contents from a file or another resource into the triple store.
-  * @param path the local filesystem path of the file to use
+  * @param path        the local filesystem path of the file to use
   * @param modelFormat the RDF format to use, supporting all formats available in [[org.eclipse.rdf4j.rio.Rio]]
   * @param graphUri    an optional graph Uri, will insert into the default graph if no graph is specified.
   *                    NB: if the incoming RDF is in "quads" format, i.e. [[NQUADS]] or [[JSONLD]], the graph

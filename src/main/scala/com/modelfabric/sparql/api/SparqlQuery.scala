@@ -29,7 +29,6 @@ object SparqlQuery {
       case (_, POST) => POST
       case (s, _) if s.length > sparqlQueryPostThreshold =>
         // no log is configured so we just dump this to stderr
-        System.err.println(s"unable to set desired method GET due to query length = ${s.length}, using POST instead!!!")
         POST
       case (_, m) => m
     }

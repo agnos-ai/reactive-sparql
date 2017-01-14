@@ -103,7 +103,6 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
         .map { bs =>
           val reader = new StringReader(bs.utf8String)
           val mt = Try(Rio.parse(reader, "", RDFFormat.NQUADS))
-          println(mt.toString)
           mt.toOption
         }
     } else if (useStrictByteStringStrategy) {
@@ -113,7 +112,6 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
         .map { bs =>
           val reader = new StringReader(bs.data.utf8String)
           val mt = Try(Rio.parse(reader, "", RDFFormat.NQUADS))
-          println(mt.toString)
           mt.toOption
         }
     } else {
@@ -130,7 +128,8 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
     }
   }
 
-  def graphStoreOpToRequest(endpoint: HttpEndpoint)(graphStoreRequest: GraphStoreRequest): (HttpRequest, GraphStoreRequest) = {
+  def graphStoreOpToRequest(endpoint: HttpEndpoint)
+                           (graphStoreRequest: GraphStoreRequest): (HttpRequest, GraphStoreRequest) = {
     (makeHttpRequest(endpoint, graphStoreRequest), graphStoreRequest)
   }
 

@@ -15,6 +15,10 @@ object SparqlClientConstants {
   val UPDATE_URI_PART = "/update"
   val UPDATE_PARAM_NAME = "update"
 
+  val GRAPH_PARAM_NAME = "graph"
+
+  val DEFAULT_PARAM_NAME = "default"
+
   val FORM_MIME_TYPE = "x-www-form-urlencoded"
   val SPARQL_RESULTS_MIME_TYPE = "sparql-results+json"
   val TEXT_BOOLEAN_MIME_TYPE = "boolean"
@@ -58,5 +62,7 @@ object SparqlClientConstants {
     * Content Type for text/turtle
     */
   val `text/turtle`: ContentType.NonBinary = MediaType.text("turtle").toContentType(HttpCharsets.`UTF-8`)
+
+  lazy val numberOfCpuCores: Int = sys.runtime.availableProcessors()
 
 }

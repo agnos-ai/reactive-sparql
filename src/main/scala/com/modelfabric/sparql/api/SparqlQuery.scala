@@ -9,12 +9,12 @@ object SparqlQuery {
     * The threshold at which the SPARQL client will force to use HTTP [[POST]] method on the
     * Sparql endpoint. This is due to HTTP limiting the size of the query string.
     *
-    * Defaults to 512, but may be overridden by setting the SPARQL_CLIENT_MAX_HTTP_QUERY_URI_LENGTH
+    * Defaults to 2kB, but may be overridden by setting the SPARQL_CLIENT_MAX_HTTP_QUERY_URI_LENGTH
     * environment variable to the desired value.
     *
     * @see [[https://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.2.1]]
     */
-  val sparqlQueryPostThreshold: Int = sys.env.get("SPARQL_CLIENT_MAX_HTTP_QUERY_URI_LENGTH").map(_.toInt).getOrElse(512)
+  val sparqlQueryPostThreshold: Int = sys.env.get("SPARQL_CLIENT_MAX_HTTP_QUERY_URI_LENGTH").map(_.toInt).getOrElse(2048)
 
   /**
     * Decides which method to use for the query. Will return the desired method, unless the

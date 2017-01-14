@@ -16,7 +16,7 @@ class SparqlQueryConstructionSpec extends WordSpec {
     }
 
     "correctly set the default HTTP Method for huge queries" in {
-      val q = SparqlQuery("small query" * 100) // this will make it cross the threshold
+      val q = SparqlQuery("small query" * 300) // this will make it cross the threshold
       assert(POST === q.httpMethod)
     }
 
@@ -26,7 +26,7 @@ class SparqlQueryConstructionSpec extends WordSpec {
     }
 
     "override the selected HTTP Method for large queries" in {
-      val q = SparqlQuery("small query" * 100, GET) // asking explicitly for GET but this will make it cross the threshold
+      val q = SparqlQuery("small query" * 300, GET) // asking explicitly for GET but this will make it cross the threshold
       assert(POST === q.httpMethod)
     }
 

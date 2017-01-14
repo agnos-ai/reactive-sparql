@@ -101,7 +101,12 @@ trait SparqlClientHelpers {
       SparqlResponse(success = false, request = request, error = Some(error))
   }
 
-  protected def responseToBoolean(response: (Try[HttpResponse], _)): Future[Boolean] = {
+  protected def responseToBoolean
+  (
+    response: (Try[HttpResponse], _),
+    successStatuses: Set[StatusCode] = Set.empty,
+    failureStatuses: Set[StatusCode] = Set.empty
+  ): Future[Boolean] = {
     response match {
       case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _)
         if entity.contentType == `text/boolean` =>
@@ -109,8 +114,11 @@ trait SparqlClientHelpers {
       case (Success(HttpResponse(StatusCodes.OK, _, _, _)), _) =>
         //println(s"WARING: Unexpected response content type: ${entity.contentType} and/or media type: ${entity.contentType.mediaType}")
         Future.successful(true)
+      case (Success(HttpResponse(status, _, _, _)), _)  if successStatuses.contains(status) =>
+        Future.successful(true)
+      case (Success(HttpResponse(status, _, _, _)), _)  if failureStatuses.contains(status) =>
+        Future.successful(false)
       case (Success(HttpResponse(status, _, _, _)), _) =>
-        println()
         Future.failed(new IllegalArgumentException(s"Unexpected response status: $status"))
       case x@_ =>
         println(s"Unexpected response: $x")

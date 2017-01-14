@@ -4,10 +4,16 @@ import java.net.URI
 
 import com.modelfabric.sparql.api.HttpMethod.POST
 import com.modelfabric.sparql.api._
-import com.modelfabric.sparql.mapper.SolutionMapper
+import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 
 trait SparqlQueries {
   implicit val pm = PrefixMapping.extended
+
+  val svf: SimpleValueFactory = SimpleValueFactory.getInstance()
+  implicit def uriToIri(uri: URI): IRI = {
+    svf.createIRI(uri.toString)
+  }
 
   lazy val delete = SparqlUpdate { s"""
     |WITH <$graphIri>
@@ -69,6 +75,14 @@ trait SparqlQueries {
     |}
     |WHERE {
     |  ?person <$propertyIri> "Bill"
+    |}"""
+  }
+
+  lazy val select1 = {s"""
+    |SELECT ?g ?a ?b ?c
+    |WHERE {
+    |   VALUES ?a { <$whateverIri> }
+    |  ?a ?b ?c
     |}"""
   }
 

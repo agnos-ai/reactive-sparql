@@ -17,10 +17,48 @@ import scala.concurrent.Future
 import scala.util.Try
 
 
+object GraphStoreRequestFlowBuilder {
+
+  /**
+    * A Set of status codes on which the response will always show success = true
+    */
+  val successfulHttpResponseStatusCodes: Set[StatusCode] = {
+    Set(
+      StatusCodes.Created,
+      StatusCodes.Accepted,
+      StatusCodes.NoContent,
+      StatusCodes.AlreadyReported
+    )
+  }
+
+  /**
+    * A Set of status codes which the flow can handle gracefully, even though
+    * these all mean that the operation has failed. In all these cases, however
+    * the stream remains open. Any codes not shown on the success or failure
+    * list will cause the stream to fail and complete prematurely.
+    */
+  val failingHttpResponseStatusCodes: Set[StatusCode] = {
+    Set(
+      StatusCodes.NotFound,
+      StatusCodes.Unauthorized,
+      StatusCodes.PaymentRequired,
+      StatusCodes.Forbidden,
+      StatusCodes.NotFound,
+      StatusCodes.ProxyAuthenticationRequired,
+      StatusCodes.RequestTimeout ,
+      StatusCodes.Conflict,
+      StatusCodes.Gone
+    )
+  }
+}
+
+
 trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
 
   import SparqlClientConstants._
   import com.modelfabric.extension.StringExtensions._
+
+  import GraphStoreRequestFlowBuilder._
 
   def graphStoreRequestFlow(
     endpoint: HttpEndpoint
@@ -112,7 +150,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
   }
 
   private def responseToResult(response: Try[HttpResponse], request: GraphStoreRequest): Future[GraphStoreResponse] = {
-    responseToBoolean((response, request))
+    responseToBoolean((response, request), successfulHttpResponseStatusCodes, failingHttpResponseStatusCodes)
       .map( result => GraphStoreResponse(request, success = result))
   }
 

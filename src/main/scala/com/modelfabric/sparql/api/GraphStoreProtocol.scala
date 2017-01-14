@@ -8,11 +8,27 @@ import org.eclipse.rdf4j.rio.RDFFormat
 import org.eclipse.rdf4j.rio.RDFFormat.{JSONLD, NQUADS, TURTLE}
 
 
+/**
+  * Implementation of the graph-store API messages.
+  */
 trait GraphStoreProtocol extends ClientAPIProtocol
 
 abstract class GraphStoreRequest extends ClientHttpRequest with GraphStoreProtocol
 
-case class GraphStoreResponse(request: GraphStoreRequest, success: Boolean) extends ClientHttpResponse with GraphStoreProtocol
+/**
+  * The response entity for graph store operations
+  * @param request the request object
+  * @param success true if the operation was successful
+  * @param statusCode the HTTP status code of the response
+  * @param statusText the HTTP status reason text
+  */
+case class GraphStoreResponse
+(
+  request: GraphStoreRequest,
+  success: Boolean,
+  statusCode: Int,
+  statusText: String
+) extends ClientHttpResponse with GraphStoreProtocol
 
 object DropGraph {
 
@@ -48,6 +64,7 @@ class DropGraph(val graphUri: Option[URI]) extends GraphStoreRequest {
   * [[https://www.w3.org/TR/2013/REC-sparql11-http-rdf-update-20130321/#http-post]]
   * @param graphUri an optional graph IRI specifier, will be added as the value of the "?graph=uri"
   *                 query parameter
+  * @param mergeGraphs merge if true, replace graph if false.
   */
 abstract class InsertGraph(graphUri: Option[URI], mergeGraphs: Boolean) extends GraphStoreRequest {
 
@@ -84,6 +101,7 @@ object InsertGraphFromModel {
   * Used to insert an in-memory RDF model into the triple store.
   * @param graphModel the graph model
   * @param graphUri optional graph Uri
+  * @param mergeGraphs merge if true, replace graph if false.
   */
 class InsertGraphFromModel
 (
@@ -131,8 +149,11 @@ object InsertGraphFromURL {
 /**
   * Used to insert RDF contents from a file or another resource into the triple store.
   * @param url the URL of the file to use
+  * @param modelSerializationFormat the RDF format to use, supporting all formats available
+  *                                 in [[org.eclipse.rdf4j.rio.Rio]]
   * @param graphUri an optional graph Uri, will insert into the default graph if no graph is specified
   *                 and the file is not in "quads" format [[TURTLE]], [[JSONLD]]
+  * @param mergeGraphs merge if true, replace graph if false.
   */
 class InsertGraphFromURL
 (

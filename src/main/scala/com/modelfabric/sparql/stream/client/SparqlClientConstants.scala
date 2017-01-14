@@ -63,6 +63,9 @@ object SparqlClientConstants {
     */
   val `text/turtle`: ContentType.NonBinary = MediaType.text("turtle").toContentType(HttpCharsets.`UTF-8`)
 
+  /**
+    * Checks the number of available CPU cores from the JVM runtime. Used parallelise async stream operations.
+    */
   lazy val numberOfCpuCores: Int = sys.runtime.availableProcessors()
 
 }

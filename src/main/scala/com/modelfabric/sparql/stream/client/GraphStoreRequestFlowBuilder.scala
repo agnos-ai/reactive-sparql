@@ -151,7 +151,14 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
 
   private def responseToResult(response: Try[HttpResponse], request: GraphStoreRequest): Future[GraphStoreResponse] = {
     responseToBoolean((response, request), successfulHttpResponseStatusCodes, failingHttpResponseStatusCodes)
-      .map( result => GraphStoreResponse(request, success = result))
+      .map( result =>
+        GraphStoreResponse(
+          request,
+          success = result._1,
+          statusCode =  result._2.intValue,
+          statusText =  result._2.reason
+        )
+      )
   }
 
 }

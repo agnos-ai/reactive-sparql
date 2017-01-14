@@ -86,9 +86,9 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
 
       //assertSuccessResponse(sink.expectNext(receiveTimeout))
       sink.expectNext(receiveTimeout) match {
-        case GraphStoreResponse(_, status) =>
-          info(s"named graph $graphIri deletion status: $status")
-        case x@_ => assert(false, s"unexpected: $x")
+        case GraphStoreResponse(_, success, statusCode, statusText) =>
+          info(s"named graph $graphIri deletion status: $success / $statusCode / $statusText")
+        case x@_ => fail(s"unexpected: $x")
       }
 
       // clear the default graph
@@ -102,7 +102,7 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
       sparqlSink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, ResultSet(_, results) :: Nil, None) if results.bindings.isEmpty =>
           assert(true)
-        case x@_ => assert(false, s"unexpected: $x")
+        case x@_ => fail(s"unexpected: $x")
       }
     }
 

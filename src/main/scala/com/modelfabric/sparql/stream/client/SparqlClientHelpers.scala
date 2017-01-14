@@ -86,7 +86,6 @@ trait SparqlClientHelpers {
       .map {
         case BasicAuthentication(username, password) => Authorization(BasicHttpCredentials(username, password))
       }
-
     auth.toList
   }
 
@@ -106,18 +105,18 @@ trait SparqlClientHelpers {
     response: (Try[HttpResponse], _),
     successStatuses: Set[StatusCode] = Set.empty,
     failureStatuses: Set[StatusCode] = Set.empty
-  ): Future[Boolean] = {
+  ): Future[(Boolean, StatusCode)] = {
     response match {
-      case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _)
-        if entity.contentType == `text/boolean` =>
-        Unmarshal(entity).to[Boolean]
-      case (Success(HttpResponse(StatusCodes.OK, _, _, _)), _) =>
+      case (Success(HttpResponse(status, _, entity, _)), _)
+        if status == StatusCodes.OK && entity.contentType == `text/boolean` =>
+        Unmarshal(entity).to[Boolean].map( (_, status) )
+      case (Success(HttpResponse(status, _, _, _)), _) if status == StatusCodes.OK =>
         //println(s"WARING: Unexpected response content type: ${entity.contentType} and/or media type: ${entity.contentType.mediaType}")
-        Future.successful(true)
+        Future.successful((true, status))
       case (Success(HttpResponse(status, _, _, _)), _)  if successStatuses.contains(status) =>
-        Future.successful(true)
+        Future.successful((true, status))
       case (Success(HttpResponse(status, _, _, _)), _)  if failureStatuses.contains(status) =>
-        Future.successful(false)
+        Future.successful((false, status))
       case (Success(HttpResponse(status, _, _, _)), _) =>
         Future.failed(new IllegalArgumentException(s"Unexpected response status: $status"))
       case x@_ =>

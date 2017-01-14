@@ -73,6 +73,11 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
     */
   val strictEntityReadTimeout: FiniteDuration = 60 seconds
 
+  /**
+    * Limit the response entity size to 1MB by default
+    */
+  val strictEntityMaximumLengthInBytes: Int = 1024 * 1024
+
   def graphStoreRequestFlow(endpoint: HttpEndpoint): Flow[GraphStoreRequest, GraphStoreResponse, _] = {
     Flow
       .fromFunction(graphStoreOpToRequest(endpoint))
@@ -99,7 +104,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
       Source.single(None)
     } else if ( !useStrictByteStringStrategy) {
       // TODO: mapping over the data bytes stream won't work because the stream will never emit for empty entities
-      entity.dataBytes
+      entity.withoutSizeLimit().dataBytes
         .map { bs =>
           val reader = new StringReader(bs.utf8String)
           val mt = Try(Rio.parse(reader, "", RDFFormat.NQUADS))
@@ -107,7 +112,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
         }
     } else if (useStrictByteStringStrategy) {
       // this workaround does seem to be alright, because chunked resonses have a limited size
-      Source.single(entity.withoutSizeLimit())
+      Source.single(entity.withSizeLimit(strictEntityMaximumLengthInBytes))
         .mapAsync(numberOfCpuCores)(_.toStrict(strictEntityReadTimeout))
         .map { bs =>
           val reader = new StringReader(bs.data.utf8String)

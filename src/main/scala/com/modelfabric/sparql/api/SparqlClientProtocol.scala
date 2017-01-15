@@ -1,29 +1,24 @@
 package com.modelfabric.sparql.api
 
-sealed trait SparqlClientProtocol
+import com.modelfabric.sparql.api.HttpMethod.GET
 
-/**
-  * Request
-  */
-trait Request extends SparqlClientProtocol
+
+trait SparqlClientProtocol extends ClientAPIProtocol
 
 /**
   * Represents a single Sparql request to be sent to the triple store.
   *
   * @param statement the sparql statement string, any | margins will be stripped automatically
   */
-case class SparqlRequest(statement: SparqlStatement) extends Request
+case class SparqlRequest(statement: SparqlStatement) extends ClientHttpRequest with SparqlClientProtocol {
+  override def httpMethod = GET
+}
 
 /**
   * "Is-Alive" request
   */
 // JC: not used
 case object PingRequest extends Request
-
-/**
-  * Response
-  */
-trait Response extends SparqlClientProtocol
 
 /**
   * Represents a response from the triple store for a Sparql request.
@@ -37,7 +32,7 @@ case class SparqlResponse(
   request: SparqlRequest,
   success: Boolean = true,
   result: List[SparqlResult] = Nil,
-  error: Option[SparqlClientError] = None) extends Response
+  error: Option[SparqlClientError] = None) extends ClientHttpResponse with SparqlClientProtocol
 
 /**
   * "Is-Alive" response
@@ -45,7 +40,7 @@ case class SparqlResponse(
   * @param success
   */
 // JC: not used
-case class PingResponse(success: Boolean = true) extends Response
+case class PingResponse(success: Boolean = true) extends ClientHttpResponse with SparqlClientProtocol
 
 
 /**

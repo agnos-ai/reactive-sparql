@@ -3,10 +3,10 @@ package com.modelfabric.test
 import akka.actor.{ActorSystem, Props}
 import akka.testkit.{ImplicitSender, TestKit}
 import com.modelfabric.sparql.spray.SpraySparqlClientSpec
-import com.modelfabric.sparql.stream.{MappingStreamSparqlToResultsClientSpec, StreamSparqlToModelConstructClientSpec, StreamSparqlToResultsClientSpec, StreamSpec}
+import com.modelfabric.sparql.stream._
 import com.modelfabric.sparql.util.{BasicAuthentication, HttpEndpoint}
 import com.modelfabric.test.FusekiManager._
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest._
 
 import scala.concurrent.duration._
@@ -31,8 +31,7 @@ object HttpEndpointSuiteTestRunner {
     case _ => HttpEndpoint.localhostWithAutomaticPort("/test")
   }
 
-  val config = {
-    // JC: type = "HttpSpray" ?
+  val config: Config = {
     ConfigFactory.parseString(
       s"""
          |akka.loggers = ["akka.testkit.TestEventListener"]
@@ -95,12 +94,13 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
     new SpraySparqlClientSpec(system),
     new StreamSpec(system),
     new StreamSparqlToResultsClientSpec(system),
-    new MappingStreamSparqlToResultsClientSpec(system)
+    new MappingStreamSparqlToResultsClientSpec(system),
+    new GraphStoreProtocolBuilderSpec(system)
   )
 
   val _log = akka.event.Logging(this.system, testActor)
 
-  lazy val fusekiManager = system.actorOf(Props(classOf[FusekiManager], testServerEndpoint), "fuseki-manager")
+  private lazy val fusekiManager = system.actorOf(Props(classOf[FusekiManager], testServerEndpoint), "fuseki-manager")
 
   override def beforeAll() {
     if (useFuseki) {

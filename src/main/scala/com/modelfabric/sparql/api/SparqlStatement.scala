@@ -1,10 +1,10 @@
 package com.modelfabric.sparql.api
 
 import com.modelfabric.extension.StringExtensions._
-import com.modelfabric.sparql.mapper.{SolutionMapper, DefaultSolutionMapper}
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
+
 
 /**
  * SparqlStatement is the interface representing all SPARQL statements. Create a
@@ -13,36 +13,33 @@ import scala.language.postfixOps
  *
  * By the way, this also goes for some non SPARQL statements such as some Graph API statements
  */
-abstract class SparqlStatement()(implicit val pm : PrefixMapping) {
+abstract class SparqlStatement()(implicit val pm : PrefixMapping) extends ClientHttpRequest {
 
   /**
    * @return the SPARQL statement in executable form
    */
   def statement : String
 
-  /**
-   * @return the HTTP Method to be used to transport this statement to the endpoint, default is GET
-   */
-  def httpMethod: HttpMethod = HttpMethod.GET
+  override def httpMethod: HttpMethod = HttpMethod.GET
 
   protected def build(statement_ : String) : String = s"""
     |${pm.sparql}
     ${statement_}
-  """.stripped.trim
+  """.trim.stripped
 
-  override def toString = super.toString + ":\n" + statement
+  override def toString: String = super.toString + ":\n" + statement
 
   /**
    * @return the receive timeout for the sparql statement, subclasses should
    *         override the default value which is set here to 3 seconds.
    */
-  def receiveTimeout = 3 seconds
+  def receiveTimeout: FiniteDuration = 3 seconds
 
   /**
    * @return the idle timeout for the sparql statement, subclasses should
    *         override the default value which is set here to 2 seconds.
    */
-  def idleTimeout = 5 seconds
+  def idleTimeout: FiniteDuration = 5 seconds
 
   /**
    *
@@ -50,5 +47,6 @@ abstract class SparqlStatement()(implicit val pm : PrefixMapping) {
    *         this will be used by the Future while obtaining a connection
    *         and also executing the statement and handling the responses
    */
-  def executionTimeout = 10 seconds
+  def executionTimeout: FiniteDuration = 10 seconds
+
 }

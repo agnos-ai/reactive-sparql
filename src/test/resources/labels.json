@@ -1,0 +1,227 @@
+[
+  {
+    "@id": "urn:test:mfab:res:0",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 0"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 0"
+      },
+      {
+        "@value": "Alt Label 0"
+      }
+    ]
+  },
+  {
+    "@id": "urn:test:mfab:res:1",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 1"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 1"
+      },
+      {
+        "@value": "Alt Label 1"
+      }
+    ]
+  },
+  {
+    "@id": "urn:test:mfab:res:10",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 10"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 10"
+      }
+    ]
+  },
+  {
+    "@id": "urn:test:mfab:res:11",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 11"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 11"
+      }
+    ]
+  },
+  {
+    "@id": "urn:test:mfab:res:12",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 12"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 12"
+      }
+    ]
+  },
+  {
+    "@id": "urn:test:mfab:res:13",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 13"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 13"
+      }
+    ]
+  },
+  {
+    "@id": "urn:test:mfab:res:14",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 14"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 14"
+      }
+    ]
+  },
+  {
+    "@id": "urn:test:mfab:res:2",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 2"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 2"
+      },
+      {
+        "@value": "Alt Label 2"
+      }
+    ]
+  },
+  {
+    "@id": "urn:test:mfab:res:3",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 3"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 3"
+      },
+      {
+        "@value": "Alt Label 3"
+      }
+    ]
+  },
+  {
+    "@id": "urn:test:mfab:res:4",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 4"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 4"
+      },
+      {
+        "@value": "Alt Label 4"
+      }
+    ]
+  },
+  {
+    "@id": "urn:test:mfab:res:5",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 5"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 5"
+      },
+      {
+        "@value": "Alt Label 5"
+      }
+    ]
+  },
+  {
+    "@id": "urn:test:mfab:res:6",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 6"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 6"
+      },
+      {
+        "@value": "Alt Label 6"
+      }
+    ]
+  },
+  {
+    "@id": "urn:test:mfab:res:7",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 7"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 7"
+      },
+      {
+        "@value": "Alt Label 7"
+      }
+    ]
+  },
+  {
+    "@id": "urn:test:mfab:res:8",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 8"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 8"
+      },
+      {
+        "@value": "Alt Label 8"
+      }
+    ]
+  },
+  {
+    "@id": "urn:test:mfab:res:9",
+    "http://www.w3.org/2000/01/rdf-schema#comment": [
+      {
+        "@value": "Comment 9"
+      }
+    ],
+    "http://www.w3.org/2000/01/rdf-schema#label": [
+      {
+        "@value": "Label 9"
+      },
+      {
+        "@value": "Alt Label 9"
+      }
+    ]
+  }
+]

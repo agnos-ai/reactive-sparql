@@ -6,22 +6,22 @@ import com.modelfabric.sparql.api.HttpMethod.{GET, POST}
 object SparqlQuery {
 
   /**
-    * The threshold at which the SPARQL client will force to use HTTP [[POST]] method on the
-    * Sparql endpoint. This is due to HTTP limiting the size of the query string.
+    * The threshold at which the SPARQL client will force to use HTTP [[com.modelfabric.sparql.api.HttpMethod.POST]]
+    * method on the Sparql endpoint. This is due to HTTP limiting the size of the query string.
     *
-    * Defaults to 512, but may be overridden by setting the SPARQL_CLIENT_MAX_HTTP_QUERY_URI_LENGTH
+    * Defaults to 2kB, but may be overridden by setting the SPARQL_CLIENT_MAX_HTTP_QUERY_URI_LENGTH
     * environment variable to the desired value.
     *
     * @see [[https://www.w3.org/Protocols/rfc2616/rfc2616-sec3.html#sec3.2.1]]
     */
-  val sparqlQueryPostThreshold: Int = sys.env.get("SPARQL_CLIENT_MAX_HTTP_QUERY_URI_LENGTH").map(_.toInt).getOrElse(512)
+  val sparqlQueryPostThreshold: Int = sys.env.get("SPARQL_CLIENT_MAX_HTTP_QUERY_URI_LENGTH").map(_.toInt).getOrElse(2048)
 
   /**
     * Decides which method to use for the query. Will return the desired method, unless the
     * query is longer that the POST threshold configured by [[sparqlQueryPostThreshold]], in which case
-    * [[POST]] is returned
+    * [[com.modelfabric.sparql.api.HttpMethod.POST]] is returned
     * @param sparql the sparql statement
-    * @param desiredMethod the desired HTTP method to use, defaults to [[GET]]
+    * @param desiredMethod the desired HTTP method to use, defaults to [[com.modelfabric.sparql.api.HttpMethod.GET]]
     * @return the decided HTTP method to be used
     */
   def decideQueryHttpMethod(sparql: String, desiredMethod: HttpMethod): HttpMethod = {
@@ -29,7 +29,6 @@ object SparqlQuery {
       case (_, POST) => POST
       case (s, _) if s.length > sparqlQueryPostThreshold =>
         // no log is configured so we just dump this to stderr
-        System.err.println(s"unable to set desired method GET due to query length = ${s.length}, using POST instead!!!")
         POST
       case (_, m) => m
     }

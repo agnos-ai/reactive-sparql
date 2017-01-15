@@ -2,18 +2,14 @@ package com.modelfabric.sparql.stream.client
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.model.HttpResponse
 import akka.stream.{ActorMaterializer, FlowShape}
 import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, ZipWith}
 import com.modelfabric.sparql.api.{SparqlRequest, SparqlResponse}
 import com.modelfabric.sparql.util.HttpEndpoint
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success, Try}
-
-import com.modelfabric.sparql.mapper.SparqlClientJsonProtocol._
-
+import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 trait SparqlUpdateFlowBuilder extends SparqlClientHelpers {
 
@@ -48,23 +44,6 @@ trait SparqlUpdateFlowBuilder extends SparqlClientHelpers {
       FlowShape(converter.in, updateResultZipper.out)
     } named "flow.sparqlUpdateRequest")
 
-  }
-
-  private def responseToBoolean(response: (Try[HttpResponse], SparqlRequest)): Future[Boolean] = {
-    response match {
-      case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _)
-        if entity.contentType == `text/boolean` =>
-        Unmarshal(entity).to[Boolean]
-      case (Success(HttpResponse(StatusCodes.OK, _, _, _)), _) =>
-        //println(s"WARING: Unexpected response content type: ${entity.contentType} and/or media type: ${entity.contentType.mediaType}")
-        Future.successful(true)
-      case (Success(HttpResponse(status, _, _, _)), _) =>
-        println()
-        Future.failed(new IllegalArgumentException(s"Unexpected response status: $status"))
-      case x@_ =>
-        println(s"Unexpected response: $x")
-        Future.failed(new IllegalArgumentException(s"Unexpected response: $x"))
-    }
   }
 
 }

@@ -81,7 +81,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
   def graphStoreRequestFlow(endpoint: HttpEndpoint): Flow[GraphStoreRequest, GraphStoreResponse, _] = {
     Flow
       .fromFunction(graphStoreOpToRequest(endpoint))
-      .via(Http().cachedHostConnectionPool[GraphStoreRequest](endpoint.host, endpoint.port))
+      .via(pooledHttpClientFlow[GraphStoreRequest](endpoint))
       .flatMapConcat {
       case (Success(response), request) =>
         val gsr = GraphStoreResponse(
@@ -99,7 +99,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
 
   def makeModelSource(entity: HttpEntity): Source[Option[Model], Any] = {
     if ( entity.isKnownEmpty()
-      || entity.contentType.mediaType != `application/n-quads`.mediaType) {
+      || entity.contentType.mediaType != `application/n-triples`.mediaType) {
       entity.discardBytes()
       Source.single(None)
     } else if ( !useStrictByteStringStrategy) {
@@ -107,7 +107,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
       entity.withoutSizeLimit().dataBytes
         .map { bs =>
           val reader = new StringReader(bs.utf8String)
-          val mt = Try(Rio.parse(reader, "", RDFFormat.NQUADS))
+          val mt = Try(Rio.parse(reader, "", mapContentTypeToRdfFormat(entity.contentType)))
           mt.toOption
         }
     } else if (useStrictByteStringStrategy) {
@@ -116,7 +116,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
         .mapAsync(numberOfCpuCores)(_.toStrict(strictEntityReadTimeout))
         .map { bs =>
           val reader = new StringReader(bs.data.utf8String)
-          val mt = Try(Rio.parse(reader, "", RDFFormat.NQUADS))
+          val mt = Try(Rio.parse(reader, "", mapContentTypeToRdfFormat(entity.contentType)))
           mt.toOption
         }
     } else {
@@ -146,7 +146,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
           method = mapHttpMethod(method),
           uri = s"${endpoint.path}${mapGraphOptionToPath(graphUri)}"
         ).withHeaders(
-          Accept(`application/n-quads`.mediaType)
+          Accept(`application/n-triples`.mediaType)
           :: makeRequestHeaders(endpoint)
         )
 
@@ -157,17 +157,17 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
         ).withHeaders(makeRequestHeaders(endpoint))
 
       case InsertGraphFromModelM(model, format, graphUri, method) =>
-        makeInsertGraphHttpRequest(endpoint, method, graphUri, mapGraphContentType(format)) {
+        makeInsertGraphHttpRequest(endpoint, method, graphUri, mapRdfFormatToContentType(format)) {
           () => makeGraphSource(model, format)
         }
 
       case InsertGraphFromURLM(url, format, graphUri, method) =>
-        makeInsertGraphHttpRequest(endpoint, method, graphUri, mapGraphContentType(format)) {
+        makeInsertGraphHttpRequest(endpoint, method, graphUri, mapRdfFormatToContentType(format)) {
           () => makeGraphSource(url, format)
         }
 
       case InsertGraphFromPathM(path, format, graphUri, method) =>
-        makeInsertGraphHttpRequest(endpoint, method, graphUri, mapGraphContentType(format)) {
+        makeInsertGraphHttpRequest(endpoint, method, graphUri, mapRdfFormatToContentType(format)) {
           () => makeGraphSource(path, format)
         }
     }
@@ -200,13 +200,6 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
     case Some(uri) => s"?$GRAPH_PARAM_NAME=${uri.toString.urlEncode}"
     case None      => s"?$DEFAULT_PARAM_NAME"
 
-  }
-
-  private def mapGraphContentType(format: RDFFormat): ContentType = format match {
-    case f: RDFFormat if f == RDFFormat.NTRIPLES => `application/n-triples`
-    case f: RDFFormat if f == RDFFormat.NQUADS   => `application/n-quads`
-    case f: RDFFormat if f == RDFFormat.TURTLE   => `text/turtle`
-    case f: RDFFormat if f == RDFFormat.JSONLD   => `application/ld+json`
   }
 
   private def makeGraphSource(model: Model, format: RDFFormat): Source[ByteString, Any] = {

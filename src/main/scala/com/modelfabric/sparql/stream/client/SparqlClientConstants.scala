@@ -5,9 +5,17 @@ import akka.http.scaladsl.model.{ContentType, HttpCharsets, MediaType}
 /*           */
 /* CONSTANTS */
 /* --------- */
-// JC: these are same for all triple store??
-//SSZ: AFAIK yes: https://www.w3.org/TR/sparql11-protocol/
+/**
+  * Sparql Client Constants
+  *
+  * The ones referring to parameters and paths are all standardised and should work
+  * for any triple store.
+  * @see [[https://www.w3.org/TR/sparql11-protocol/]]
+  *
+  * Tested with Jena Fuseki 2.4.0 and Stardog 3.4.X through 4.2.2
+  */
 object SparqlClientConstants {
+
   val QUERY_URI_PART = "/query"
   val QUERY_PARAM_NAME = "query"
   val REASONING_PARAM_NAME = "reasoning"
@@ -44,29 +52,40 @@ object SparqlClientConstants {
   /**
     * Media type for text/boolean
     */
-  val `text/boolean`: ContentType.NonBinary =
+  val `text/boolean`: ContentType.NonBinary = {
     MediaType.text(TEXT_BOOLEAN_MIME_TYPE).toContentType(HttpCharsets.`UTF-8`)
+  }
 
   /**
     * Content Type for application/ld+json
     */
-  val `application/ld+json`: ContentType.NonBinary = MediaType.applicationWithFixedCharset("ld+json", HttpCharsets.`UTF-8`).toContentType
+  val `application/ld+json`: ContentType.NonBinary = {
+    MediaType.applicationWithFixedCharset("ld+json", HttpCharsets.`UTF-8`).toContentType
+  }
 
   /**
-    * Content Type for text/x-nquads and application/n-quads
+    * Content Types for text/x-nquads and application/n-quads
     */
-  val `text/x-nquads`: ContentType.NonBinary = MediaType.text("x-nquads").toContentType(HttpCharsets.`UTF-8`)
-  val `application/n-quads`: ContentType.NonBinary = MediaType.applicationWithFixedCharset("n-quads", HttpCharsets.`UTF-8`).toContentType
+  val `text/x-nquads`: ContentType.NonBinary = {
+    MediaType.text("x-nquads").toContentType(HttpCharsets.`UTF-8`)
+  }
+  val `application/n-quads`: ContentType.NonBinary = {
+    MediaType.applicationWithFixedCharset("n-quads", HttpCharsets.`UTF-8`).toContentType
+  }
 
   /**
     * Content Type for application/n-triples
     */
-  val `application/n-triples`: ContentType.NonBinary = MediaType.applicationWithFixedCharset("n-quads", HttpCharsets.`UTF-8`).toContentType
+  val `application/n-triples`: ContentType.NonBinary = {
+    MediaType.applicationWithFixedCharset("n-triples", HttpCharsets.`UTF-8`).toContentType
+  }
 
   /**
     * Content Type for text/turtle
     */
-  val `text/turtle`: ContentType.NonBinary = MediaType.text("turtle").toContentType(HttpCharsets.`UTF-8`)
+  val `text/turtle`: ContentType.NonBinary = {
+    MediaType.text("turtle").toContentType(HttpCharsets.`UTF-8`)
+  }
 
   /**
     * Checks the number of available CPU cores from the JVM runtime. Used parallelise async stream operations.

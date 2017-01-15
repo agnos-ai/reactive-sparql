@@ -1,0 +1,40 @@
+<urn:test:mfab:res:0> <http://www.w3.org/2000/01/rdf-schema#label> "Label 0" .
+<urn:test:mfab:res:0> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 0" .
+<urn:test:mfab:res:1> <http://www.w3.org/2000/01/rdf-schema#label> "Label 1" .
+<urn:test:mfab:res:1> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 1" .
+<urn:test:mfab:res:2> <http://www.w3.org/2000/01/rdf-schema#label> "Label 2" .
+<urn:test:mfab:res:2> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 2" .
+<urn:test:mfab:res:3> <http://www.w3.org/2000/01/rdf-schema#label> "Label 3" .
+<urn:test:mfab:res:3> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 3" .
+<urn:test:mfab:res:4> <http://www.w3.org/2000/01/rdf-schema#label> "Label 4" .
+<urn:test:mfab:res:4> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 4" .
+<urn:test:mfab:res:5> <http://www.w3.org/2000/01/rdf-schema#label> "Label 5" .
+<urn:test:mfab:res:5> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 5" .
+<urn:test:mfab:res:6> <http://www.w3.org/2000/01/rdf-schema#label> "Label 6" .
+<urn:test:mfab:res:6> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 6" .
+<urn:test:mfab:res:7> <http://www.w3.org/2000/01/rdf-schema#label> "Label 7" .
+<urn:test:mfab:res:7> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 7" .
+<urn:test:mfab:res:8> <http://www.w3.org/2000/01/rdf-schema#label> "Label 8" .
+<urn:test:mfab:res:8> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 8" .
+<urn:test:mfab:res:9> <http://www.w3.org/2000/01/rdf-schema#label> "Label 9" .
+<urn:test:mfab:res:9> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 9" .
+<urn:test:mfab:res:10> <http://www.w3.org/2000/01/rdf-schema#label> "Label 10" .
+<urn:test:mfab:res:10> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 10" .
+<urn:test:mfab:res:11> <http://www.w3.org/2000/01/rdf-schema#label> "Label 11" .
+<urn:test:mfab:res:11> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 11" .
+<urn:test:mfab:res:12> <http://www.w3.org/2000/01/rdf-schema#label> "Label 12" .
+<urn:test:mfab:res:12> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 12" .
+<urn:test:mfab:res:13> <http://www.w3.org/2000/01/rdf-schema#label> "Label 13" .
+<urn:test:mfab:res:13> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 13" .
+<urn:test:mfab:res:14> <http://www.w3.org/2000/01/rdf-schema#label> "Label 14" .
+<urn:test:mfab:res:14> <http://www.w3.org/2000/01/rdf-schema#comment> "Comment 14" .
+<urn:test:mfab:res:0> <http://www.w3.org/2000/01/rdf-schema#label> "Alt Label 0" .
+<urn:test:mfab:res:1> <http://www.w3.org/2000/01/rdf-schema#label> "Alt Label 1" .
+<urn:test:mfab:res:2> <http://www.w3.org/2000/01/rdf-schema#label> "Alt Label 2" .
+<urn:test:mfab:res:3> <http://www.w3.org/2000/01/rdf-schema#label> "Alt Label 3" .
+<urn:test:mfab:res:4> <http://www.w3.org/2000/01/rdf-schema#label> "Alt Label 4" .
+<urn:test:mfab:res:5> <http://www.w3.org/2000/01/rdf-schema#label> "Alt Label 5" .
+<urn:test:mfab:res:6> <http://www.w3.org/2000/01/rdf-schema#label> "Alt Label 6" .
+<urn:test:mfab:res:7> <http://www.w3.org/2000/01/rdf-schema#label> "Alt Label 7" .
+<urn:test:mfab:res:8> <http://www.w3.org/2000/01/rdf-schema#label> "Alt Label 8" .
+<urn:test:mfab:res:9> <http://www.w3.org/2000/01/rdf-schema#label> "Alt Label 9" .

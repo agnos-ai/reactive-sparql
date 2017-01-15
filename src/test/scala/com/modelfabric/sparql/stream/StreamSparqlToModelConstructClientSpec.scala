@@ -9,6 +9,7 @@ import akka.testkit.TestKit
 import com.modelfabric.sparql.SparqlQueries
 import com.modelfabric.sparql.api._
 import com.modelfabric.sparql.stream.client.SparqlRequestFlowBuilder
+import com.modelfabric.sparql.util.RdfModelTestUtils
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 import org.scalatest._
 
@@ -24,7 +25,7 @@ import scala.language.postfixOps
 @DoNotDiscover
 class StreamSparqlToModelConstructClientSpec(val _system: ActorSystem) extends TestKit(_system)
   with WordSpecLike with MustMatchers with BeforeAndAfterAll
-  with SparqlQueries with SparqlRequestFlowBuilder {
+  with SparqlQueries with SparqlRequestFlowBuilder with RdfModelTestUtils {
 
   implicit val materializer: ActorMaterializer = ActorMaterializer()(system)
   implicit val dispatcher: ExecutionContext = system.dispatcher
@@ -68,7 +69,7 @@ class StreamSparqlToModelConstructClientSpec(val _system: ActorSystem) extends T
 
     }
 
-    "4. Get the filtered graph just inserted via a model construct query" in {
+    "3. Get the filtered graph just inserted via a model construct query" in {
 
       sink.request(1)
       source.sendNext(
@@ -79,13 +80,13 @@ class StreamSparqlToModelConstructClientSpec(val _system: ActorSystem) extends T
 
       sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, Seq(SparqlModelResult(modelResult)), None) =>
+          dumpModel(modelResult)
           assert(modelResult.size() === 10)
-          info(modelResult.toString)
         case x@_ => fail(s"failing due to unexpected message received: $x")
       }
     }
 
-    "3. Get the full graph just inserted via a model construct query" in {
+    "4. Get the full graph just inserted via a model construct query" in {
 
       sink.request(1)
       source.sendNext(
@@ -96,8 +97,8 @@ class StreamSparqlToModelConstructClientSpec(val _system: ActorSystem) extends T
 
       sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, Seq(SparqlModelResult(modelResult)), None) =>
+          dumpModel(modelResult)
           assert(modelResult.size() === 40)
-          info(modelResult.toString)
         case x@_ => fail(s"failing due to unexpected message received: $x")
       }
     }
@@ -115,8 +116,8 @@ class StreamSparqlToModelConstructClientSpec(val _system: ActorSystem) extends T
 
       sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, Seq(SparqlModelResult(modelResult)), None) =>
+          dumpModel(modelResult)
           assert(modelResult.size() === 3)
-          info(modelResult.toString)
         case x@_ => fail(s"failing due to unexpected message received: $x")
       }
     }
@@ -134,8 +135,8 @@ class StreamSparqlToModelConstructClientSpec(val _system: ActorSystem) extends T
 
       sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, Seq(SparqlModelResult(modelResult)), None) =>
+          dumpModel(modelResult)
           assert(modelResult.size() === 25)
-          info(modelResult.toString)
         case x@_ => fail(s"failing due to unexpected message received: $x")
       }
     }
@@ -150,7 +151,7 @@ class StreamSparqlToModelConstructClientSpec(val _system: ActorSystem) extends T
 
   private def assertSuccessResponse(response: SparqlResponse): Unit = response match {
     case SparqlResponse(_, true, _, _) => assert(true)
-    case x@SparqlResponse(_, _, _, _) => assert(false, x)
+    case x@SparqlResponse(_, _, _, _) => fail(s"unexpected: $x")
   }
 
   override def afterAll(): Unit = {

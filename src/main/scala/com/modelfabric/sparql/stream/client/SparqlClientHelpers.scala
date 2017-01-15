@@ -10,6 +10,7 @@ import akka.stream.scaladsl.Flow
 import com.modelfabric.sparql.api.{HttpMethod => ApiHttpMethod, _}
 import com.modelfabric.sparql.stream.client.SparqlClientConstants._
 import com.modelfabric.sparql.util.{BasicAuthentication, HttpEndpoint}
+import org.eclipse.rdf4j.rio.RDFFormat
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -25,8 +26,8 @@ trait SparqlClientHelpers {
   implicit val materializer: ActorMaterializer
   implicit val dispatcher: ExecutionContext
 
-  def pooledHttpClientFlow(endpoint: HttpEndpoint): Flow[(HttpRequest, SparqlRequest), (Try[HttpResponse], SparqlRequest), _] = {
-    Http().cachedHostConnectionPool[SparqlRequest](endpoint.host, endpoint.port)
+  def pooledHttpClientFlow[T](endpoint: HttpEndpoint): Flow[(HttpRequest, T), (Try[HttpResponse], T), _] = {
+    Http().cachedHostConnectionPool[T](endpoint.host, endpoint.port)
   }
 
   def sparqlToRequest(endpoint: HttpEndpoint)(request: SparqlRequest): (HttpRequest, SparqlRequest) = {
@@ -106,12 +107,10 @@ trait SparqlClientHelpers {
         if status == StatusCodes.OK && entity.contentType == `text/boolean` =>
         Unmarshal(entity).to[Boolean]
       case (Success(HttpResponse(status, _, _, _)), _) if status == StatusCodes.OK =>
-        //println(s"WARING: Unexpected response content type: ${entity.contentType} and/or media type: ${entity.contentType.mediaType}")
         Future.successful(true)
       case (Success(HttpResponse(status, _, _, _)), _) =>
         Future.failed(SparqlClientRequestFailed(s"Unexpected response status: $status"))
       case x@_ =>
-        println(s"Unexpected response: $x")
         Future.failed(SparqlClientRequestFailed(s"Unexpected response: $x"))
     }
   }
@@ -121,6 +120,35 @@ trait SparqlClientHelpers {
     case ApiHttpMethod.POST => HttpMethods.POST
     case ApiHttpMethod.PUT => HttpMethods.PUT
     case ApiHttpMethod.DELETE => HttpMethods.DELETE
+  }
+
+  def mapRdfFormatToContentType(format: RDFFormat): ContentType = format match {
+    case f: RDFFormat if f == RDFFormat.NTRIPLES =>
+      `application/n-triples`
+    case f: RDFFormat if f == RDFFormat.NQUADS   =>
+      `application/n-quads`
+    case f: RDFFormat if f == RDFFormat.TURTLE   =>
+      `text/turtle`
+    case f: RDFFormat if f == RDFFormat.JSONLD   =>
+      `application/ld+json`
+  }
+
+  def mapContentTypeToRdfFormat(contentType: ContentType): RDFFormat = {
+    //for some reason we need to compare the media types, content-type does not always work
+    contentType.mediaType match {
+      case format if format == `text/x-nquads`.mediaType =>
+        RDFFormat.NQUADS
+      case format if format == `application/n-quads`.mediaType =>
+        RDFFormat.NQUADS
+      case format if format == `text/turtle`.mediaType =>
+        RDFFormat.TURTLE
+      case format if format == `application/n-triples`.mediaType =>
+        RDFFormat.NTRIPLES
+      case format if format == `application/ld+json`.mediaType =>
+        RDFFormat.JSONLD
+      case format =>
+        throw new IllegalArgumentException(s"unsupported Content-Type: $format")
+    }
   }
 
 }

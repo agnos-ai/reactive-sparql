@@ -6,7 +6,7 @@ import com.modelfabric.sparql.spray.SpraySparqlClientSpec
 import com.modelfabric.sparql.stream._
 import com.modelfabric.sparql.util.{BasicAuthentication, HttpEndpoint}
 import com.modelfabric.test.FusekiManager._
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest._
 
 import scala.concurrent.duration._
@@ -31,8 +31,7 @@ object HttpEndpointSuiteTestRunner {
     case _ => HttpEndpoint.localhostWithAutomaticPort("/test")
   }
 
-  val config = {
-    // JC: type = "HttpSpray" ?
+  val config: Config = {
     ConfigFactory.parseString(
       s"""
          |akka.loggers = ["akka.testkit.TestEventListener"]

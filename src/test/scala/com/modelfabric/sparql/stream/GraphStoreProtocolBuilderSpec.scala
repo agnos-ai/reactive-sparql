@@ -259,12 +259,14 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
     }
 
     "9. Load TURTLE file from a remote URL into a named graph" in {
+      // NB: this may not work behind network proxy, so make sure
+      // the http[s]_proxy and no_proxy variables is set accordingly (on Unix platforms)
       val rdfSchemaLabelOwlURL: URL = new URL("https://www.w3.org/2000/01/rdf-schema")
       //val rdfSchemaLabelOwlURL: URL = new URL("https://www.w3.org/ns/regorg")
 
       sink.request(1)
       source.sendNext(InsertGraphFromURL(rdfSchemaLabelOwlURL, RDFFormat.TURTLE, Some(modelGraphIri)))
-      sink.expectNextPF(processResponse(Some(true), None))
+      processResponse()(sink.expectNext(receiveTimeout * 2))
 
       // now there should be 87 triples in the graph, checking with GetGraph
       sink.request(1)

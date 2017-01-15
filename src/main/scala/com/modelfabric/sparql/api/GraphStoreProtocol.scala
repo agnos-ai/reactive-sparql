@@ -94,7 +94,7 @@ object InsertGraphFromModelM {
 /**
   * Used to insert an in-memory RDF model into the triple store.
   * @param graphModel  the graph model
-  * @param graphUri    optional graph Uri, defaults to [[None]]
+  * @param graphUri    optional graph Uri, defaults to None
   * @param mergeGraphs indicates if the inserted data should be merged data already in the specified graph in
   *                    the database, if set to false the previously stored data in the graph will be replaced
   *                    with the payload, defaults to false
@@ -107,9 +107,9 @@ case class InsertGraphFromModel
 ) extends InsertGraph(graphUri, mergeGraphs) {
 
   /**
-    * We only use [[NTRIPLES]] upload format.
+    * We only use NTRIPLES upload format when uploading in-memory Models.
     */
-  override val modelFormat: RDFFormat = NTRIPLES
+  final override val modelFormat: RDFFormat = NTRIPLES
 
 }
 
@@ -123,9 +123,10 @@ object InsertGraphFromURLM {
 /**
   * Used to insert RDF contents from a file or another resource into the triple store.
   * @param url         the URL of the file to use
-  * @param modelFormat the RDF format to use, supporting all formats available in [[org.eclipse.rdf4j.rio.Rio]]
+  * @param modelFormat the RDF format to use, supporting all formats available in org.eclipse.rdf4j.rio.Rio
   * @param graphUri    an optional graph Uri, will insert into the default graph if no graph is specified.
-  *                    NB: if the incoming RDF is in "quads" format, i.e. [[NQUADS]] or [[JSONLD]], the graph
+  *                    NB: if the incoming RDF is in "quads" format, i.e. NQUADS
+  *                    or JSON-LD, the graph
   *                    in the RDF is ignored and instead the graphIri property is used.
   * @param mergeGraphs indicates if the inserted data should be merged data already in the specified graph in
   *                    the database, if set to false the previously stored data in the graph will be replaced
@@ -148,9 +149,10 @@ object InsertGraphFromPathM {
 /**
   * Used to insert RDF contents from a file or another resource into the triple store.
   * @param path        the local filesystem path of the file to use
-  * @param modelFormat the RDF format to use, supporting all formats available in [[org.eclipse.rdf4j.rio.Rio]]
+  * @param modelFormat the RDF format to use, supporting all formats available in org.eclipse.rdf4j.rio.Rio
   * @param graphUri    an optional graph Uri, will insert into the default graph if no graph is specified.
-  *                    NB: if the incoming RDF is in "quads" format, i.e. [[NQUADS]] or [[JSONLD]], the graph
+  *                    NB: if the incoming RDF is in "quads" format, i.e. NQUADS
+  *                    or JSON-LD, the graph
   *                    in the RDF is ignored and instead the graphIri property is used.
   * @param mergeGraphs indicates if the inserted data should be merged data already in the specified graph in
   *                    the database, if set to false the previously stored data in the graph will be replaced

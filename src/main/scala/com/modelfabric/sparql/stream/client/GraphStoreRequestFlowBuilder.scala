@@ -69,7 +69,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
   val useStrictByteStringStrategy = true
 
   /**
-    * How long to wait for a [[HttpEntity.Strict]] to appear when processing the [[HttpEntity]]
+    * Specifies for how long to wait for a "strict" http entity.
     */
   val strictEntityReadTimeout: FiniteDuration = 60 seconds
 
@@ -213,7 +213,9 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
 
   private def makeGraphSource(fileUrl: URL, format: RDFFormat): Source[ByteString, Any] = {
     Source.single(Uri(fileUrl.toURI.toString))
-      .mapAsync(1)(uri => Http().singleRequest(HttpRequest(uri = uri)))
+      .mapAsync(1)(uri => Http().singleRequest {
+        HttpRequest(uri = uri).withHeaders(Accept(mapRdfFormatToContentType(format).mediaType))
+      })
       .flatMapConcat(res => res.entity.dataBytes)
   }
 

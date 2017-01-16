@@ -74,7 +74,8 @@ sink.expectNext(receiveTimeout) match {
 Working with Sparql query solutions (rows of result bindings as returned by a SELECT statement) is not always suitable. This is because the result
 is not plain RDF.
 
-Use of [SPARQL CONSTRUCT](https://www.w3.org/TR/sparql11-query/#construct)s is suitable in cases where we are only interested in triples (i.e. not quads, where the graph IRI is missing)
+Use of [SPARQL CONSTRUCT](https://www.w3.org/TR/sparql11-query/#construct)s is suitable in cases where we are only interested in triples (i.e. not
+quads, where the graph IRI is missing)
 
 At the moment there is no way to write the following statement, so that the resulting RDF is returned in "quads" format (N-QUADS or JSON-LD)
 ```sparql
@@ -115,14 +116,14 @@ for more detail.
 
 ### Flavour #3: Manipulate Graphs
 
-This flow allows for basic graph manipulation, as defined by the [graph-sore protocol](https://www.w3.org/TR/2013/REC-sparql11-http-rdf-update-20130321/).
+This flow allows for basic graph manipulation, as defined by the [graph-store protocol](https://www.w3.org/TR/2013/REC-sparql11-http-rdf-update-20130321/).
 Not all aspects of the protocol are supported, however it is possible to:
 
 #### Retrieve Graphs
 
 Retrieve an entire graph using `GetGraph(graphUri: Option[URI])` wrapped in a `GraphStoreRequest()`
 
-If no graphIri is specified the query returns the result of the DEFAULT graph.
+If no graphIri is specified the query returns the contents of the DEFAULT graph.
 
 #### Drop Graphs
 

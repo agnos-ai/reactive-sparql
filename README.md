@@ -21,7 +21,6 @@ Use the `SparqlQuery(stmt: String)` or `SparqlUpdate(stmt: String)` case class a
 This is however not mandatory, there is a default result mapper available that will return a [standard
 result set model](src/main/scala/com/modelfabric/sparql/api/ResultSet.scala) based on the `application/sparql-results+json` content type.
 
-
 It is possible to use a single wrapper flow of [`Flow[SparqlRequest, SparqlResponse, _]`](src/main/scala/com/modelfabric/sparql/stream/client/SparqlRequestFlowBuilder.scala)
 to run both `SparqlUpdate()` and `SparqlQuery()` statements. There is an option to use specialised [query](src/main/scala/com/modelfabric/sparql/stream/client/SparqlQueryFlowBuilder.scala)
 and [update](src/main/scala/com/modelfabric/sparql/stream/client/SparqlUpdateFlowBuilder.scala) flows as well.
@@ -29,7 +28,6 @@ and [update](src/main/scala/com/modelfabric/sparql/stream/client/SparqlUpdateFlo
 The underlying implementation communicates with the triple store via the HTTP endpoints, as documented here
 for [queries](https://www.w3.org/TR/2013/REC-sparql11-query-20130321/)
 and [updates](https://www.w3.org/TR/2013/REC-sparql11-update-20130321/).
-
 
 #### Example #1: Run a simple Sparql query
 
@@ -115,7 +113,6 @@ case class SparqlModelResult(model: Model) extends SparqlResult
 Refer to [`Flow[SparqlRequest, SparqlResponse, _]`](src/main/scala/com/modelfabric/sparql/stream/client/SparqlConstructToModelFlowBuilder.scala)
 for more detail.
 
-
 ### Flavour #3: Manipulate Graphs
 
 This flow allows for basic graph manipulation, as defined by the [graph-sore protocol](https://www.w3.org/TR/2013/REC-sparql11-http-rdf-update-20130321/).
@@ -137,8 +134,8 @@ If no graphIri is specified the request drops the DEFAULT graph, so be careful w
 
 Insert the contents of an RDF Model into the specified graph. There are 3 variants:
 
-* `InsertGraphFromModel(graphModel: Model, graphUri: Option[URI])`: inserts an in-memory RDF Model
-* `InsertGraphFromPath(filePath: Path, graphUri: Option[URI], format: RDFFormat)`: inserts the contents of the specified file in the given RDF format.
+* `InsertGraphFromModel(graphModel: Model, graphUri: Option[URI])`: inserts an in-memory RDF Model;
+* `InsertGraphFromPath(filePath: Path, graphUri: Option[URI], format: RDFFormat)`: inserts the contents of the specified file in the given RDF format;
 * `InsertGraphFromURL(url: URL, format: RDFFormat, graphUri: Option[URI])`: inserts the contents of the file behind the specified HTTP URL in the given RDF format.
 
 All the operations above return a `GraphStoreResponse` which contains the success status of the operation and a optional model (for `GetGraph()` queries only)
@@ -157,9 +154,9 @@ There is a `mergeGraphs: Boolean` parameter for all insert messages, that allows
 the newly inserted triples.
 
 * `mergeGraphs = true` will perform a HTTP PUT operation, which merges the content of the graph being sent with the graph that
-  is already in the triple store
-* `mergeGraphs = false` is the DEFAULT option will perform a HTTP POST operation, which replacecs the content of the graph being sent with the graph that
-  is already in the triple store.
+  is already in the triple store;
+* `mergeGraphs = false` is the DEFAULT option and will perform a HTTP POST operation, which replaces the content of the graph with
+  the one being sent over.
 
 If no graph is specified, the insert will use the DEFAULT graph in the triple store.
 

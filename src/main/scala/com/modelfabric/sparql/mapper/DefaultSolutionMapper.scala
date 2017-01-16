@@ -1,11 +1,15 @@
 package com.modelfabric.sparql.mapper
 
-import com.modelfabric.sparql.client.QuerySolution
+import com.modelfabric.sparql.api.QuerySolution
+
+object DefaultSolutionMapper {
+  def apply() = new DefaultSolutionMapper {}
+}
 
 /**
  * Default mapper doesn't map query solutions. It returns unmodified solutions.
  */
-object DefaultSolutionMapper
+trait DefaultSolutionMapper
     extends SolutionMapper[QuerySolution] {
 
   def map(querySolution : QuerySolution) : QuerySolution = querySolution

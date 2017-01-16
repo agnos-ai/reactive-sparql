@@ -1,8 +1,8 @@
 package com.modelfabric.sparql.mapper
 
-import com.modelfabric.sparql.client.QuerySolution
-
 import java.net.URI
+
+import com.modelfabric.sparql.api.QuerySolution
 
 /**
  * The mapper expects that a query solution has a URI field.

@@ -1,6 +1,6 @@
 package com.modelfabric.sparql.mapper
 
-import com.modelfabric.sparql.client.QuerySolution
+import com.modelfabric.sparql.api.QuerySolution
 
 /**
  * Extracts a string value from a query solution object.

@@ -1,6 +1,6 @@
 package com.modelfabric.sparql.mapper
 
-import com.modelfabric.sparql.client.QuerySolution
+import com.modelfabric.sparql.api.QuerySolution
 
 /**
  * Implementations should be able to extract data from a query solution
@@ -15,6 +15,6 @@ trait SolutionMapper[T] {
    * @param querySolution solution containing the data.
    * @return the extracted data.
    */
-  def map(querySolution : QuerySolution) : T
+  def map(querySolution : QuerySolution): T
 }
 

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE scalastyle>
 <scalastyle>
-	<name>Scalastyle BKNOW Configuration</name>
+	<name>Scalastyle Configuration</name>
 	<check level="warning" class="org.scalastyle.file.FileTabChecker"
 		enabled="true"></check>
 	<check level="warning" class="org.scalastyle.file.FileLengthChecker"

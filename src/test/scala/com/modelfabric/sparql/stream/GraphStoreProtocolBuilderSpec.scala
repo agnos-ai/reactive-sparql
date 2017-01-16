@@ -5,14 +5,18 @@ import java.net.URL
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.Http.ServerBinding
+import akka.http.scaladsl.model.{HttpEntity, HttpResponse}
+import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Keep
+import akka.stream.scaladsl._
+import akka.stream.testkit.TestSubscriber.Probe
 import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestKit
 import com.modelfabric.sparql.SparqlQueries
 import com.modelfabric.sparql.api._
 import com.modelfabric.sparql.stream.client.{GraphStoreRequestFlowBuilder, SparqlRequestFlowBuilder}
-import com.modelfabric.sparql.util.RdfModelTestUtils
+import com.modelfabric.sparql.util.{HttpEndpoint, RdfModelTestUtils}
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 import org.eclipse.rdf4j.model.util.ModelBuilder
 import org.eclipse.rdf4j.model.Model
@@ -20,7 +24,7 @@ import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.rio.RDFFormat
 import org.scalatest.{BeforeAndAfterAll, DoNotDiscover, WordSpecLike}
 
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 
 @DoNotDiscover
@@ -36,9 +40,11 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
   implicit val dispatcher: ExecutionContext = system.dispatcher
   implicit val prefixMapping: PrefixMapping = PrefixMapping.none
 
-  implicit val receiveTimeout: FiniteDuration = 5 seconds
-
   import HttpEndpointSuiteTestRunner._
+
+  val timeout: FiniteDuration = 30 seconds
+
+  var binding: Option[ServerBinding] = None
 
   override def beforeAll(): Unit = {
     clearTestData()
@@ -46,6 +52,7 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
 
   override def afterAll(): Unit = {
     //clearTestData()
+    shutdownFileServer()
     Await.result(Http().shutdownAllConnectionPools(), 5 seconds)
   }
 
@@ -68,36 +75,55 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
     // clear the test graph
     sink.request(1)
     source.sendNext(DropGraph(Some(graphIri)))
-    sink.expectNextPF(processResponse())
+    checkAllGood(sink)
 
     // clear the model graph
     sink.request(1)
     source.sendNext(DropGraph(Some(modelGraphIri)))
-    sink.expectNextPF(processResponse())
+    checkAllGood(sink)
 
     // clear the default graph
     sink.request(1)
     source.sendNext(DropGraph(None))
-    sink.expectNextPF(processResponse())
+    checkAllGood(sink)
   }
 
-  def processResponse
+  /**
+    * Looks at the Sink and makes sure all is as expected after each test
+    * @param probe the Sink probe to check
+    * @param expectedStatus if set, check the status of the response, if None checking is skipped
+    * @param expectedModelSize if set check the size of the returned model, if None checking is skipped
+    * @param timeout set the timeout, defaults to the one set for this spec.
+    * @tparam T
+    * @return
+    */
+  def checkAllGood[T]
   (
+    probe: Probe[T],
     expectedStatus: Option[Boolean] = None,
-    expectedModelSize: Option[Int] = None
-  ): PartialFunction[Any, GraphStoreResponse] = {
-    case response@GraphStoreResponse(request, success, statusCode, statusText, modelOpt) =>
-      info(s"response status for $request ===>>> $success / $statusCode / $statusText")
-      modelOpt.foreach(dumpModel(_))
-      expectedStatus foreach (s => assert( s === success, s"expecting the response status to have the correct value, was: $s") )
-      for {
-        testSize  <- expectedModelSize
-        model     <- modelOpt
-        modelSize  = model.size()
-      } yield {
-        assert(testSize === modelSize, s"expecting model to be of certain size, was: ($modelSize)")
-      }
-      response
+    expectedModelSize: Option[Int] = None,
+    timeout: FiniteDuration = timeout
+  ): T = {
+
+    val response = probe.expectNext(timeout)
+    info(s"Got Response: $response")
+    response match {
+      case GraphStoreResponse(request, success, statusCode, statusText, modelOpt) =>
+        info(s"response status for $request ===>>> $success / $statusCode / $statusText")
+        modelOpt.foreach(dumpModel(_))
+        expectedStatus foreach (s => assert(s === success, s"expecting the response status to have the correct value, was: $s"))
+        for {
+          testSize <- expectedModelSize
+          model <- modelOpt
+          modelSize = model.size()
+        } yield {
+          assert(testSize === modelSize, s"expecting model to be of certain size, was: ($modelSize)")
+        }
+      case SparqlResponse(request, success, result, error) =>
+        info(s"response status for $request ===>>> $success / ${result.size} items/ error: $error")
+
+    }
+    response
   }
 
   import scala.collection.JavaConversions._
@@ -135,12 +161,12 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
     "1. Add a triple to the default graph" in {
       sink.request(1)
       source.sendNext(InsertGraphFromModel(model1default))
-      assertSuccessResponse(sink.expectNext(receiveTimeout))
+      checkAllGood(sink)
 
       // check with regular Sparql if the file is there
       sparqlSink.request(1)
       sparqlSource.sendNext(SparqlRequest(query1Get))
-      sparqlSink.expectNext(receiveTimeout) match {
+      checkAllGood(sparqlSink) match {
         case SparqlResponse (_, true, result, None) =>
           assert(result === query1Result)
       }
@@ -148,19 +174,19 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
       // now check with GetGraph (graph-store protocol variant)
       sink.request(1)
       source.sendNext(GetGraph(None))
-      sink.expectNextPF(processResponse(Some(true), Some(1)))
+      checkAllGood(sink, Some(true), Some(1))
 
     }
 
     "2. Add a triple to the named graph" in {
       sink.request(1)
       source.sendNext(InsertGraphFromModel(model1default, Some(graphIri)))
-      assertSuccessResponse(sink.expectNext(receiveTimeout))
+      checkAllGood(sink)
 
       // check with regular Sparql if the file is there
       sparqlSink.request(1)
       sparqlSource.sendNext(SparqlRequest(query2Get))
-      sparqlSink.expectNext(receiveTimeout) match {
+      checkAllGood(sparqlSink) match {
         case SparqlResponse (_, true, result, None) =>
           assert(result === query2Result)
       }
@@ -168,7 +194,7 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
       // now check with GetGraph (graph-store protocol variant)
       sink.request(1)
       source.sendNext(GetGraph(Some(graphIri)))
-      sink.expectNextPF(processResponse(Some(true), Some(1)))
+      checkAllGood(sink, Some(true), Some(1))
 
     }
 
@@ -177,11 +203,11 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
 
       sink.request(1)
       source.sendNext(InsertGraphFromModel(model1named, Some(graphIri)))
-      assertSuccessResponse(sink.expectNext(receiveTimeout))
+      checkAllGood(sink, Some(true))
 
       sparqlSink.request(1)
       sparqlSource.sendNext(SparqlRequest(query2Get))
-      sparqlSink.expectNext(receiveTimeout) match {
+      checkAllGood(sparqlSink) match {
         case SparqlResponse (_, true, result, None) =>
           assert(result === query2Result)
       }
@@ -189,29 +215,29 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
       // now check with GetGraph (graph-store protocol variant)
       sink.request(1)
       source.sendNext(GetGraph(Some(graphIri)))
-      sink.expectNextPF(processResponse(Some(true), Some(1)))
+      checkAllGood(sink, Some(true), Some(1))
     }
 
     "4. Add a second triple to the named graph and see if it is merged" in {
       sink.request(1)
       source.sendNext(InsertGraphFromModel(model2named, Some(graphIri), mergeGraphs = true))
-      sink.expectNextPF(processResponse(Some(true), None))
+      checkAllGood(sink, Some(true))
 
       // now there should be 2 triples in the graph, checking with GetGraph
       sink.request(1)
       source.sendNext(GetGraph(Some(graphIri)))
-      sink.expectNextPF(processResponse(Some(true), Some(2)))
+      checkAllGood(sink, Some(true), Some(2))
     }
 
     "5. Add a third triple to the named graph with merging off, and check it is the only one left" in {
       sink.request(1)
       source.sendNext(InsertGraphFromModel(model3named, Some(graphIri)))
-      sink.expectNextPF(processResponse(Some(true), None))
+      checkAllGood(sink, Some(true))
 
       // now there should be 2 triples in the graph, checking with GetGraph
       sink.request(1)
       source.sendNext(GetGraph(Some(graphIri)))
-      sink.expectNextPF(processResponse(Some(true), Some(1)))
+      checkAllGood(sink, Some(true), Some(1))
     }
 
     "6. Load N-TRIPLES file from the local filesystem into a named graph" in {
@@ -219,12 +245,12 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
 
       sink.request(1)
       source.sendNext(InsertGraphFromPath(ntFilePath, RDFFormat.NTRIPLES, Some(modelGraphIri)))
-      sink.expectNextPF(processResponse(Some(true), Some(40)))
+      checkAllGood(sink, Some(true))
 
       // now there should be 40 triples in the graph, checking with GetGraph
       sink.request(1)
       source.sendNext(GetGraph(Some(modelGraphIri)))
-      val res: GraphStoreResponse = sink.expectNextPF(processResponse(Some(true), None))
+      val res = checkAllGood(sink, Some(true), Some(40))
       res.model.get.predicates.containsAll(Set(RDFS.LABEL, RDFS.COMMENT))
       dumpModel(res.model.get, RDFFormat.TURTLE)
       dumpModel(res.model.get, RDFFormat.JSONLD)
@@ -235,12 +261,12 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
 
       sink.request(1)
       source.sendNext(InsertGraphFromPath(ntFilePath, RDFFormat.TURTLE, Some(modelGraphIri)))
-      sink.expectNextPF(processResponse(Some(true), Some(40)))
+      checkAllGood(sink, Some(true))
 
       // now there should be 40 triples in the graph, checking with GetGraph
       sink.request(1)
       source.sendNext(GetGraph(Some(modelGraphIri)))
-      val res: GraphStoreResponse = sink.expectNextPF(processResponse(Some(true), None))
+      val res = checkAllGood(sink, Some(true), Some(40))
       res.model.get.predicates.containsAll(Set(RDFS.LABEL, RDFS.COMMENT))
     }
 
@@ -249,37 +275,56 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
 
       sink.request(1)
       source.sendNext(InsertGraphFromPath(ntFilePath, RDFFormat.JSONLD, Some(modelGraphIri)))
-      sink.expectNextPF(processResponse(Some(true), Some(40)))
+      checkAllGood(sink, Some(true))
 
       // now there should be 40 triples in the graph, checking with GetGraph
       sink.request(1)
       source.sendNext(GetGraph(Some(modelGraphIri)))
-      val res: GraphStoreResponse = sink.expectNextPF(processResponse(Some(true), None))
+      val res = checkAllGood(sink, Some(true), Some(40))
       res.model.get.predicates.containsAll(Set(RDFS.LABEL, RDFS.COMMENT))
     }
 
-    "9. Load TURTLE file from a remote URL into a named graph" in {
-      // NB: this may not work behind network proxy, so make sure
-      // the http[s]_proxy and no_proxy variables is set accordingly (on Unix platforms)
-      val rdfSchemaLabelOwlURL: URL = new URL("https://www.w3.org/2000/01/rdf-schema")
-      //val rdfSchemaLabelOwlURL: URL = new URL("https://www.w3.org/ns/regorg")
+    "9. Load TURTLE file from an http server using a URL into a named graph" in {
+
+      def serveFileViaHttp(serverEndpoint: HttpEndpoint, rootFolder: String): Future[ServerBinding] = {
+        import com.modelfabric.sparql.stream.client.SparqlClientConstants._
+        val route =
+          get {
+            path(serverEndpoint.path.replaceFirst("/", "") / RemainingPath) {
+              case path if path.toString == "labels.ttl" =>
+                val fileSource = FileIO.fromPath(new File(s"$rootFolder/$path").toPath)
+                complete(HttpResponse(entity = HttpEntity(`text/turtle`, fileSource)))
+            }
+          }
+
+        Http().bindAndHandle(route, serverEndpoint.host, serverEndpoint.port, log = system.log)
+      }
+
+      val endpoint = HttpEndpoint.localhostWithAutomaticPort("/resources")
+      binding = Some(Await.result(serveFileViaHttp(endpoint, "src/test/resources"), 5 seconds))
+      val endpointUrlString = s"${endpoint.url}/labels.ttl"
+      val rdfUrl = new URL(endpointUrlString)
+      info(s"made the resource URL: $rdfUrl")
 
       sink.request(1)
-      source.sendNext(InsertGraphFromURL(rdfSchemaLabelOwlURL, RDFFormat.TURTLE, Some(modelGraphIri)))
-      processResponse()(sink.expectNext(receiveTimeout * 2))
+      source.sendNext(InsertGraphFromURL(rdfUrl, RDFFormat.TURTLE, Some(modelGraphIri)))
+      checkAllGood(sink, Some(true), None, 10 seconds)
 
-      // now there should be 87 triples in the graph, checking with GetGraph
+      // checking with GetGraph whether it worked
       sink.request(1)
       source.sendNext(GetGraph(Some(modelGraphIri)))
-      val res: GraphStoreResponse = sink.expectNextPF(processResponse(Some(true), Some(87)))
+      val res = checkAllGood(sink, Some(true), Some(40))
       res.model.get.predicates.containsAll(Set(RDFS.LABEL, RDFS.COMMENT))
+
+      // should the test never get this far to stop the server, the afterAll() hook will attempt it again
+      shutdownFileServer()
     }
 
   }
 
-  private def assertSuccessResponse(response: GraphStoreResponse): Boolean = {
-    info(s"Got response:\n:$response")
-    response.success
+  def shutdownFileServer(): Unit = {
+    binding.foreach(b => Await.result(b.unbind(), timeout))
+    binding = None
   }
 
 }

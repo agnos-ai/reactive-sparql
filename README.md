@@ -1,24 +1,26 @@
 reactive-sparql
 ===============
 
-# A Reactive SPARQL Client for Scala and Akka
+*"A Reactive SPARQL Client for Scala and Akka"*
 
-This client uses Akka to do as much as possible asynchronously, i.e. there are no blocking calls crossing process boundaries.
-The older Spray HTTP client is still available, however no longer supported. All of the documented features on this page are
-implemented fully with [akka-streams](http://doc.akka.io/docs/akka/2.4/scala.html).
+This client uses [akka-streams](http://doc.akka.io/docs/akka/2.4/scala.html to do as much as possible asynchronously, with back pressure
+support around the HTTP connection towards the triple store. There are no blocking calls crossing process boundaries.
 
-The akka-streams APIs currently support 3 different flavours of flows:
+The older Spray HTTP client is still available, however no longer supported.
 
-* [Flavour #1](#flavour1): Execute SPARQL
-* [Flavour #2](#flavour2): Construct Models
-* [Flavour #3](#flavour3): Manipulate Graphs
+The akka-streams APIs currently supports 3 flavours of flows:
 
-<a name="flavour1"/>
+* [Flavour #1](#flavour-1-run-sparql): Execute SPARQL
+* [Flavour #2](#flavour-2-construct-models): Construct Models
+* [Flavour #3](#flavour-3-manipulate-graphs): Manipulate Graphs
+
 ### Flavour #1: Run SPARQL
 
 Use the `SparqlQuery(stmt: String)` or `SparqlUpdate(stmt: String)` case class and embed it in a `SparqlRequest()` to be passed to the flow. On the other end a
-SparqlResponse() pops out. Support for custom mappings is available, where the resulting values get marshaled to e.g. a custom domain object.
-This is not necessary, as default implementation will return
+`SparqlResponse()` pops out. Support for custom mappings is available, where the resulting values get marshaled to a custom domain object.
+This is however not mandatory, there is a default result mapper available that will return a [standard
+result set model](src/main/scala/com/modelfabric/sparql/api/ResultSet.scala) based on the `application/sparql-results+json` content type.
+
 
 It is possible to use a single wrapper flow of [`Flow[SparqlRequest, SparqlResponse, _]`](src/main/scala/com/modelfabric/sparql/stream/client/SparqlRequestFlowBuilder.scala)
 to run both `SparqlUpdate()` and `SparqlQuery()` statements. There is an option to use specialised [query](src/main/scala/com/modelfabric/sparql/stream/client/SparqlQueryFlowBuilder.scala)
@@ -78,7 +80,7 @@ is not plain RDF.
 Use of [SPARQL CONSTRUCT](https://www.w3.org/TR/sparql11-query/#construct)s is suitable in cases where we are only interested in triples (i.e. not quads, where the graph IRI is missing)
 
 At the moment there is no way to write the following statement, so that the resulting RDF is returned in "quads" format (N-QUADS or JSON-LD)
-```
+```sparql
 CONSTRUCT {
   GRAPH ?g {
     ?s ?p ?o .
@@ -88,10 +90,10 @@ CONSTRUCT {
 }
 ```
 
-This flow has been created to circumvent the problem. It is an extension of the API used in [Flavour #1](#flavour1).
+This flow has been created to circumvent the problem. It is an extension of the API used in [Flavour #1](#flavour-1-run-sparql).
 
 Instead of a `SparqlQuery()` this flow works with a `SparqlModelConstruct()` inside the `SparqlRequest()`
-```
+```scala
 object SparqlModelConstruct {
   def apply(resourceIRIs: Seq[URI] = Nil,
             propertyIRIs: Seq[URI] = Nil,
@@ -107,7 +109,7 @@ By specifying a set of matching resource, property and/or graph IRIs, we limit t
 Internally this flow will generate a reified SELECT statement that allows us to capture all 4 properties of the RDF Model, including the graph IRI.
 
 The flow responds with a `SparqlModelResult(model: Model)` within a `SparqlResult()` which contains the RDF4J Model (Graph) instance.
-```
+```scala
 case class SparqlModelResult(model: Model) extends SparqlResult
 ```
 
@@ -141,7 +143,7 @@ Insert the contents of an RDF Model into the specified graph. There are 3 varian
 * `InsertGraphFromURL(url: URL, graphUri: Option[URI], format: RDFFormat)`: inserts the contents of the file behind the specified HTTP URL in the given RDF format.
 
 All the operations above return a `GraphStoreResponse` which contains the success status of the operation and a optional model (for `GetGraph()` queries only)
-```
+```scala
 case class GraphStoreResponse
 (
   request: GraphStoreRequest,

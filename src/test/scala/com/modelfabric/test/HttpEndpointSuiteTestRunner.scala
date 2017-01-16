@@ -93,8 +93,8 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
     new StreamSparqlToModelConstructClientSpec(system),
     new SpraySparqlClientSpec(system),
     new StreamSpec(system),
-    new StreamSparqlToResultsClientSpec(system),
-    new MappingStreamSparqlToResultsClientSpec(system),
+    new StreamSparqlClientSpec(system),
+    new MappingStreamSparqlClientSpec(system),
     new GraphStoreProtocolBuilderSpec(system)
   )
 

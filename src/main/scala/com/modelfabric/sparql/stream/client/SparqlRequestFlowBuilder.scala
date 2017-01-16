@@ -6,7 +6,7 @@ import com.modelfabric.sparql.api.{SparqlModelConstruct, _}
 import com.modelfabric.sparql.util.HttpEndpoint
 
 
-trait SparqlRequestFlowBuilder extends SparqlQueryToResultsFlowBuilder
+trait SparqlRequestFlowBuilder extends SparqlQueryFlowBuilder
   with SparqlConstructToModelFlowBuilder with SparqlUpdateFlowBuilder {
 
   /**

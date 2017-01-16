@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
 
 
-trait SparqlQueryToResultsFlowBuilder extends SparqlClientHelpers {
+trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
 
   import SparqlClientConstants._
 

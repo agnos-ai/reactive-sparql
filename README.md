@@ -3,7 +3,7 @@ reactive-sparql
 
 *"A Reactive SPARQL Client for Scala and Akka"*
 
-This client uses [akka-streams](http://doc.akka.io/docs/akka/2.4/scala.html to do as much as possible asynchronously, with back pressure
+This client uses [akka-streams](http://doc.akka.io/docs/akka/2.4/scala.html) to do as much as possible asynchronously, with back pressure
 support around the HTTP connection towards the triple store. There are no blocking calls crossing process boundaries.
 
 The older Spray HTTP client is still available, however no longer supported.
@@ -71,7 +71,6 @@ sink.expectNext(receiveTimeout) match {
 }
 ```
 
-<a name="flavour2"/a>
 ### Flavour #2: Construct Models
 
 Working with Sparql query solutions (rows of result bindings as returned by a SELECT statement) is not always suitable. This is because the result
@@ -117,10 +116,10 @@ Refer to [`Flow[SparqlRequest, SparqlResponse, _]`](src/main/scala/com/modelfabr
 for more detail.
 
 
-<a name="flavour3/>
 ### Flavour #3: Manipulate Graphs
 
-This flow allows for basic graph manipulation, as defined by the [graph-sore protocol](). Not all aspect of the protocol are supported, however it is possible to:
+This flow allows for basic graph manipulation, as defined by the [graph-sore protocol](https://www.w3.org/TR/2013/REC-sparql11-http-rdf-update-20130321/).
+Not all aspects of the protocol are supported, however it is possible to:
 
 #### Retrieve Graphs
 
@@ -140,7 +139,7 @@ Insert the contents of an RDF Model into the specified graph. There are 3 varian
 
 * `InsertGraphFromModel(graphModel: Model, graphUri: Option[URI])`: inserts an in-memory RDF Model
 * `InsertGraphFromPath(filePath: Path, graphUri: Option[URI], format: RDFFormat)`: inserts the contents of the specified file in the given RDF format.
-* `InsertGraphFromURL(url: URL, graphUri: Option[URI], format: RDFFormat)`: inserts the contents of the file behind the specified HTTP URL in the given RDF format.
+* `InsertGraphFromURL(url: URL, format: RDFFormat, graphUri: Option[URI])`: inserts the contents of the file behind the specified HTTP URL in the given RDF format.
 
 All the operations above return a `GraphStoreResponse` which contains the success status of the operation and a optional model (for `GetGraph()` queries only)
 ```scala
@@ -153,6 +152,16 @@ case class GraphStoreResponse
   model: Option[Model] = None
 )
 ```
+
+There is a `mergeGraphs: Boolean` parameter for all insert messages, that allows us to control how the resulting graph will deal with
+the newly inserted triples.
+
+* `mergeGraphs = true` will perform a HTTP PUT operation, which merges the content of the graph being sent with the graph that
+  is already in the triple store
+* `mergeGraphs = false` is the DEFAULT option will perform a HTTP POST operation, which replacecs the content of the graph being sent with the graph that
+  is already in the triple store.
+
+If no graph is specified, the insert will use the DEFAULT graph in the triple store.
 
 Refer to [`Flow[GraphStoreRequest, GraphStoreResponse, _]`](src/main/scala/com/modelfabric/sparql/stream/client/GraphStoreRequestFlowBuilder.scala)
 for more detail.

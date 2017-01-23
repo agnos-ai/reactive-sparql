@@ -1,0 +1,19 @@
+# sbt/travis documentation
+# * http://www.scala-sbt.org/0.13/docs/Travis-CI-with-sbt.html
+# * http://docs.travis-ci.com/user/languages/scala/
+# * http://blog.travis-ci.com/2014-12-17-faster-builds-with-container-based-infrastructure/
+#
+
+sudo: false
+
+language: scala
+
+script:
+  - sbt ++$TRAVIS_SCALA_VERSION test
+
+jdk:
+  - oraclejdk8
+
+scala:
+  - 2.12.1
+  - 2.11.8

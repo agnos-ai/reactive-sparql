@@ -90,29 +90,23 @@ trait SparqlClientHelpers {
     auth.toList
   }
 
+  /**
+    * Takes the HttpResponse and makes a SparqlResponse.
+    *
+    * NB: This function will NOT consume the response entity!!
+    *
+    * @param response
+    * @return
+    */
   def responseToSparqlResponse(response: (Try[HttpResponse], SparqlRequest)): SparqlResponse = response match {
     case (Success(HttpResponse(StatusCodes.OK, _, _, _)), request) =>
       SparqlResponse(request = request)
-    case (Success(HttpResponse(status, headers, entity, _)), request) =>
-      val error = SparqlClientRequestFailed(s"Request failed with: $status, headers: ${headers.mkString("|")}, message: $entity)")
+    case (Success(HttpResponse(status, headers, _, _)), request) =>
+      val error = SparqlClientRequestFailed(s"Request failed with: $status, headers: ${headers.mkString("|")}")
       SparqlResponse(success = false, request = request, error = Some(error))
     case (Failure(throwable), request) =>
       val error = SparqlClientRequestFailedWithError("Request failed on the HTTP layer", throwable)
       SparqlResponse(success = false, request = request, error = Some(error))
-  }
-
-  protected def responseToBoolean(response: (Try[HttpResponse], _)): Future[Boolean] = {
-    response match {
-      case (Success(HttpResponse(status, _, entity, _)), _)
-        if status == StatusCodes.OK && entity.contentType == `text/boolean` =>
-        Unmarshal(entity).to[Boolean]
-      case (Success(HttpResponse(status, _, _, _)), _) if status == StatusCodes.OK =>
-        Future.successful(true)
-      case (Success(HttpResponse(status, _, _, _)), _) =>
-        Future.failed(SparqlClientRequestFailed(s"Unexpected response status: $status"))
-      case x@_ =>
-        Future.failed(SparqlClientRequestFailed(s"Unexpected response: $x"))
-    }
   }
 
   protected def mapHttpMethod(in: ApiHttpMethod): HttpMethod = in match {

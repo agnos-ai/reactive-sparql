@@ -28,7 +28,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration._
 
 @DoNotDiscover
-class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_system)
+class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProtocolBuilderSpec"))
   with WordSpecLike
   with BeforeAndAfterAll
   with GraphStoreRequestFlowBuilder
@@ -51,9 +51,9 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
   }
 
   override def afterAll(): Unit = {
-    //clearTestData()
     shutdownFileServer()
     Await.result(Http().shutdownAllConnectionPools(), 5 seconds)
+    Await.result(system.terminate(), 5 seconds)
   }
 
   private val flowUnderTest = graphStoreRequestFlow(testServerEndpoint)
@@ -318,6 +318,16 @@ class GraphStoreProtocolBuilderSpec(val _system: ActorSystem) extends TestKit(_s
 
       // should the test never get this far to stop the server, the afterAll() hook will attempt it again
       shutdownFileServer()
+    }
+
+    "10. Streams must complete gracefully" in {
+
+      source.sendComplete()
+      sparqlSource.sendComplete()
+
+      sink.expectComplete()
+      sparqlSink.expectComplete()
+
     }
 
   }

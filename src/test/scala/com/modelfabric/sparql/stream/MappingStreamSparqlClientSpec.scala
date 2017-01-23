@@ -1,7 +1,5 @@
 package com.modelfabric.sparql.stream
 
-import java.net.URI
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
@@ -10,7 +8,7 @@ import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestKit
 import com.modelfabric.sparql.SparqlQueries
 import com.modelfabric.sparql.api._
-import com.modelfabric.sparql.stream.client.{SparqlQueryFlowBuilder, SparqlRequestFlowBuilder}
+import com.modelfabric.sparql.stream.client.SparqlRequestFlowBuilder
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 import org.scalatest._
 
@@ -20,11 +18,9 @@ import scala.language.postfixOps
 
 /**
   * This test runs as part of the [[HttpEndpointSuiteTestRunner]] Suite.
- *
-  * @param _system the actor system
   */
 @DoNotDiscover
-class MappingStreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
+class MappingStreamSparqlClientSpec() extends TestKit(ActorSystem("MappingStreamSparqlClientSpec"))
   with WordSpecLike with MustMatchers with BeforeAndAfterAll with SparqlQueries with SparqlRequestFlowBuilder {
 
   implicit val materializer = ActorMaterializer()(system)
@@ -44,7 +40,6 @@ class MappingStreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_s
       .run()
 
     "1. Clear the data" in {
-
       sink.request(1)
       source.sendNext(SparqlRequest(delete))
 
@@ -56,43 +51,36 @@ class MappingStreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_s
       sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, result, None) => assert(result === emptyResult)
       }
-
     }
 
     "2. Allow one insert" in {
-
       sink.request(1)
       source.sendNext(SparqlRequest(insert1))
 
       assertSuccessResponse(sink.expectNext(receiveTimeout))
-
     }
 
     "3. Get the MAPPED results just inserted via HTTP GET" in {
-
       sink.request(1)
       source.sendNext(SparqlRequest(mappingQuery2Get))
 
       sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, result, None) => assert(result === mappedQuery1Result)
-        case r@SparqlResponse(_, _, _, _) => assert(false, r)
+        case r@SparqlResponse(_, _, _, _) => fail(s"unexpected: $r")
       }
     }
 
     "4. Get the MAPPED results just inserted via HTTP POST" in {
-
       sink.request(1)
       source.sendNext(SparqlRequest(mappingQuery2Post))
 
       sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, result, None) => assert(result === mappedQuery1Result)
-        case r@SparqlResponse(_, _, _, _) => assert(false, r)
+        case r@SparqlResponse(_, _, _, _) => fail(s"unexpected: $r")
       }
-
     }
 
     "5. Stream must complete gracefully" in {
-
       source.sendComplete()
       sink.expectComplete()
     }
@@ -101,10 +89,12 @@ class MappingStreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_s
 
   private def assertSuccessResponse(response: SparqlResponse): Unit = response match {
     case SparqlResponse(_, true, _, _) => assert(true)
-    case x@SparqlResponse(_, _, _, _) => assert(false, x)
+    case x@SparqlResponse(_, _, _, _) => fail(s"unexpected: $x")
   }
 
   override def afterAll(): Unit = {
     Await.result(Http().shutdownAllConnectionPools(), 5 seconds)
+    Await.result(system.terminate(), 5 seconds)
   }
+
 }

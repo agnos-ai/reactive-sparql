@@ -63,10 +63,12 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
   import GraphStoreRequestFlowBuilder._
 
   /**
-    * If this is set to true (default) then the response entity is "strictified", i.e. all chunks are loaded
-    * into memory in one go.
+    * If this is set to true then the response entity is "strictified", i.e. all chunks are loaded
+    * into memory in one go. However by being false, the result is processed
+    * as a proper stream but there is the risk is that the user might
+    * get more than a single response per request.
     */
-  val useStrictByteStringStrategy = true
+  val useStrictByteStringStrategy = false
 
   /**
     * Specifies for how long to wait for a "strict" http entity.
@@ -83,15 +85,14 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
       .fromFunction(graphStoreOpToRequest(endpoint))
       .via(pooledHttpClientFlow[GraphStoreRequest](endpoint))
       .flatMapConcat {
-      case (Success(response), request) =>
-        val gsr = GraphStoreResponse(
-          request,
-          success = calculateSuccess(response.status),
-          statusCode = response.status.intValue,
-          statusText = response.status.reason
-        )
-        makeModelSource(response.entity).map( s => gsr.copy(model = s)).take(1)
-
+        case (Success(response), request) =>
+          val gsr = GraphStoreResponse(
+            request,
+            success = calculateSuccess(response.status),
+            statusCode = response.status.intValue,
+            statusText = response.status.reason
+          )
+          makeModelSource(response.entity).map( s => gsr.copy(model = s))
       case (Failure(error), _) =>
         throw error //fail the stream, there is nothing we can do
     }
@@ -100,18 +101,25 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
   def makeModelSource(entity: HttpEntity): Source[Option[Model], Any] = {
     if ( entity.isKnownEmpty()
       || entity.contentType.mediaType != `application/n-triples`.mediaType) {
+      // if we know there are no bytes in the entity (no-graph has been returned)
+      // or the reponse content type is not what we have requested then no model is emitted.
       entity.discardBytes()
       Source.single(None)
     } else if ( !useStrictByteStringStrategy) {
-      // TODO: mapping over the data bytes stream won't work because the stream will never emit for empty entities
+      // NB: mapping over the data bytes stream won't work because the stream will never emit for empty entities
+      // the trick is to introduce a scan() call, which will emit an empty string even if nothing comes through.
       entity.withoutSizeLimit().dataBytes
+        .scan(ByteString.empty)((a,b) => b ++ a)
+        .filter(_.nonEmpty)
+        //.via(Framing.delimiter(ByteString.fromString("\n"), maximumFrameLength = strictEntityMaximumLengthInBytes))
         .map { bs =>
           val reader = new StringReader(bs.utf8String)
           val mt = Try(Rio.parse(reader, "", mapContentTypeToRdfFormat(entity.contentType)))
           mt.toOption
         }
     } else if (useStrictByteStringStrategy) {
-      // this workaround does seem to be alright, because chunked resonses have a limited size
+      // this workaround does seem to be alright for smaller graphs that can be
+      // converted to a strict in-memory entity - currently this off by default
       Source.single(entity.withSizeLimit(strictEntityMaximumLengthInBytes))
         .mapAsync(numberOfCpuCores)(_.toStrict(strictEntityReadTimeout))
         .map { bs =>
@@ -125,6 +133,13 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
     }
   }
 
+  /**
+    * Returns true or false if a supported success or failure code is given. For unsupported
+    * codes, a SparqlClientRequestFailed is thrown.
+    *
+    * @param statusCode
+    * @return
+    */
   def calculateSuccess(statusCode: StatusCode): Boolean = {
     if (successfulHttpResponseStatusCodes.contains(statusCode)) true
     else if (failingHttpResponseStatusCodes.contains(statusCode)) false

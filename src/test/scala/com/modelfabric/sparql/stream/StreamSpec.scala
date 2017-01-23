@@ -6,7 +6,6 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl._
 
-import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.{Authorization, BasicHttpCredentials}
@@ -22,11 +21,9 @@ import akka.testkit.TestKit
 
 /**
   * This test runs as part of the [[HttpEndpointSuiteTestRunner]] Suite.
- *
-  * @param _system
   */
 @DoNotDiscover
-class StreamSpec(val _system: ActorSystem) extends TestKit(_system)
+class StreamSpec extends TestKit(ActorSystem("StreamSpec"))
   with WordSpecLike with MustMatchers with BeforeAndAfterAll {
 
   implicit val testMaterializer = ActorMaterializer()
@@ -48,11 +45,9 @@ class StreamSpec(val _system: ActorSystem) extends TestKit(_system)
 
       val result = Await.result(responseFuture, 5 seconds)
       println(result)
-      assert {
-        result match {
-          case HttpResponse(StatusCodes.OK, _, _, _) => true
-          case x@_ => false
-        }
+      result match {
+        case HttpResponse(StatusCodes.OK, _, _, _) => assert(true)
+        case x@_ => fail(s"unexpected: $x")
       }
     }
 
@@ -64,13 +59,16 @@ class StreamSpec(val _system: ActorSystem) extends TestKit(_system)
 
       val result = Await.result(responseFuture, 5 seconds)
       println(result)
-      assert {
-        result match {
-          case HttpResponse(StatusCodes.NotFound, _, _, _) => true
-          case x@_ => false
-        }
+      result match {
+        case HttpResponse(StatusCodes.NotFound, _, _, _) => assert(true)
+        case x@_ => fail(s"unexpected: $x")
       }
     }
+  }
+
+  override def afterAll(): Unit = {
+    Await.result(Http().shutdownAllConnectionPools(), 5 seconds)
+    Await.result(system.terminate(), 5 seconds)
   }
 
 }

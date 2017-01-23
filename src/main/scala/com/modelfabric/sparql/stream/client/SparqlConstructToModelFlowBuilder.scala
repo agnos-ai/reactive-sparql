@@ -76,6 +76,9 @@ trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
       }
   }
 
+  /**
+    * This flow will consume the Http response entity and produces a corresponding SparqlResult
+    */
   val responseToModelFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, _] = {
     Flow[(Try[HttpResponse], SparqlRequest)]
       .flatMapConcat {

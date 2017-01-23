@@ -18,11 +18,9 @@ import scala.language.postfixOps
 
 /**
   * This test runs as part of the [[HttpEndpointSuiteTestRunner]] Suite.
- *
-  * @param _system the actor system
   */
 @DoNotDiscover
-class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
+class StreamSparqlRequestClientSpec extends TestKit(ActorSystem("StreamSparqlRequestClientSpec"))
   with WordSpecLike with MustMatchers with BeforeAndAfterAll
   with SparqlQueries with SparqlRequestFlowBuilder {
 
@@ -43,17 +41,25 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
       .run()
 
     "1. Clear the data" in {
+      val numUpdates = 5
+      sink.request(numUpdates)
+      // all we need is a single delete, however we are trying
+      // to saturate the stream, so it back-pressures in case
+      // the responses don't get processed properly - this was a known bug
+      for ( _ <- 1 to numUpdates) {
+        source.sendNext(SparqlRequest(delete))
+      }
 
-      sink.request(1)
-      source.sendNext(SparqlRequest(delete))
-
-      assertSuccessResponse(sink.expectNext(receiveTimeout))
+      for ( _ <- 1 to numUpdates) {
+        assertSuccessResponse(sink.expectNext(receiveTimeout))
+      }
 
       sink.request(1)
       source.sendNext(SparqlRequest(query1))
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, emptyResult, None) => assert(true)
+        case SparqlResponse (_, true, result, None) => assert(result == emptyResult)
+        case x@_ => fail(s"Unexpected: $x")
       }
 
     }
@@ -82,7 +88,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
       source.sendNext(SparqlRequest(query2Get))
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, query2Result, None) => assert(true)
+        case SparqlResponse (_, true, result, None) => assert(result === query2Result)
       }
     }
 
@@ -92,7 +98,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
       source.sendNext(SparqlRequest(query2Post))
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, query2Result, None) => assert(true)
+        case SparqlResponse (_, true, result, None) => assert(result === query2Result)
       }
 
     }
@@ -108,7 +114,7 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
       }
 
       val x = for (
-        i <- 0 until numRequests;
+        _ <- 0 until numRequests;
         response = sink.expectNext(receiveTimeout)
       ) yield {
         response match {
@@ -131,10 +137,12 @@ class StreamSparqlClientSpec(val _system: ActorSystem) extends TestKit(_system)
 
   private def assertSuccessResponse(response: SparqlResponse): Unit = response match {
     case SparqlResponse(_, true, _, _) => assert(true)
-    case x@SparqlResponse(_, _, _, _) => assert(false, x)
+    case x@SparqlResponse(_, _, _, _) => fail(s"unexpected: $x")
   }
 
   override def afterAll(): Unit = {
     Await.result(Http().shutdownAllConnectionPools(), 5 seconds)
+    Await.result(system.terminate(), 5 seconds)
   }
+
 }

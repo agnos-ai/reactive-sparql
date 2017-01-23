@@ -19,11 +19,9 @@ import scala.language.postfixOps
 
 /**
   * This test runs as part of the [[HttpEndpointSuiteTestRunner]] Suite.
- *
-  * @param _system the actor system
   */
 @DoNotDiscover
-class StreamSparqlToModelConstructClientSpec(val _system: ActorSystem) extends TestKit(_system)
+class StreamSparqlToModelConstructClientSpec extends TestKit(ActorSystem("StreamSparqlToModelConstructClientSpec"))
   with WordSpecLike with MustMatchers with BeforeAndAfterAll
   with SparqlQueries with SparqlRequestFlowBuilder with RdfModelTestUtils {
 
@@ -48,12 +46,10 @@ class StreamSparqlToModelConstructClientSpec(val _system: ActorSystem) extends T
 
       sink.request(1)
       source.sendNext(SparqlRequest(deleteModelGraph))
-
       assertSuccessResponse(sink.expectNext(receiveTimeout))
 
       sink.request(1)
       source.sendNext(SparqlRequest(queryModelGraph))
-
       sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, result, None) => assert(result == emptyResult)
       }
@@ -156,5 +152,7 @@ class StreamSparqlToModelConstructClientSpec(val _system: ActorSystem) extends T
 
   override def afterAll(): Unit = {
     Await.result(Http().shutdownAllConnectionPools(), 5 seconds)
+    Await.result(system.terminate(), 5 seconds)
   }
+
 }

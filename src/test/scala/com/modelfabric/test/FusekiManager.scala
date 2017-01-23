@@ -19,7 +19,7 @@ object FusekiManager {
   case object StartError extends Message
   case object Shutdown extends Message
   case object ShutdownOk extends Message
-  case object ShutdownError extends Message
+  case class ShutdownError(error: Throwable) extends Message
 
   private case class Ping(
     respondTo: ActorRef,
@@ -48,7 +48,11 @@ object FusekiManager {
     }
 
     def shutdownServer(): Unit = {
-      process.foreach(_.destroy())
+      process.foreach { p =>
+        p.destroy()
+        p.waitFor()
+        println(s"Fuseki Server killed with status: ${p.exitValue()}")
+      }
       process = None
     }
   }
@@ -67,7 +71,7 @@ object FusekiManager {
   *
   * @param endpoint the HttpEndpoint instance to bind too, e.g. "localhost"
   */
-class FusekiManager(val endpoint: HttpEndpoint) extends Actor with ActorLogging {
+class  FusekiManager(val endpoint: HttpEndpoint) extends Actor with ActorLogging {
 
   import context.dispatcher
   implicit val timeout = Timeout(5 seconds)
@@ -142,7 +146,7 @@ class FusekiManager(val endpoint: HttpEndpoint) extends Actor with ActorLogging 
     case SoftShutdownRequested(originalSender) =>
       /* soft shutdown succeeds if pings start failing eventually */
       /* start pinging the server and issue ShutdownOk to the sender when ping is no longer successful */
-      self ! Ping(originalSender, sendOnSuccess = ShutdownError, sendOnFailure = ShutdownOk, stopOnSuccess = false)
+      self ! Ping(originalSender, sendOnSuccess = ShutdownError(null), sendOnFailure = ShutdownOk, stopOnSuccess = false)
 
     case HardShutdownRequested(originalSender) =>
       Future {
@@ -150,8 +154,8 @@ class FusekiManager(val endpoint: HttpEndpoint) extends Actor with ActorLogging 
       } onComplete {
         case Success(_) =>
           originalSender ! ShutdownOk
-        case Failure(_) =>
-          originalSender ! ShutdownError
+        case Failure(x) =>
+          originalSender ! ShutdownError(x)
       }
 
   }

@@ -2,19 +2,18 @@ package com.modelfabric.sparql.spray
 
 import com.modelfabric.sparql.SparqlQueries
 import com.modelfabric.sparql.api._
-import com.modelfabric.sparql.spray.client.{SparqlHttpSprayClient, MessageSparqlClientQueryEnd}
+import com.modelfabric.sparql.spray.client.{MessageSparqlClientQueryEnd, SparqlHttpSprayClient}
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 
 import scala.language.postfixOps
-
-import akka.actor.{Props, ActorSystem}
-
-import spray.http.{StatusCodes, HttpResponse}
+import akka.actor.{ActorSystem, Props}
+import akka.http.scaladsl.Http
+import spray.http.{HttpResponse, StatusCodes}
 import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest._
-
 import com.modelfabric.sparql.spray.client._
 
+import scala.concurrent.Await
 import scala.concurrent.duration._
 
 object SpraySparqlClientSpec {
@@ -24,15 +23,13 @@ object SpraySparqlClientSpec {
 
 /**
   * This test runs as part of the [[HttpEndpointSuiteTestRunner]] Suite.
-  *
-  * @param _system
   */
 @DoNotDiscover
-class SpraySparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
+class SpraySparqlClientSpec extends TestKit(ActorSystem("SparqlSparqlClientSpec", HttpEndpointSuiteTestRunner.config))
   with WordSpecLike with MustMatchers with BeforeAndAfterAll
   with ImplicitSender with SparqlQueries {
 
-  def config = SparqlClientConfig(_system)
+  def config = SparqlClientConfig(system)
 
   lazy val client = system.actorOf(Props(classOf[SparqlHttpSprayClient], config))
 
@@ -136,6 +133,11 @@ class SpraySparqlClientSpec(_system: ActorSystem) extends TestKit(_system)
         case msg @ _ => handleUnknownMessage(msg)
       }
     }
+  }
+
+  override def afterAll(): Unit = {
+    Await.result(Http().shutdownAllConnectionPools(), 5 seconds)
+    Await.result(system.terminate(), 5 seconds)
   }
 }
 

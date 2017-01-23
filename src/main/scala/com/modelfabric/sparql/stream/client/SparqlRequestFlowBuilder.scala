@@ -34,8 +34,8 @@ trait SparqlRequestFlowBuilder extends SparqlQueryFlowBuilder
 
       val responseMerger = builder.add(Merge[SparqlResponse](3).named("merge.sparqlResponse"))
 
-      partition ~> sparqlQueryFlow(endpoint)  ~> responseMerger
-      partition ~> sparqlUpdateFlow(endpoint) ~> responseMerger
+      partition ~> sparqlQueryFlow(endpoint)          ~> responseMerger
+      partition ~> sparqlUpdateFlow(endpoint)         ~> responseMerger
       partition ~> sparqlModelConstructFlow(endpoint) ~> responseMerger
 
       FlowShape(partition.in, responseMerger.out)

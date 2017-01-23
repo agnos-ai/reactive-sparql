@@ -1,6 +1,7 @@
 package com.modelfabric.test
 
 import akka.actor.{ActorSystem, Props}
+import akka.http.scaladsl.Http
 import akka.testkit.{ImplicitSender, TestKit}
 import com.modelfabric.sparql.spray.SpraySparqlClientSpec
 import com.modelfabric.sparql.stream._
@@ -9,6 +10,7 @@ import com.modelfabric.test.FusekiManager._
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest._
 
+import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.languageFeature.postfixOps
 
@@ -90,12 +92,12 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
     * @return
     */
   override def nestedSuites = Vector(
-    new StreamSparqlToModelConstructClientSpec(system),
-    new SpraySparqlClientSpec(system),
-    new StreamSpec(system),
-    new StreamSparqlClientSpec(system),
-    new MappingStreamSparqlClientSpec(system),
-    new GraphStoreProtocolBuilderSpec(system)
+    //new SpraySparqlClientSpec(), //no longer supported
+    new StreamSparqlToModelConstructClientSpec(),
+    new StreamSpec(),
+    new StreamSparqlRequestClientSpec(),
+    new MappingStreamSparqlClientSpec(),
+    new GraphStoreProtocolBuilderSpec()
   )
 
   val _log = akka.event.Logging(this.system, testActor)
@@ -123,9 +125,8 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
     * @param system The ActorSystem currently in use.
     */
   def shutdownSystem(implicit system: ActorSystem) {
-    system.terminate()
-    // Give the OS some time to clean up the actor system. This sucks.
-    Thread.sleep(250)
+    Await.result(Http().shutdownAllConnectionPools(), 5 seconds)
+    Await.result(system.terminate(), 5 seconds)
   }
 
 }

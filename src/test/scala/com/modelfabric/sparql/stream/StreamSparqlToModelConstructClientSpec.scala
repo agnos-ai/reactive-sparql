@@ -29,7 +29,7 @@ class StreamSparqlToModelConstructClientSpec extends TestKit(ActorSystem("Stream
   implicit val dispatcher: ExecutionContext = system.dispatcher
   implicit val prefixMapping: PrefixMapping = PrefixMapping.none
 
-  implicit val receiveTimeout: FiniteDuration = 3 seconds
+  implicit val receiveTimeout: FiniteDuration = 30 seconds
 
   import HttpEndpointSuiteTestRunner._
 
@@ -46,6 +46,10 @@ class StreamSparqlToModelConstructClientSpec extends TestKit(ActorSystem("Stream
 
       sink.request(1)
       source.sendNext(SparqlRequest(deleteModelGraph))
+      assertSuccessResponse(sink.expectNext(receiveTimeout))
+
+      sink.request(1)
+      source.sendNext(SparqlRequest(deleteAlternateModelGraph))
       assertSuccessResponse(sink.expectNext(receiveTimeout))
 
       sink.request(1)

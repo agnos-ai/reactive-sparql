@@ -28,7 +28,7 @@ class StreamSparqlRequestClientSpec extends TestKit(ActorSystem("StreamSparqlReq
   implicit val dispatcher: ExecutionContext = system.dispatcher
   implicit val prefixMapping: PrefixMapping = PrefixMapping.none
 
-  implicit val receiveTimeout: FiniteDuration = 5 seconds
+  implicit val receiveTimeout: FiniteDuration = 30 seconds
 
   import HttpEndpointSuiteTestRunner._
 
@@ -47,7 +47,7 @@ class StreamSparqlRequestClientSpec extends TestKit(ActorSystem("StreamSparqlReq
       // to saturate the stream, so it back-pressures in case
       // the responses don't get processed properly - this was a known bug
       for ( _ <- 1 to numUpdates) {
-        source.sendNext(SparqlRequest(delete))
+        source.sendNext(SparqlRequest(dropGraph))
       }
 
       for ( _ <- 1 to numUpdates) {

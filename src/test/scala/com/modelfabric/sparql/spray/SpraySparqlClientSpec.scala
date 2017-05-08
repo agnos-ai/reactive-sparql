@@ -71,7 +71,7 @@ class SpraySparqlClientSpec extends TestKit(ActorSystem("SparqlSparqlClientSpec"
 
     "1. Clear the data" in {
 
-      client ! delete
+      client ! dropGraph
 
       fishForMessage(dbTimeout, "a. wait for MessageSparqlClientUpdateSuccessful") {
         case MessageSparqlClientUpdateSuccessful(_) => handleSparqlUpdateSuccessful

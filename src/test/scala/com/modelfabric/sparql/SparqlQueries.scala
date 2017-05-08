@@ -15,10 +15,8 @@ trait SparqlQueries {
     svf.createIRI(uri.toString)
   }
 
-  lazy val delete = SparqlUpdate { s"""
-    |WITH <$graphIri>
-    |DELETE { ?a ?b ?c . }
-    |WHERE { ?a ?b ?c . }
+  lazy val dropGraph = SparqlUpdate { s"""
+    |DROP SILENT GRAPH <$graphIri>
     |"""
   }
 
@@ -134,8 +132,8 @@ trait SparqlQueries {
   }
   case class Person(id: URI, name: String) extends SparqlResult
 
-  lazy val mappingQuery2Get = SparqlQuery( select2, mapping = Person)
-  lazy val mappingQuery2Post = SparqlQuery( select2, method = POST, mapping = Person)
+  lazy val mappingQuery2Get   = SparqlQuery( select2, mapping = Person)
+  lazy val mappingQuery2Post  = SparqlQuery( select2, method = POST, mapping = Person)
 
   lazy val mappedQuery2Result = Person(whateverIri, "William") :: Nil
 
@@ -144,7 +142,13 @@ trait SparqlQueries {
   lazy val modelAlternateGraphIri = uri("urn:test:mfab:modelalt")
   lazy val deleteModelGraph = {
     SparqlUpdate(s"""
-       |DROP SILENT ALL
+       |DROP SILENT GRAPH <$modelGraphIri>
+     """)
+  }
+
+  lazy val deleteAlternateModelGraph = {
+    SparqlUpdate(s"""
+       |DROP SILENT GRAPH <$modelAlternateGraphIri>
      """)
   }
 

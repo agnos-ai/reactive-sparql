@@ -41,7 +41,7 @@ class MappingStreamSparqlClientSpec() extends TestKit(ActorSystem("MappingStream
 
     "1. Clear the data" in {
       sink.request(1)
-      source.sendNext(SparqlRequest(delete))
+      source.sendNext(SparqlRequest(dropGraph))
 
       assertSuccessResponse(sink.expectNext(receiveTimeout))
 

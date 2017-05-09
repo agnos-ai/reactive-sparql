@@ -2,6 +2,8 @@ package com.modelfabric.sparql.api
 
 import java.net.URI
 
+import akka.http.scaladsl.model.{HttpMethod, HttpMethods}
+
 object SparqlModelConstruct {
   def apply(resourceIRIs: Seq[URI] = Nil,
             propertyIRIs: Seq[URI] = Nil,
@@ -91,7 +93,7 @@ object SparqlModelConstruct {
 abstract class SparqlModelConstruct()(
   implicit pm: PrefixMapping) extends SparqlStatement()(pm) {
 
-  override val httpMethod = HttpMethod.POST
+  override val httpMethod = HttpMethods.POST
 
   def reasoning = false
 }

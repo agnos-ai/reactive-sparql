@@ -119,7 +119,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
         } yield {
           assert(testSize === modelSize, s"expecting model to be of certain size, was: ($modelSize)")
         }
-      case SparqlResponse(request, success, result, error) =>
+      case SparqlResponse(request, success, _, result, error) =>
         info(s"response status for $request ===>>> $success / ${result.size} items/ error: $error")
 
     }
@@ -167,7 +167,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       sparqlSink.request(1)
       sparqlSource.sendNext(SparqlRequest(query1Get))
       checkAllGood(sparqlSink) match {
-        case SparqlResponse (_, true, result, None) =>
+        case SparqlResponse (_, true, _, result, None) =>
           assert(result === query1Result)
       }
 
@@ -187,7 +187,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       sparqlSink.request(1)
       sparqlSource.sendNext(SparqlRequest(query2Get))
       checkAllGood(sparqlSink) match {
-        case SparqlResponse (_, true, result, None) =>
+        case SparqlResponse (_, true, _, result, None) =>
           assert(result === query2Result)
       }
 
@@ -208,7 +208,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       sparqlSink.request(1)
       sparqlSource.sendNext(SparqlRequest(query2Get))
       checkAllGood(sparqlSink) match {
-        case SparqlResponse (_, true, result, None) =>
+        case SparqlResponse (_, true, _, result, None) =>
           assert(result === query2Result)
       }
 

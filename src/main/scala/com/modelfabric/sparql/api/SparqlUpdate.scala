@@ -2,6 +2,8 @@ package com.modelfabric.sparql.api
 
 import java.text.SimpleDateFormat
 
+import akka.http.scaladsl.model.{HttpMethod, HttpMethods}
+
 object SparqlUpdate {
 
   /**
@@ -29,7 +31,7 @@ abstract class SparqlUpdate()(
 
   lazy val formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
 
-  override val httpMethod = HttpMethod.POST
+  override val httpMethod = HttpMethods.POST
 
   protected def formatDate(date : java.util.Date) = {
     formatter.format(date)

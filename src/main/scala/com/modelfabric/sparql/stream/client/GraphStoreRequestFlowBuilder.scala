@@ -4,12 +4,14 @@ import java.io.{StringReader, StringWriter}
 import java.net.{URI, URL}
 import java.nio.file.Path
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.Accept
 import akka.http.scaladsl.model.{HttpEntity, _}
+import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Flow, Source}
 import akka.util.ByteString
-import com.modelfabric.sparql.api.{HttpMethod => ApiHttpMethod, _}
+import com.modelfabric.sparql.api._
 import com.modelfabric.sparql.util.HttpEndpoint
 import org.eclipse.rdf4j.model.Model
 import org.eclipse.rdf4j.rio.{RDFFormat, Rio}
@@ -61,6 +63,10 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
   import com.modelfabric.extension.StringExtensions._
 
   import GraphStoreRequestFlowBuilder._
+
+  implicit val system: ActorSystem
+  implicit val materializer: ActorMaterializer
+  import system.dispatcher
 
   /**
     * If this is set to true then the response entity is "strictified", i.e. all chunks are loaded
@@ -158,8 +164,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
 
       case GetGraphM(graphUri, method) =>
         HttpRequest(
-          method = mapHttpMethod(method),
-          uri = s"${endpoint.path}${mapGraphOptionToPath(graphUri)}"
+          method, uri = s"${endpoint.path}${mapGraphOptionToPath(graphUri)}"
         ).withHeaders(
           Accept(`application/n-triples`.mediaType)
           :: makeRequestHeaders(endpoint)
@@ -167,8 +172,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
 
       case DropGraphM(graphUri, method) =>
         HttpRequest(
-          method = mapHttpMethod(method),
-          uri = s"${endpoint.path}${mapGraphOptionToPath(graphUri)}"
+          method, uri = s"${endpoint.path}${mapGraphOptionToPath(graphUri)}"
         ).withHeaders(makeRequestHeaders(endpoint))
 
       case InsertGraphFromModelM(model, format, graphUri, method) =>
@@ -191,7 +195,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
   private def makeInsertGraphHttpRequest
   (
     endpoint: HttpEndpoint,
-    method: ApiHttpMethod,
+    method: HttpMethod,
     graphUri: Option[URI],
     contentType: ContentType
   )
@@ -199,8 +203,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
     entitySourceCreator: () => Source[ByteString, Any]
   ): HttpRequest = {
     HttpRequest(
-      method = mapHttpMethod(method),
-      uri = s"${endpoint.path}${mapGraphOptionToPath(graphUri)}"
+      method, uri = s"${endpoint.path}${mapGraphOptionToPath(graphUri)}"
     )
     .withHeaders(makeRequestHeaders(endpoint))
     .withEntity(

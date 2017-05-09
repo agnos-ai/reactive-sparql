@@ -3,10 +3,11 @@ package com.modelfabric.sparql.api
 import java.net.{URI, URL}
 import java.nio.file.Path
 
-import com.modelfabric.sparql.api.HttpMethod.{DELETE, GET, POST, PUT}
+import akka.http.scaladsl.model.HttpMethod
+import akka.http.scaladsl.model.HttpMethods._
 import org.eclipse.rdf4j.model.Model
 import org.eclipse.rdf4j.rio.RDFFormat
-import org.eclipse.rdf4j.rio.RDFFormat.{JSONLD, NQUADS, NTRIPLES}
+import org.eclipse.rdf4j.rio.RDFFormat.NTRIPLES
 
 
 /**

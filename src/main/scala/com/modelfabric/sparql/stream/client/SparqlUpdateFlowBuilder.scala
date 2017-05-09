@@ -33,7 +33,7 @@ trait SparqlUpdateFlowBuilder extends SparqlClientHelpers {
       val broadcastUpdateHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).async.named("broadcast.updateResponse"))
       val booleanParser = builder.add(Flow[(Try[HttpResponse], SparqlRequest)].mapAsync(1)(res => responseToBoolean(res)).async.named("mapping.parseBoolean"))
       val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).async.named("mapping.makeResponseFromHeader"))
-      val updateResultZipper = builder.add(ZipWith[Boolean, SparqlResponse, SparqlResponse]( (success, response) =>
+      val updateResultZipper = builder.add(ZipWith[Boolean, SparqlResponse, SparqlResponse]((success, response) =>
         response.copy(
           success = success
         )

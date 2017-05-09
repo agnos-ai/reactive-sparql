@@ -1,12 +1,74 @@
 package com.modelfabric.sparql.api
 
-import com.modelfabric.sparql.api.HttpMethod.{GET, POST}
+import akka.http.scaladsl.model._
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
+import org.eclipse.rdf4j.model.{IRI, Value}
+import com.modelfabric.sparql.stream.client.SparqlClientConstants._
+import com.modelfabric.sparql.util.SparqlQueryStringConverter
 
+trait QueryType
 
-object SparqlQuery {
+/**
+  * For queries that return a streamed source of the triple stores response directly, which is
+  * suitable for large batch jobs and long lasting operations.
+  */
+case class StreamedQuery(desiredContentType: ContentType = `application/sparql-results+json`) extends QueryType
+
+trait MappedQuery[T <: SparqlResult] extends QueryType {
+  def mapper: ResultMapper[T]
+}
+
+/**
+  * Default Mapped Query, mapping to ResultSet object.
+  */
+case object DefaultMappedQuery extends MappedQuery[ResultSet] {
+  val mapper: ResultMapper[ResultSet] = ResultSetMapper
+}
+
+/**
+  * Client-provided result mapper.
+  *
+  * @param mapper
+  * @tparam T
+  */
+case class ClientMappedQuery[T <: SparqlResult](mapper: ResultMapper[T]) extends MappedQuery[T]
+
+/**
+  * SPARQL Query to be executed, supports both mapped and streaming queries.
+  *
+  * The streaming option also allows for full akka-streams integration support with the knowledge graph, which is
+  * useful for large results (e.g. reports)
+  *
+  * @param query the query to be executed
+  * @param queryType the type of query, defaults to [[DefaultMappedQuery]]
+  * @param bindings the request bindings
+  * @param defaultGraphs the default graphs passed as query parameters (correspond to FROM &lt;graph&gt; SPARQL statement)
+  * @param namedGraphs the named graphs passed as query parameters (correspont to FROM NAMED &lt;graph&gt; SPARQL statement)
+  * @param limit an optional limit to be passed as a query parameter
+  * @param offset an optional offset to be passed as a query parameter
+  * @param reasoning an optional reasoning flag to be passed as a query parameter
+  * @param timeout an optional per-query specific timeout to be passed as as query parameter
+  */
+case class SparqlQuery
+(
+  query: String,
+  httpMethod: HttpMethod = HttpMethods.GET,
+  queryType: QueryType = DefaultMappedQuery,
+  bindings: Map[String, Value] = Map.empty,
+  defaultGraphs: List[IRI] = Nil,
+  namedGraphs: List[IRI] = Nil,
+  limit: Option[Long] = None,
+  offset: Option[Long] = None,
+  reasoning: Option[Boolean] = None,
+  timeout: Option[Long] = None
+)(implicit _pm: PrefixMapping) extends SparqlStatement()(_pm) {
+  lazy override val statement: String = build(query)
+
+  import HttpMethods._
 
   /**
-    * The threshold at which the SPARQL client will force to use HTTP [[com.modelfabric.sparql.api.HttpMethod.POST]]
+    * The threshold at which the SPARQL client will force to use HTTP
     * method on the Sparql endpoint. This is due to HTTP limiting the size of the query string.
     *
     * Defaults to 2kB, but may be overridden by setting the SPARQL_CLIENT_MAX_HTTP_QUERY_URI_LENGTH
@@ -19,91 +81,22 @@ object SparqlQuery {
   /**
     * Decides which method to use for the query. Will return the desired method, unless the
     * query is longer that the POST threshold configured by [[sparqlQueryPostThreshold]], in which case
-    * [[com.modelfabric.sparql.api.HttpMethod.POST]] is returned
-    * @param sparql the sparql statement
-    * @param desiredMethod the desired HTTP method to use, defaults to [[com.modelfabric.sparql.api.HttpMethod.GET]]
+    * [[akka.http.scaladsl.model.HttpMethods.POST]] is returned
     * @return the decided HTTP method to be used
     */
-  def decideQueryHttpMethod(sparql: String, desiredMethod: HttpMethod): HttpMethod = {
-    (sparql, desiredMethod) match {
-      case (_, POST) => POST
-      case (s, _) if s.length > sparqlQueryPostThreshold =>
-        // no log is configured so we just dump this to stderr
-        POST
+  val queryHttpMethod: HttpMethod = {
+    (statement, httpMethod) match {
+      case (_, POST)                                     => POST
+      case (s, _) if s.length > sparqlQueryPostThreshold => POST
       case (_, m) => m
     }
   }
 
-  /**
-    * Construct a SparqlQuery from the passed string and implicit prefix mappings with reasoning disabled by default.
-    *
-    * @param sparql the query string
-    * @param _pm prefix mappings from the current scope
-    * @return
-    */
-  def apply(sparql: String)(implicit _pm : PrefixMapping): SparqlQuery = {
-    // JC: why not just create two constructors in SparqlQuery, and make it concrete
-    new SparqlQuery() { override val statement: String = build(sparql) }
+  lazy val encodedQueryString: String = {
+    SparqlQueryStringConverter.toQueryString(this)
   }
 
-  /**
-    * Construct a SparqlQuery from the passed string and implicit prefix mappings.
-    *
-    * @param sparql the query string
-    * @param method the HTTP method to use
-    * @param mapping the Result Set mapping to use, defaults to ResultSets
-    * @param reasoningEnabled set to true to enable reasoning
-    * @param _pm prefix mappings from the current scope
-    * @return
-    */
-  def apply(
-    sparql: String,
-    method: HttpMethod = GET,
-    mapping: ResultMapper[_] = ResultSetMapper,
-    reasoningEnabled: Boolean = false
-  )(implicit _pm : PrefixMapping = PrefixMapping.none, _paging: PagingParams = PagingParams.Defaults): SparqlQuery = {
-
-    new SparqlQuery() {
-      override val httpMethod: HttpMethod = decideQueryHttpMethod(sparql, method)
-      override val statement: String = build(sparql)
-      override val resultMapper: ResultMapper[_] = mapping
-      override val reasoning: Boolean = reasoningEnabled
-      //override val paging = _paging
-    }
-  }
-
-  /**
-    *
-    * @param query
-    * @return
-    */
-  def unapply(query: SparqlQuery): Option[(HttpMethod, String, ResultMapper[_], Boolean, PagingParams)] = {
-    Some((query.httpMethod, query.statement, query.resultMapper.asInstanceOf[ResultMapper[_ <: SparqlResult]], query.reasoning, query.paging))
-  }
 
 }
 
-/**
- * SparqlQuery is the interface representing all SPARQL queries. Create a
- * subclass of SparqlQuery for each and every (SELECT) query that you send to the
- * SparqlClient.
- */
-abstract class SparqlQuery()(implicit _pm : PrefixMapping) extends SparqlStatement()(_pm) {
-
-  import SparqlQuery._
-
-  def query: String = statement
-
-  override def httpMethod: HttpMethod = decideQueryHttpMethod(statement, GET)
-
-  /**
-    * @return a result mapper that is aware of how to map a result set to objects of a specific type.
-    *         Objects may be maps of fields and values or case class instances, for example.
-    */
-  def resultMapper : ResultMapper[_] = ResultSetMapper
-
-  def reasoning = false
-
-  def paging = NoPaging
-
-}
+case class StreamingSparqlResult(dataStream: Source[ByteString, Any], contentType: Option[ContentType]) extends SparqlResult

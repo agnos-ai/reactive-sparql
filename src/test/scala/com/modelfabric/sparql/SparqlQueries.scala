@@ -2,10 +2,11 @@ package com.modelfabric.sparql
 
 import java.net.URI
 
-import com.modelfabric.sparql.api.HttpMethod.POST
 import com.modelfabric.sparql.api._
 import org.eclipse.rdf4j.model.IRI
 import org.eclipse.rdf4j.model.impl.SimpleValueFactory
+
+import akka.http.scaladsl.model.HttpMethods._
 
 trait SparqlQueries {
   implicit val pm = PrefixMapping.extended
@@ -98,7 +99,7 @@ trait SparqlQueries {
   lazy val query1Get = SparqlQuery(select1)
 
   lazy val query2Get = SparqlQuery(select2)
-  lazy val query2Post = SparqlQuery(select2, method = HttpMethod.POST)
+  lazy val query2Post = SparqlQuery(select2, httpMethod = POST)
 
   lazy val query1Result: List[ResultSet] = ResultSet(
     ResultSetVars(List("a", "b", "c")),
@@ -132,8 +133,8 @@ trait SparqlQueries {
   }
   case class Person(id: URI, name: String) extends SparqlResult
 
-  lazy val mappingQuery2Get   = SparqlQuery( select2, mapping = Person)
-  lazy val mappingQuery2Post  = SparqlQuery( select2, method = POST, mapping = Person)
+  lazy val mappingQuery2Get   = SparqlQuery( select2, queryType = ClientMappedQuery(Person))
+  lazy val mappingQuery2Post  = SparqlQuery( select2, httpMethod = POST, queryType = ClientMappedQuery(Person))
 
   lazy val mappedQuery2Result = Person(whateverIri, "William") :: Nil
 

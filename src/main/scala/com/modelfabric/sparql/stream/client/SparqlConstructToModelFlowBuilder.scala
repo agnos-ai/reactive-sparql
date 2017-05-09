@@ -44,7 +44,7 @@ trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
       val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).async.named("mapping.sparqlToConstruct"))
       val broadcastConstructHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).async.named("broadcast.constructResponse"))
       val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).async.named("mapping.makeResponseFromHeader"))
-      val resultZipper = builder.add(ZipWith[SparqlResult, SparqlResponse, SparqlResponse]( (result, response) =>
+      val resultZipper = builder.add(ZipWith[SparqlResult, SparqlResponse, SparqlResponse]((result, response) =>
         response.copy(
           result = List(result)
         )
@@ -68,10 +68,10 @@ trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
       .fold(new LinkedHashModelFactory().createEmptyModel()) {
         case (model, s) =>
           model.add(
-            s.find(_.getPredicate() == `rdf:subject`).get.getObject.asInstanceOf[Resource],
-            s.find(_.getPredicate() == `rdf:predicate`).get.getObject.asInstanceOf[IRI],
-            s.find(_.getPredicate() == `rdf:object`).get.getObject,
-            s.find(_.getPredicate() == `rdf:graph`).get.getObject.asInstanceOf[Resource])
+            s.find(_.getPredicate == `rdf:subject`).get.getObject.asInstanceOf[Resource],
+            s.find(_.getPredicate == `rdf:predicate`).get.getObject.asInstanceOf[IRI],
+            s.find(_.getPredicate == `rdf:object`).get.getObject,
+            s.find(_.getPredicate == `rdf:graph`).get.getObject.asInstanceOf[Resource])
           model
       }
   }

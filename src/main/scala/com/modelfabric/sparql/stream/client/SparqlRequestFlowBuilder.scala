@@ -6,8 +6,8 @@ import com.modelfabric.sparql.api.{SparqlModelConstruct, _}
 import com.modelfabric.sparql.util.HttpEndpoint
 
 
-trait SparqlRequestFlowBuilder extends SparqlQueryFlowBuilderV0_1_4
-  with SparqlQueryFlowBuilder with SparqlConstructToModelFlowBuilder with SparqlUpdateFlowBuilder {
+trait SparqlRequestFlowBuilder
+  extends SparqlQueryFlowBuilder with SparqlConstructToModelFlowBuilder with SparqlUpdateFlowBuilder {
 
   /**
     * Create a flow of Sparql requests to results.
@@ -24,9 +24,9 @@ trait SparqlRequestFlowBuilder extends SparqlQueryFlowBuilderV0_1_4
       val routes = 3
 
       val partition = builder.add(Partition[SparqlRequest](routes, {
-        case SparqlRequest(SparqlQuery(_,_,_,_,_,_,_,_,_,_)) => 0
-        case SparqlRequest(SparqlUpdate(_,_)) => 1
-        case SparqlRequest(SparqlModelConstruct(_,_,_)) => 2
+        case SparqlRequest(_: SparqlQuery)          => 0
+        case SparqlRequest(_: SparqlUpdate)         => 1
+        case SparqlRequest(_: SparqlModelConstruct) => 2
       }))
 
       val responseMerger = builder.add(Merge[SparqlResponse](routes).named("merge.sparqlResponse"))
@@ -39,6 +39,5 @@ trait SparqlRequestFlowBuilder extends SparqlQueryFlowBuilderV0_1_4
 
     } named "flow.sparqlRequestFlow")
   }
-
 
 }

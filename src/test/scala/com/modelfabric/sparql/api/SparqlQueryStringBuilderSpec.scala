@@ -1,16 +1,14 @@
 package com.modelfabric.sparql.api
 
-import org.eclipse.rdf4j.model.{IRI, ValueFactory}
-import org.eclipse.rdf4j.model.impl.SimpleValueFactory
+import org.eclipse.rdf4j.model.IRI
 import org.scalatest.WordSpec
 import com.modelfabric.extension.StringExtensions._
-
+import com.modelfabric.sparql.stream.client.SparqlClientConstants.{valueFactory => vf}
 
 class SparqlQueryStringBuilderSpec extends WordSpec {
 
   implicit val pm: PrefixMapping = PrefixMapping.none
 
-  val vf: ValueFactory = SimpleValueFactory.getInstance()
   def iri(resource: String): IRI = vf.createIRI(s"http://modelfabric.com/resource/$resource")
 
   import com.modelfabric.sparql.util.SparqlQueryStringConverter._

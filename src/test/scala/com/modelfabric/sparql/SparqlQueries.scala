@@ -4,14 +4,14 @@ import java.net.URI
 
 import com.modelfabric.sparql.api._
 import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.impl.SimpleValueFactory
 
 import akka.http.scaladsl.model.HttpMethods._
+
+import com.modelfabric.sparql.stream.client.SparqlClientConstants.{valueFactory => svf}
 
 trait SparqlQueries {
   implicit val pm = PrefixMapping.extended
 
-  val svf: SimpleValueFactory = SimpleValueFactory.getInstance()
   implicit def uriToIri(uri: URI): IRI = {
     svf.createIRI(uri.toString)
   }
@@ -128,10 +128,10 @@ trait SparqlQueries {
     */
   object Person extends ResultMapper[Person] {
     override def map(qs: QuerySolution): Person = {
-      Person(qs.uri("a").get, qs.string("c").get)
+      Person(qs.iri("a").get, qs.string("c").get)
     }
   }
-  case class Person(id: URI, name: String) extends SparqlResult
+  case class Person(id: IRI, name: String) extends SparqlResult
 
   lazy val mappingQuery2Get   = SparqlQuery( select2, queryType = ClientMappedQuery(Person))
   lazy val mappingQuery2Post  = SparqlQuery( select2, httpMethod = POST, queryType = ClientMappedQuery(Person))

@@ -81,7 +81,7 @@ case class SparqlQuery
   /**
     * Decides which method to use for the query. Will return the desired method, unless the
     * query is longer that the POST threshold configured by [[sparqlQueryPostThreshold]], in which case
-    * [[akka.http.scaladsl.model.HttpMethods.POST]] is returned
+    * POST is returned
     * @return the decided HTTP method to be used
     */
   val queryHttpMethod: HttpMethod = {

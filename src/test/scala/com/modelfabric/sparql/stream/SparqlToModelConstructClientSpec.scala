@@ -33,7 +33,7 @@ class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToMode
 
   import HttpEndpointSuiteTestRunner._
 
-  "The Akka-Streams Sparql Client" must {
+  "The ModelConstructFlow Builder" must {
     val sparqlRequestFlowUnderTest = sparqlRequestFlow(testServerEndpoint)
 
     val ( source, sink ) = TestSource.probe[SparqlRequest]

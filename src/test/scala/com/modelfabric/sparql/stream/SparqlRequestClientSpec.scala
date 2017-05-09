@@ -8,7 +8,7 @@ import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestKit
 import com.modelfabric.sparql.SparqlQueries
 import com.modelfabric.sparql.api._
-import com.modelfabric.sparql.stream.client.{SparqlQueryFlowBuilderV0_1_4, SparqlRequestFlowBuilder}
+import com.modelfabric.sparql.stream.client.SparqlRequestFlowBuilder
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 import org.scalatest._
 

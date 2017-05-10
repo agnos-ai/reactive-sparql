@@ -5,11 +5,14 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.stream.{ActorMaterializer, FlowShape}
 import akka.stream.scaladsl.{Flow, GraphDSL, Merge, Partition, Source}
+import akka.util.ByteString
 import com.modelfabric.sparql.api._
 import com.modelfabric.sparql.util.HttpEndpoint
 
 import scala.util.{Failure, Success, Try}
 import spray.json._
+
+import scala.concurrent.ExecutionContext
 
 
 trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
@@ -18,6 +21,7 @@ trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
 
   implicit val system: ActorSystem
   implicit val materializer: ActorMaterializer
+  implicit val dispatcher: ExecutionContext
 
   def sparqlQueryFlow
   (
@@ -53,15 +57,17 @@ trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
             SparqlQuery(_, _, mappedQueryType: MappedQuery[_],_,_,_,_,_,_,_)
           ), true, _, List(StreamingSparqlResult(dataStream, Some(contentType))), _)
         if isSparqlResultsJson(contentType) =>
-          dataStream.map { data =>
-            Try(format3.read(data.utf8String.parseJson)) match {
-              case Success(x: ResultSet) =>
-                response.copy(result = mappedQueryType.mapper.map(x))
-              case Failure(err) =>
-                response.copy(
-                  success = false, result = Nil,
-                  error = Some(SparqlClientRequestFailedWithError("failed to un-marshall result", err))
-                )
+          Source.fromFuture {
+            dataStream.runFold(ByteString.empty)(_ ++ _).map { data =>
+              Try(format3.read(data.utf8String.parseJson)) match {
+                case Success(x: ResultSet) =>
+                  response.copy(result = mappedQueryType.mapper.map(x))
+                case Failure(err) =>
+                  response.copy(
+                    success = false, result = Nil,
+                    error = Some(SparqlClientRequestFailedWithError("failed to un-marshall result", err))
+                  )
+              }
             }
           }
 

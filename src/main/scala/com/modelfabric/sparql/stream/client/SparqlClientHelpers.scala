@@ -29,7 +29,10 @@ trait SparqlClientHelpers {
     PredefinedFromEntityUnmarshallers.stringUnmarshaller.map(_.toBoolean)
 
   def pooledHttpClientFlow[T](endpoint: HttpEndpoint): Flow[(HttpRequest, T), (Try[HttpResponse], T), _] = {
-    Http().cachedHostConnectionPool[T](endpoint.host, endpoint.port)
+    Flow[(HttpRequest, T)]
+      .log("beforeHttpRequest")
+      .via(Http().cachedHostConnectionPool[T](endpoint.host, endpoint.port))
+      .log("afterHttpRequest")
   }
 
   def sparqlToRequest(endpoint: HttpEndpoint)(request: SparqlRequest): (HttpRequest, SparqlRequest) = {
@@ -139,6 +142,9 @@ trait SparqlClientHelpers {
         RDFFormat.NTRIPLES
       case format if format == `application/ld+json`.mediaType =>
         RDFFormat.JSONLD
+      case format if format == `application/octet-stream`.mediaType =>
+        system.log.warning("got application/octet-stream, assuming this is a chunked response containing NTRIPLES payload")
+        RDFFormat.NTRIPLES
       case format =>
         throw new IllegalArgumentException(s"unsupported Content-Type: $format")
     }

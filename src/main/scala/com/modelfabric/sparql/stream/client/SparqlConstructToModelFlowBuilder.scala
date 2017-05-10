@@ -82,10 +82,11 @@ trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
     Flow[(Try[HttpResponse], SparqlRequest)]
       .flatMapConcat {
         case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) =>
-          entity.withoutSizeLimit().getDataBytes().zip(Source.single(entity.contentType))
+          val fut = entity.withoutSizeLimit().dataBytes.runFold(ByteString.empty)(_ ++ _).map( (_, entity.contentType) )
+          Source.fromFuture(fut)
       }
       .map { x =>
-        Rio.parse(x.first.iterator.asInputStream, "", mapContentTypeToRdfFormat(x.second))
+        Rio.parse(x._1.iterator.asInputStream, "", mapContentTypeToRdfFormat(x._2))
       }
       .flatMapConcat( m => Source.single[Model](m).via(deReifyConstructSubGraph()))
       .map(SparqlModelResult)

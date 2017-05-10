@@ -89,7 +89,9 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
   def graphStoreRequestFlow(endpoint: HttpEndpoint): Flow[GraphStoreRequest, GraphStoreResponse, _] = {
     Flow
       .fromFunction(graphStoreOpToRequest(endpoint))
+      .log("beforeHttpRequest")
       .via(pooledHttpClientFlow[GraphStoreRequest](endpoint))
+      .log("afterHttpRequest")
       .flatMapConcat {
         case (Success(response), request) =>
           val gsr = GraphStoreResponse(
@@ -105,8 +107,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
   }
 
   def makeModelSource(entity: HttpEntity): Source[Option[Model], Any] = {
-    if ( entity.isKnownEmpty()
-      || entity.contentType.mediaType != `application/n-triples`.mediaType) {
+    if ( !entity.isChunked() && (entity.isKnownEmpty() || entity.contentLengthOption.getOrElse(0) ==0)) {
       // if we know there are no bytes in the entity (no-graph has been returned)
       // or the reponse content type is not what we have requested then no model is emitted.
       entity.discardBytes()

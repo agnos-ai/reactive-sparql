@@ -1,5 +1,6 @@
 package com.modelfabric.sparql.stream.client
 
+import akka.http.scaladsl.model.MediaType.NotCompressible
 import akka.http.scaladsl.model.{ContentType, HttpCharsets, MediaType}
 import org.eclipse.rdf4j.model.{ModelFactory, ValueFactory}
 import org.eclipse.rdf4j.model.impl.{LinkedHashModelFactory, SimpleValueFactory}
@@ -80,6 +81,13 @@ object SparqlClientConstants {
     */
   val `application/n-triples`: ContentType.NonBinary = {
     MediaType.applicationWithFixedCharset("n-triples", HttpCharsets.`UTF-8`).toContentType
+  }
+
+  /**
+    * Content Type for application/n-triples
+    */
+  val `application/octet-stream`: ContentType.Binary = {
+    MediaType.applicationBinary("octet-stream", NotCompressible).toContentType
   }
 
   /**

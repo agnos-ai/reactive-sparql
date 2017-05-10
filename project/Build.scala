@@ -74,7 +74,7 @@ object PublishingSettings {
 object Version {
 
   val scala      = "2.11.8"
-  val scalaUtils = "0.2"
+  val scalaUtils = "0.4-SNAPSHOT"
   val akka       = "2.5.0"
   val akkaHttp   = "10.0.5"
   val sprayJson  = "1.3.3"
@@ -83,7 +83,7 @@ object Version {
   val jersey     = "1.19"
   val rdf4j      = "2.1.2"
   val logback    = "1.1.4"
-  val scalaTest  = "2.2.5"
+  val scalaTest  = "3.0.1"
   val fuseki     = "2.4.0"
 }
 

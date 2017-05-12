@@ -1,15 +1,14 @@
 package com.modelfabric.sparql.stream.client
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{HttpEntity, HttpResponse, StatusCodes}
 import akka.stream.{ActorMaterializer, FlowShape}
 import akka.stream.scaladsl.{Broadcast, Flow, Framing, GraphDSL, Source, ZipWith}
 import akka.util.ByteString
 import com.modelfabric.sparql.api._
 import com.modelfabric.sparql.util.HttpEndpoint
-import com.modelfabric.sparql.stream.client.SparqlClientConstants.{valueFactory => vf, modelFactory => mf}
+import com.modelfabric.sparql.stream.client.SparqlClientConstants.{modelFactory => mf, valueFactory => vf}
 import org.eclipse.rdf4j.model.{IRI, Model, Resource}
-
 import org.eclipse.rdf4j.rio.{RDFFormat, Rio}
 
 import scala.concurrent.ExecutionContext
@@ -81,10 +80,19 @@ trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
   val responseToModelFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, _] = {
     Flow[(Try[HttpResponse], SparqlRequest)]
       .flatMapConcat {
+        // TODO: there are issues here with Stardog...
+        case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) if entity.isChunked() =>
+          entity.withoutSizeLimit().dataBytes/*.scan(ByteString.empty)(_ ++ _)*/.zip(Source.single(entity.contentType))
+        case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) =>
+          entity.withoutSizeLimit().dataBytes.zip(Source.single(entity.contentType))
+      }
+/*
+      .flatMapConcat {
         case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) =>
           val fut = entity.withoutSizeLimit().dataBytes.runFold(ByteString.empty)(_ ++ _).map( (_, entity.contentType) )
           Source.fromFuture(fut)
       }
+*/
       .map { x =>
         Rio.parse(x._1.iterator.asInputStream, "", mapContentTypeToRdfFormat(x._2))
       }

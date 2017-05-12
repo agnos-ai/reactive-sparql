@@ -30,7 +30,7 @@ trait SparqlClientHelpers {
 
   def pooledHttpClientFlow[T](endpoint: HttpEndpoint): Flow[(HttpRequest, T), (Try[HttpResponse], T), _] = {
     Flow[(HttpRequest, T)]
-      .log("beforeHttpRequest")
+      .log("beforeHttpRequest", (req => req._1.httpMessage))
       .via(Http().cachedHostConnectionPool[T](endpoint.host, endpoint.port))
       .log("afterHttpRequest")
   }
@@ -52,7 +52,7 @@ trait SparqlClientHelpers {
     case query@SparqlQuery(_, _, queryType, _, _, _, _, _, _, _) if query.queryHttpMethod == GET =>
       HttpRequest(
         method = GET,
-        uri = endpoint.path + "/query?" + query.encodedQueryString,
+        uri = s"${endpoint.path}$QUERY_URI_PART?${query.encodedQueryString}",
         Accept(acceptQueryMediaType(queryType)) :: makeRequestHeaders(endpoint),
         entity = HttpEntity.Empty.withContentType(`application/x-www-form-urlencoded`)
       )
@@ -60,7 +60,7 @@ trait SparqlClientHelpers {
     case query@SparqlQuery(_, _, queryType, _, _, _, _, _, _, _) if query.queryHttpMethod == POST =>
       HttpRequest(
         method = POST,
-        uri = endpoint.path + "/query",
+        uri = s"${endpoint.path}$QUERY_URI_PART",
         Accept(acceptQueryMediaType(queryType)) :: makeRequestHeaders(endpoint),
         entity = HttpEntity(query.encodedQueryString).withContentType(`application/x-www-form-urlencoded`)
       )
@@ -82,7 +82,8 @@ trait SparqlClientHelpers {
         Accept(`text/boolean`.mediaType) :: makeRequestHeaders(endpoint)
       ).withEntity(
         `application/x-www-form-urlencoded`,
-        s"$UPDATE_PARAM_NAME=${update.urlEncode}")
+        s"$UPDATE_PARAM_NAME=${update.urlEncode}"
+      )
   }
 
   // JC: the method name could be more specific

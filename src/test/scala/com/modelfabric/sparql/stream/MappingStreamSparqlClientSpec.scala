@@ -41,7 +41,7 @@ class MappingStreamSparqlClientSpec() extends TestKit(ActorSystem("MappingStream
 
     "1. Clear the data" in {
       sink.request(1)
-      source.sendNext(SparqlRequest(delete))
+      source.sendNext(SparqlRequest(dropGraph))
 
       assertSuccessResponse(sink.expectNext(receiveTimeout))
 
@@ -49,7 +49,7 @@ class MappingStreamSparqlClientSpec() extends TestKit(ActorSystem("MappingStream
       source.sendNext(SparqlRequest(query1))
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, result, None) => assert(result === emptyResult)
+        case SparqlResponse (_, true, _, result, None) => assert(result === emptyResult)
       }
     }
 
@@ -65,8 +65,8 @@ class MappingStreamSparqlClientSpec() extends TestKit(ActorSystem("MappingStream
       source.sendNext(SparqlRequest(mappingQuery2Get))
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, result, None) => assert(result === mappedQuery1Result)
-        case r@SparqlResponse(_, _, _, _) => fail(s"unexpected: $r")
+        case SparqlResponse (_, true, _, result, None) => assert(result === mappedQuery1Result)
+        case r@SparqlResponse(_, _, _, _, _) => fail(s"unexpected: $r")
       }
     }
 
@@ -75,8 +75,8 @@ class MappingStreamSparqlClientSpec() extends TestKit(ActorSystem("MappingStream
       source.sendNext(SparqlRequest(mappingQuery2Post))
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, result, None) => assert(result === mappedQuery1Result)
-        case r@SparqlResponse(_, _, _, _) => fail(s"unexpected: $r")
+        case SparqlResponse (_, true, _, result, None) => assert(result === mappedQuery1Result)
+        case r@SparqlResponse(_, _, _, _, _) => fail(s"unexpected: $r")
       }
     }
 
@@ -88,8 +88,8 @@ class MappingStreamSparqlClientSpec() extends TestKit(ActorSystem("MappingStream
   }
 
   private def assertSuccessResponse(response: SparqlResponse): Unit = response match {
-    case SparqlResponse(_, true, _, _) => assert(true)
-    case x@SparqlResponse(_, _, _, _) => fail(s"unexpected: $x")
+    case SparqlResponse(_, true, _, _, _) => assert(true)
+    case x@SparqlResponse(_, _, _, _, _) => fail(s"unexpected: $x")
   }
 
   override def afterAll(): Unit = {

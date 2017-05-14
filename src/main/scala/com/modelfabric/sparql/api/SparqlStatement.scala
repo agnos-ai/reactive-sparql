@@ -1,5 +1,6 @@
 package com.modelfabric.sparql.api
 
+import akka.http.scaladsl.model._
 import com.modelfabric.extension.StringExtensions._
 
 import scala.concurrent.duration._
@@ -20,12 +21,12 @@ abstract class SparqlStatement()(implicit val pm : PrefixMapping) extends Client
    */
   def statement : String
 
-  override def httpMethod: HttpMethod = HttpMethod.GET
+  override def httpMethod: HttpMethod
 
   protected def build(statement_ : String) : String = s"""
     |${pm.sparql}
     ${statement_}
-  """.trim.stripped
+  """.stripped.trim
 
   override def toString: String = super.toString + ":\n" + statement
 

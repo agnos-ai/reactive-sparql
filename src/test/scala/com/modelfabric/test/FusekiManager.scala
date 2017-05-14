@@ -1,11 +1,12 @@
 package com.modelfabric.test
 
 import akka.actor._
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
+import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.modelfabric.sparql.util.HttpEndpoint
 import com.modelfabric.test.FusekiManager._
-import spray.client.pipelining._
-import spray.http.{HttpResponse, StatusCodes}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -74,17 +75,19 @@ object FusekiManager {
 class  FusekiManager(val endpoint: HttpEndpoint) extends Actor with ActorLogging {
 
   import context.dispatcher
+  implicit val system = context.system
+  implicit val materializer = ActorMaterializer()
   implicit val timeout = Timeout(5 seconds)
 
   private val fusekiRunner = new FusekiRunner(endpoint.port, endpoint.path)
 
   private def fusekiEndpoint(path: String): String = s"http://${endpoint.host}:${endpoint.port}/${path}"
 
-  val shutdownReq = Post(fusekiEndpoint("$/server/shutdown"))
+  val shutdownReq = HttpRequest(HttpMethods.POST, fusekiEndpoint("$/server/shutdown"))
 
-  val pingReq = Get(fusekiEndpoint("$/ping"))
+  val pingReq = HttpRequest(HttpMethods.GET, fusekiEndpoint("$/ping"))
 
-  val pipeline = sendReceive
+  def pipeline(request: HttpRequest): Future[HttpResponse] = Http().singleRequest(request)
 
   override def receive: Receive = {
 

@@ -109,7 +109,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
     info(s"Got Response: $response")
     response match {
       case GraphStoreResponse(request, success, statusCode, statusText, modelOpt) =>
-        info(s"response status for $request ===>>> $success / $statusCode / $statusText")
+        info(s"response status for $request ===>>> $success / $statusCode / $statusText\n$modelOpt")
         modelOpt.foreach(dumpModel(_))
         expectedStatus foreach (s => assert(s === success, s"expecting the response status to have the correct value, was: $s"))
         for {
@@ -117,9 +117,9 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
           model <- modelOpt
           modelSize = model.size()
         } yield {
-          assert(testSize === modelSize, s"expecting model to be of certain size, was: ($modelSize)")
+          assert(testSize === modelSize, s"expecting model to be of certain size, was: ($modelSize)\n$model")
         }
-      case SparqlResponse(request, success, result, error) =>
+      case SparqlResponse(request, success, _, result, error) =>
         info(s"response status for $request ===>>> $success / ${result.size} items/ error: $error")
 
     }
@@ -167,7 +167,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       sparqlSink.request(1)
       sparqlSource.sendNext(SparqlRequest(query1Get))
       checkAllGood(sparqlSink) match {
-        case SparqlResponse (_, true, result, None) =>
+        case SparqlResponse (_, true, _, result, None) =>
           assert(result === query1Result)
       }
 
@@ -187,7 +187,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       sparqlSink.request(1)
       sparqlSource.sendNext(SparqlRequest(query2Get))
       checkAllGood(sparqlSink) match {
-        case SparqlResponse (_, true, result, None) =>
+        case SparqlResponse (_, true, _, result, None) =>
           assert(result === query2Result)
       }
 
@@ -199,7 +199,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
     }
 
     "3. Add a triple to the named graph" in {
-      assert(model1named.contexts().contains(uriToIri(graphIri)), "checking the model")
+      assert(model1named.contexts().contains(graphIri), "checking the model")
 
       sink.request(1)
       source.sendNext(InsertGraphFromModel(model1named, Some(graphIri)))
@@ -208,7 +208,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       sparqlSink.request(1)
       sparqlSource.sendNext(SparqlRequest(query2Get))
       checkAllGood(sparqlSink) match {
-        case SparqlResponse (_, true, result, None) =>
+        case SparqlResponse (_, true, _, result, None) =>
           assert(result === query2Result)
       }
 

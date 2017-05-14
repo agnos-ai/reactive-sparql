@@ -3,10 +3,11 @@
  */
 package com.modelfabric.sparql.api
 
-import java.net.URI
 import javax.xml.bind.DatatypeConverter
 
 import com.modelfabric.sparql.mapper.SolutionMapper
+import com.modelfabric.sparql.stream.client.SparqlClientConstants
+import org.eclipse.rdf4j.model.IRI
 
 trait SparqlResult
 
@@ -39,7 +40,7 @@ case class QuerySolutionValue(`type` : String, datatype : Option[String] = None,
 
   def asBoolean : Boolean = DatatypeConverter.parseBoolean(value)
 
-  def asUri : URI = URI.create(value)
+  def asIri : IRI = SparqlClientConstants.valueFactory.createIRI(value)
 
   def asLocalName : String = {
     val lastIndex = math.max(value.lastIndexOf('/'), value.lastIndexOf('#'))
@@ -72,7 +73,7 @@ case class QuerySolutionValue(`type` : String, datatype : Option[String] = None,
   */
 case class QuerySolution(values : Map[String, QuerySolutionValue]) {
 
-  def uri(var_ : String) : Option[URI] = values get var_ map (_.asUri)
+  def iri(var_ : String) : Option[IRI] = values get var_ map (_.asIri)
 
   def localName(var_ : String) : Option[String] = values get var_ map (_.asLocalName)
 

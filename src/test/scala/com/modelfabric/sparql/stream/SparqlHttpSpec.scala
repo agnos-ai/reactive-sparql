@@ -23,7 +23,7 @@ import akka.testkit.TestKit
   * This test runs as part of the [[HttpEndpointSuiteTestRunner]] Suite.
   */
 @DoNotDiscover
-class StreamSpec extends TestKit(ActorSystem("StreamSpec"))
+class SparqlHttpSpec extends TestKit(ActorSystem("SparqlHttpSpec"))
   with WordSpecLike with MustMatchers with BeforeAndAfterAll {
 
   implicit val testMaterializer = ActorMaterializer()

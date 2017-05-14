@@ -3,7 +3,7 @@ package com.modelfabric.sparql.mapper
 import akka.http.scaladsl.unmarshalling._
 import com.modelfabric.sparql.api._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import spray.json.{DefaultJsonProtocol, JsObject, JsValue, RootJsonFormat}
+import spray.json._
 
 /**
   * Json protocol which relies on spray's Json library.
@@ -16,7 +16,9 @@ object SparqlClientJsonProtocol extends SprayJsonSupport with DefaultJsonProtoco
     */
   implicit val format4 = jsonFormat3(QuerySolutionValue)
   implicit object format5 extends RootJsonFormat[QuerySolution] {
-    def write(c : QuerySolution) = JsObject()
+    def write(c : QuerySolution) = {
+      JsObject(c.values.map(e => e._1 -> e._2.toJson))
+    }
     def read(row : JsValue) = read(row.asInstanceOf[JsObject])
     def read(row : JsObject) = {
       QuerySolution(row.fields mapValues {

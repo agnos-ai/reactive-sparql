@@ -1,87 +1,120 @@
 package com.modelfabric.sparql.stream.client
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.{ActorMaterializer, FlowShape}
-import akka.stream.scaladsl._
+import akka.stream.scaladsl.{Flow, GraphDSL, Merge, Partition, Source}
+import akka.util.ByteString
 import com.modelfabric.sparql.api._
-import com.modelfabric.sparql.mapper.SparqlClientJsonProtocol._
 import com.modelfabric.sparql.util.HttpEndpoint
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
+import spray.json._
+
+import scala.concurrent.ExecutionContext
 
 
 trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
 
-  import SparqlClientConstants._
+  import com.modelfabric.sparql.mapper.SparqlClientJsonProtocol._
 
   implicit val system: ActorSystem
   implicit val materializer: ActorMaterializer
   implicit val dispatcher: ExecutionContext
 
-  /**
-    * Create a flow of Sparql requests to results.
-    * {{{
-    *
-    * TODO
-    *
-    * }}}
-    *
-    * @param endpoint the HTTP endpoint of the Sparql triple store server
-    * @return
-    */
-  def sparqlQueryFlow(
+  def sparqlQueryFlow
+  (
     endpoint: HttpEndpoint
-  ): Flow[SparqlRequest, SparqlResponse, _] = {
+  ): Flow[SparqlRequest, SparqlResponse, Any] = {
     Flow.fromGraph(GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
-      val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).async.named("mapping.sparqlToHttpRequest"))
-      val broadcastQueryHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).async.named("broadcast.queryResponse"))
-      val resultSetParser = builder.add(Flow[(Try[HttpResponse], SparqlRequest)].mapAsync(1)(res => responseToResultSet(res)).async.named("mapping.parseResultSet"))
-      val resultSetMapper = builder.add(Flow.fromFunction(resultSetToMappedResult).async.named("mapping.mapResultSet"))
-      val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).async.named("mapping.makeResponseFromHeader"))
-      val queryResultZipper = builder.add(ZipWith[List[SparqlResult], SparqlResponse, SparqlResponse](
-        (result, response) =>
-          response.copy(result = result)
-      ).async.named("zipper.queryResultZipper"))
+      val routes = 2
 
-      converter ~> pooledHttpClientFlow[SparqlRequest](endpoint) ~> broadcastQueryHttpResponse
+      val partition = builder.add(Partition[SparqlRequest](routes, {
+        case SparqlRequest(SparqlQuery(_, _, StreamedQuery(_),_,_,_,_,_,_,_)) => 0
+        case SparqlRequest(SparqlQuery(_, _,_: MappedQuery[_],_,_,_,_,_,_,_)) => 1
+      }))
 
-      broadcastQueryHttpResponse ~> resultSetParser ~> resultSetMapper ~> queryResultZipper.in0
-      broadcastQueryHttpResponse ~>                    resultMaker     ~> queryResultZipper.in1
+      val responseMerger = builder.add(Merge[SparqlResponse](routes).named("merge.sparqlResponse"))
 
-      FlowShape(converter.in, queryResultZipper.out)
-    } named "flow.sparqlQueryRequest")
+      partition ~> sparqlQueryToStreamFlow(endpoint)                               ~> responseMerger
+      partition ~> sparqlQueryToStreamFlow(endpoint) ~> responseUnmarshallerFlow() ~> responseMerger
+
+      FlowShape(partition.in, responseMerger.out)
+
+    } named "flow.sparqlRequestFlow")
+
   }
 
-  private def responseToResultSet(response: (Try[HttpResponse], SparqlRequest)): Future[(ResultSet, SparqlRequest)] = {
-    response match {
-      case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), request)
-        if entity.contentType.mediaType == `application/sparql-results+json`.mediaType =>
-        /* we need to override the content type, because the spray-json parser does not understand */
-        /* anything but 'application/json' */
-        Unmarshal(entity.withContentType(ContentTypes.`application/json`)).to[ResultSet] map {
-          (_, request)
-        }
-     }
+  private def responseUnmarshallerFlow(): Flow[SparqlResponse, SparqlResponse, Any] = {
+    Flow[SparqlResponse]
+      .flatMapConcat {
+
+        case response@SparqlResponse(
+          SparqlRequest(
+            SparqlQuery(_, _, mappedQueryType: MappedQuery[_],_,_,_,_,_,_,_)
+          ), true, _, List(StreamingSparqlResult(dataStream, Some(contentType))), _)
+        if isSparqlResultsJson(contentType) =>
+          Source.fromFuture {
+            dataStream.runFold(ByteString.empty)(_ ++ _).map { data =>
+              Try(format3.read(data.utf8String.parseJson)) match {
+                case Success(x: ResultSet) =>
+                  response.copy(result = mappedQueryType.mapper.map(x))
+                case Failure(err) =>
+                  response.copy(
+                    success = false, result = Nil,
+                    error = Some(SparqlClientRequestFailedWithError("failed to un-marshall result", err))
+                  )
+              }
+            }
+          }
+
+        // catchall for all streaming responses, we need to process the response entities stream, otherwise
+        // we will get back-pressure issues.
+        case response@SparqlResponse(
+          _, _, _, List(StreamingSparqlResult(dataStream, contentType)), _) =>
+          dataStream.map { data =>
+            response.copy(
+              success = false, result = Nil,
+              error = Some(SparqlClientRequestFailed(s"unsupported result type [${contentType.getOrElse("Unknown")}] ${data.take(100).utf8String}..."))
+            )
+          }
+
+        // we don't care about errors
+        case r: SparqlResponse =>
+          Source.single(r.copy(
+            success = false, result = Nil,
+            error = Some(SparqlClientRequestFailed(s"invalid request"))
+          ))
+      }
   }
 
-  private def resultSetToMappedResult(resultSet: (ResultSet, SparqlRequest))(
-    implicit
-    _system: ActorSystem,
-    _materializer: ActorMaterializer,
-    _executionContext: ExecutionContext
-  ): List[SparqlResult] = {
 
-    resultSet match {
-      case (r, SparqlRequest(SparqlQuery(_,_,mapper,_,_))) =>
-        mapper
-          .map(r)
-          .asInstanceOf[List[SparqlResult]]
+  private def sparqlQueryToStreamFlow
+  (
+    endpoint: HttpEndpoint
+  ): Flow[SparqlRequest, SparqlResponse, Any] = {
+
+    val connection: Flow[(HttpRequest, SparqlRequest), (Try[HttpResponse], SparqlRequest), _] = {
+      Http().cachedHostConnectionPool[SparqlRequest](endpoint.host, endpoint.port)
     }
+
+    Flow[SparqlRequest]
+      .map {
+        case request@SparqlRequest(query: SparqlQuery) =>
+          (makeHttpRequest(endpoint, query), request)
+        }
+      .log("SPARQL endpoint request")
+      .via(connection)
+      .log("SPARQL endpoint response")
+      .map {
+        case (Success(HttpResponse(status, _, entity, _)), request) =>
+          SparqlResponse(request, status == StatusCodes.OK, status, result = StreamingSparqlResult(entity.dataBytes, Some(entity.contentType)) :: Nil)
+        case (Failure(error), request) =>
+          SparqlResponse(request, success = false, error = Some(SparqlClientRequestFailedWithError("failed to execute sparql query", error)))
+      }
 
   }
 

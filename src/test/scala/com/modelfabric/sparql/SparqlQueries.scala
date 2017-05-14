@@ -1,24 +1,21 @@
 package com.modelfabric.sparql
 
-import java.net.URI
-
-import com.modelfabric.sparql.api.HttpMethod.POST
 import com.modelfabric.sparql.api._
 import org.eclipse.rdf4j.model.IRI
-import org.eclipse.rdf4j.model.impl.SimpleValueFactory
+
+import akka.http.scaladsl.model.HttpMethods._
+
+import com.modelfabric.sparql.stream.client.SparqlClientConstants.{valueFactory => svf}
 
 trait SparqlQueries {
   implicit val pm = PrefixMapping.extended
 
-  val svf: SimpleValueFactory = SimpleValueFactory.getInstance()
-  implicit def uriToIri(uri: URI): IRI = {
-    svf.createIRI(uri.toString)
+  implicit def stringToIri(iri: String): IRI = {
+    svf.createIRI(iri.toString)
   }
 
-  lazy val delete = SparqlUpdate { s"""
-    |WITH <$graphIri>
-    |DELETE { ?a ?b ?c . }
-    |WHERE { ?a ?b ?c . }
+  lazy val dropGraph = SparqlUpdate { s"""
+    |DROP SILENT GRAPH <$graphIri>
     |"""
   }
 
@@ -50,9 +47,9 @@ trait SparqlQueries {
     |}"""
   }
 
-  lazy val graphIri = uri("urn:test:mfab:data")
-  lazy val whateverIri = uri("urn:test:whatever")
-  lazy val propertyIri = uri("http://xmlns.com/foaf/0.1/givenName")
+  lazy val graphIri   : IRI = "urn:test:mfab:data"
+  lazy val whateverIri: IRI = "urn:test:whatever"
+  lazy val propertyIri: IRI = "http://xmlns.com/foaf/0.1/givenName"
 
 
   lazy val insert1 = SparqlUpdate { s"""
@@ -100,7 +97,7 @@ trait SparqlQueries {
   lazy val query1Get = SparqlQuery(select1)
 
   lazy val query2Get = SparqlQuery(select2)
-  lazy val query2Post = SparqlQuery(select2, method = HttpMethod.POST)
+  lazy val query2Post = SparqlQuery(select2, httpMethod = POST)
 
   lazy val query1Result: List[ResultSet] = ResultSet(
     ResultSetVars(List("a", "b", "c")),
@@ -129,26 +126,39 @@ trait SparqlQueries {
     */
   object Person extends ResultMapper[Person] {
     override def map(qs: QuerySolution): Person = {
-      Person(qs.uri("a").get, qs.string("c").get)
+      Person(qs.iri("a").get, qs.string("c").get)
     }
   }
-  case class Person(id: URI, name: String) extends SparqlResult
+  case class Person(id: IRI, name: String) extends SparqlResult
 
-  lazy val mappingQuery2Get = SparqlQuery( select2, mapping = Person)
-  lazy val mappingQuery2Post = SparqlQuery( select2, method = POST, mapping = Person)
+  lazy val mappingQuery2Get   = SparqlQuery( select2, queryType = ClientMappedQuery(Person))
+  lazy val mappingQuery2Post  = SparqlQuery( select2, httpMethod = POST, queryType = ClientMappedQuery(Person))
 
   lazy val mappedQuery2Result = Person(whateverIri, "William") :: Nil
 
 
-  lazy val modelGraphIri = uri("urn:test:mfab:model")
-  lazy val modelAlternateGraphIri = uri("urn:test:mfab:modelalt")
-  lazy val deleteModelGraph = {
+  lazy val modelGraphIri          : IRI = "urn:test:mfab:model"
+  lazy val modelAlternateGraphIri : IRI = "urn:test:mfab:modelalt"
+  lazy val deleteDefaultGraphTriples = {
     SparqlUpdate(s"""
-       |DROP SILENT ALL
+       |DELETE { ?s ?p ?o }
+       |WHERE  { ?s ?p ?o }
      """)
   }
 
-  def modelResourceIri(suffix: String): URI = uri(s"urn:test:mfab:res:$suffix")
+  lazy val deleteModelGraph = {
+    SparqlUpdate(s"""
+       |DROP SILENT GRAPH <$modelGraphIri>
+     """)
+  }
+
+  lazy val deleteAlternateModelGraph = {
+    SparqlUpdate(s"""
+       |DROP SILENT GRAPH <$modelAlternateGraphIri>
+     """)
+  }
+
+  def modelResourceIri(suffix: String): IRI = s"urn:test:mfab:res:$suffix"
 
 
   lazy val queryModelGraph = {
@@ -214,11 +224,4 @@ trait SparqlQueries {
      """)
   }
 
-  /**
-    * TODO: Move this to the string extensions in modelfabric/scala-utils project.
-    *
-    * @param value
-    * @return
-    */
-  def uri(value: String) = URI.create(value)
 }

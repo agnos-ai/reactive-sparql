@@ -3,7 +3,6 @@ package com.modelfabric.test
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.testkit.{ImplicitSender, TestKit}
-import com.modelfabric.sparql.spray.SpraySparqlClientSpec
 import com.modelfabric.sparql.stream._
 import com.modelfabric.sparql.util.{BasicAuthentication, HttpEndpoint}
 import com.modelfabric.test.FusekiManager._
@@ -92,10 +91,9 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
     * @return
     */
   override def nestedSuites = Vector(
-    //new SpraySparqlClientSpec(), //no longer supported
-    new StreamSparqlToModelConstructClientSpec(),
-    new StreamSpec(),
-    new StreamSparqlRequestClientSpec(),
+    new SparqlToModelConstructClientSpec(),
+    new SparqlHttpSpec(),
+    new SparqlRequestClientSpec(),
     new MappingStreamSparqlClientSpec(),
     new GraphStoreProtocolBuilderSpec()
   )

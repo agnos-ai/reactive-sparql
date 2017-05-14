@@ -1,6 +1,7 @@
 package com.modelfabric.sparql.api
 
-import com.modelfabric.sparql.api.HttpMethod.GET
+import akka.http.scaladsl.model.{StatusCode, StatusCodes}
+import akka.http.scaladsl.model.HttpMethods._
 
 
 trait SparqlClientProtocol extends ClientAPIProtocol
@@ -25,12 +26,14 @@ case object PingRequest extends Request
   *
   * @param request the underlying request object is returned with the response
   * @param success true if the sparql statement execution succeeded
-  * @param result
-  * @param error
+  * @param status the HTTP status of the result
+  * @param result results
+  * @param error optional error message, if available
   */
 case class SparqlResponse(
   request: SparqlRequest,
   success: Boolean = true,
+  status: StatusCode = StatusCodes.OK,
   result: List[SparqlResult] = Nil,
   error: Option[SparqlClientError] = None) extends ClientHttpResponse with SparqlClientProtocol
 

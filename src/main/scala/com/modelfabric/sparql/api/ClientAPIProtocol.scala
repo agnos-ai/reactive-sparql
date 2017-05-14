@@ -1,5 +1,7 @@
 package com.modelfabric.sparql.api
 
+import akka.http.scaladsl.model.HttpMethod
+
 
 /**
   * Client API Protocol, all concrete API requests use this

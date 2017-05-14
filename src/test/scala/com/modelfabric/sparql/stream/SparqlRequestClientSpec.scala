@@ -8,7 +8,7 @@ import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestKit
 import com.modelfabric.sparql.SparqlQueries
 import com.modelfabric.sparql.api._
-import com.modelfabric.sparql.stream.client.{SparqlQueryFlowBuilder, SparqlRequestFlowBuilder}
+import com.modelfabric.sparql.stream.client.SparqlRequestFlowBuilder
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 import org.scalatest._
 
@@ -20,7 +20,7 @@ import scala.language.postfixOps
   * This test runs as part of the [[HttpEndpointSuiteTestRunner]] Suite.
   */
 @DoNotDiscover
-class StreamSparqlRequestClientSpec extends TestKit(ActorSystem("StreamSparqlRequestClientSpec"))
+class SparqlRequestClientSpec extends TestKit(ActorSystem("SparqlRequestClientSpec"))
   with WordSpecLike with MustMatchers with BeforeAndAfterAll
   with SparqlQueries with SparqlRequestFlowBuilder {
 
@@ -28,7 +28,7 @@ class StreamSparqlRequestClientSpec extends TestKit(ActorSystem("StreamSparqlReq
   implicit val dispatcher: ExecutionContext = system.dispatcher
   implicit val prefixMapping: PrefixMapping = PrefixMapping.none
 
-  implicit val receiveTimeout: FiniteDuration = 5 seconds
+  implicit val receiveTimeout: FiniteDuration = 30 seconds
 
   import HttpEndpointSuiteTestRunner._
 
@@ -47,7 +47,7 @@ class StreamSparqlRequestClientSpec extends TestKit(ActorSystem("StreamSparqlReq
       // to saturate the stream, so it back-pressures in case
       // the responses don't get processed properly - this was a known bug
       for ( _ <- 1 to numUpdates) {
-        source.sendNext(SparqlRequest(delete))
+        source.sendNext(SparqlRequest(dropGraph))
       }
 
       for ( _ <- 1 to numUpdates) {
@@ -58,7 +58,7 @@ class StreamSparqlRequestClientSpec extends TestKit(ActorSystem("StreamSparqlReq
       source.sendNext(SparqlRequest(query1))
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, result, None) => assert(result == emptyResult)
+        case SparqlResponse (_, true, _, result, None) => assert(result == emptyResult)
         case x@_ => fail(s"Unexpected: $x")
       }
 
@@ -88,7 +88,7 @@ class StreamSparqlRequestClientSpec extends TestKit(ActorSystem("StreamSparqlReq
       source.sendNext(SparqlRequest(query2Get))
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, result, None) => assert(result === query2Result)
+        case SparqlResponse (_, true, _, result, None) => assert(result === query2Result)
       }
     }
 
@@ -98,7 +98,7 @@ class StreamSparqlRequestClientSpec extends TestKit(ActorSystem("StreamSparqlReq
       source.sendNext(SparqlRequest(query2Post))
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, result, None) => assert(result === query2Result)
+        case SparqlResponse (_, true, _, result, None) => assert(result === query2Result)
       }
 
     }
@@ -118,7 +118,7 @@ class StreamSparqlRequestClientSpec extends TestKit(ActorSystem("StreamSparqlReq
         response = sink.expectNext(receiveTimeout)
       ) yield {
         response match {
-          case SparqlResponse(_, true, _, _) => true
+          case SparqlResponse(_, true, _, _, _) => true
           case _ => false
         }
       }
@@ -136,8 +136,8 @@ class StreamSparqlRequestClientSpec extends TestKit(ActorSystem("StreamSparqlReq
   }
 
   private def assertSuccessResponse(response: SparqlResponse): Unit = response match {
-    case SparqlResponse(_, true, _, _) => assert(true)
-    case x@SparqlResponse(_, _, _, _) => fail(s"unexpected: $x")
+    case SparqlResponse(_, true, _, _, _) => assert(true)
+    case x@SparqlResponse(_, _, _, _, _) => fail(s"unexpected: $x")
   }
 
   override def afterAll(): Unit = {

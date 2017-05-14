@@ -21,7 +21,7 @@ import scala.language.postfixOps
   * This test runs as part of the [[HttpEndpointSuiteTestRunner]] Suite.
   */
 @DoNotDiscover
-class StreamSparqlToModelConstructClientSpec extends TestKit(ActorSystem("StreamSparqlToModelConstructClientSpec"))
+class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToModelConstructClientSpec"))
   with WordSpecLike with MustMatchers with BeforeAndAfterAll
   with SparqlQueries with SparqlRequestFlowBuilder with RdfModelTestUtils {
 
@@ -29,11 +29,11 @@ class StreamSparqlToModelConstructClientSpec extends TestKit(ActorSystem("Stream
   implicit val dispatcher: ExecutionContext = system.dispatcher
   implicit val prefixMapping: PrefixMapping = PrefixMapping.none
 
-  implicit val receiveTimeout: FiniteDuration = 3 seconds
+  implicit val receiveTimeout: FiniteDuration = 30 seconds
 
   import HttpEndpointSuiteTestRunner._
 
-  "The Akka-Streams Sparql Client" must {
+  "The ModelConstructFlow Builder" must {
     val sparqlRequestFlowUnderTest = sparqlRequestFlow(testServerEndpoint)
 
     val ( source, sink ) = TestSource.probe[SparqlRequest]
@@ -45,13 +45,21 @@ class StreamSparqlToModelConstructClientSpec extends TestKit(ActorSystem("Stream
     "1. Clear the data" in {
 
       sink.request(1)
+      source.sendNext(SparqlRequest(deleteDefaultGraphTriples))
+      assertSuccessResponse(sink.expectNext(receiveTimeout))
+
+      sink.request(1)
       source.sendNext(SparqlRequest(deleteModelGraph))
+      assertSuccessResponse(sink.expectNext(receiveTimeout))
+
+      sink.request(1)
+      source.sendNext(SparqlRequest(deleteAlternateModelGraph))
       assertSuccessResponse(sink.expectNext(receiveTimeout))
 
       sink.request(1)
       source.sendNext(SparqlRequest(queryModelGraph))
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, result, None) => assert(result == emptyResult)
+        case SparqlResponse (_, true, _, result, None) => assert(result == emptyResult)
       }
 
     }
@@ -75,7 +83,7 @@ class StreamSparqlToModelConstructClientSpec extends TestKit(ActorSystem("Stream
       )
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, Seq(SparqlModelResult(modelResult)), None) =>
+        case SparqlResponse (_, true, _, Seq(SparqlModelResult(modelResult)), None) =>
           dumpModel(modelResult)
           assert(modelResult.size() === 10)
         case x@_ => fail(s"failing due to unexpected message received: $x")
@@ -92,7 +100,7 @@ class StreamSparqlToModelConstructClientSpec extends TestKit(ActorSystem("Stream
       )
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, Seq(SparqlModelResult(modelResult)), None) =>
+        case SparqlResponse (_, true, _, Seq(SparqlModelResult(modelResult)), None) =>
           dumpModel(modelResult)
           assert(modelResult.size() === 40)
         case x@_ => fail(s"failing due to unexpected message received: $x")
@@ -111,7 +119,7 @@ class StreamSparqlToModelConstructClientSpec extends TestKit(ActorSystem("Stream
       )
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, Seq(SparqlModelResult(modelResult)), None) =>
+        case SparqlResponse (_, true, _, Seq(SparqlModelResult(modelResult)), None) =>
           dumpModel(modelResult)
           assert(modelResult.size() === 3)
         case x@_ => fail(s"failing due to unexpected message received: $x")
@@ -124,13 +132,13 @@ class StreamSparqlToModelConstructClientSpec extends TestKit(ActorSystem("Stream
       source.sendNext(
         SparqlRequest(
           SparqlModelConstruct(
-            propertyIRIs = uri(PrefixMapping.standard.getNsPrefixURI("rdfs") + "label") :: Nil
+            propertyIRIs = PrefixMapping.standard.getNsPrefixURI("rdfs") + "label":: Nil
           )
         )
       )
 
       sink.expectNext(receiveTimeout) match {
-        case SparqlResponse (_, true, Seq(SparqlModelResult(modelResult)), None) =>
+        case SparqlResponse (_, true, _, Seq(SparqlModelResult(modelResult)), None) =>
           dumpModel(modelResult)
           assert(modelResult.size() === 25)
         case x@_ => fail(s"failing due to unexpected message received: $x")
@@ -146,8 +154,8 @@ class StreamSparqlToModelConstructClientSpec extends TestKit(ActorSystem("Stream
   }
 
   private def assertSuccessResponse(response: SparqlResponse): Unit = response match {
-    case SparqlResponse(_, true, _, _) => assert(true)
-    case x@SparqlResponse(_, _, _, _) => fail(s"unexpected: $x")
+    case SparqlResponse(_, true, _, _, _) => assert(true)
+    case x@SparqlResponse(_, _, _, _, _) => fail(s"unexpected: $x")
   }
 
   override def afterAll(): Unit = {

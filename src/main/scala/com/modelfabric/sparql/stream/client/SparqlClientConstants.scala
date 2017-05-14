@@ -1,6 +1,9 @@
 package com.modelfabric.sparql.stream.client
 
+import akka.http.scaladsl.model.MediaType.NotCompressible
 import akka.http.scaladsl.model.{ContentType, HttpCharsets, MediaType}
+import org.eclipse.rdf4j.model.{ModelFactory, ValueFactory}
+import org.eclipse.rdf4j.model.impl.{LinkedHashModelFactory, SimpleValueFactory}
 
 /*           */
 /* CONSTANTS */
@@ -81,6 +84,13 @@ object SparqlClientConstants {
   }
 
   /**
+    * Content Type for application/n-triples
+    */
+  val `application/octet-stream`: ContentType.Binary = {
+    MediaType.applicationBinary("octet-stream", NotCompressible).toContentType
+  }
+
+  /**
     * Content Type for text/turtle
     */
   val `text/turtle`: ContentType.NonBinary = {
@@ -91,5 +101,13 @@ object SparqlClientConstants {
     * Checks the number of available CPU cores from the JVM runtime. Used parallelise async stream operations.
     */
   lazy val numberOfCpuCores: Int = sys.runtime.availableProcessors()
+
+  /**
+    * RDF4J Value Factory
+    */
+  lazy val valueFactory: ValueFactory = SimpleValueFactory.getInstance()
+
+  lazy val modelFactory: ModelFactory = new LinkedHashModelFactory()
+
 
 }

@@ -1,6 +1,7 @@
 import sbt._
 import Keys._
 import spray.revolver.RevolverPlugin._
+import scoverage.ScoverageKeys._
 
 import scala.util.Try
 
@@ -19,7 +20,10 @@ object BuildSettings {
     scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.8", "-language:implicitConversions", "-language:postfixOps", "-Xlint", "-Xfatal-warnings"),
     incOptions    := incOptions.value.withNameHashing(nameHashing     = true),
     ivyScala      := ivyScala.value map { _.copy(overrideScalaVersion = true) },
-    parallelExecution in Test := false
+    parallelExecution in Test := false,
+    coverageFailOnMinimum := true,
+    coverageOutputHTML    := true,
+    coverageOutputXML     := true
   ) ++ Defaults.itSettings ++ Revolver.settings
 }
 
@@ -70,9 +74,9 @@ object PublishingSettings {
 object Version {
 
   val scala      = "2.11.8"
-  val scalaUtils = "0.2"
+  val scalaUtils = "0.3"
   val akka       = "2.4.16"
-  val akkaHttp   = "10.0.1"
+  val akkaHttp   = "10.0.2"
   val sprayJson  = "1.3.2"
   val spray      = "1.3.3"
   val javaxWsRs  = "1.1.1"
@@ -91,13 +95,11 @@ object Library {
   val akkaHttpCore      = "com.typesafe.akka" %% "akka-http-core"                    % Version.akkaHttp
   val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json"              % Version.akkaHttp
   val akkaSlf4j         = "com.typesafe.akka" %% "akka-slf4j"                        % Version.akka
-  val sprayJson         = "io.spray"          %  "spray-json_2.11"                   % Version.sprayJson
-  val sprayClient       = "io.spray"          %% "spray-client"                      % Version.spray
   val javaxWsRs         = "javax.ws.rs"       %  "jsr311-api"                        % Version.javaxWsRs
   val jerseyCore        = "com.sun.jersey"    %  "jersey-core"                       % Version.jersey
   val jerseyClient      = "com.sun.jersey"    %  "jersey-client"                     % Version.jersey
   val logbackClassic    = "ch.qos.logback"    %  "logback-classic"                   % Version.logback
-  val rdf4jRuntime     = "org.eclipse.rdf4j" % "rdf4j-runtime"                       % Version.rdf4j withSources()
+  val rdf4jRuntime      = "org.eclipse.rdf4j" % "rdf4j-runtime"                      % Version.rdf4j withSources()
   val scalaTest         = "org.scalatest"     %% "scalatest"                         % Version.scalaTest   % "it,test"
   val akkaTestkit       = "com.typesafe.akka" %% "akka-testkit"                      % Version.akka        % "it,test"
   val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit"               % Version.akka        % "it,test"
@@ -113,7 +115,7 @@ object Build extends sbt.Build {
 
   val projectDependencies = Seq(
     scalaUtils, akkaActor, akkaStream, akkaHttpCore, akkaHttpSprayJson, akkaSlf4j,
-    sprayClient, sprayJson, javaxWsRs, jerseyCore, jerseyClient, rdf4jRuntime,
+    javaxWsRs, jerseyCore, jerseyClient, rdf4jRuntime,
     logbackClassic, scalaTest, akkaTestkit, akkaStreamTestkit, fusekiServer)
 
   lazy val project = Project("reactive-sparql", file("."))
@@ -122,6 +124,7 @@ object Build extends sbt.Build {
     .settings(jenkinsMavenSettings: _*)
     .settings(name := "reactive-sparql")
     .settings(libraryDependencies ++= projectDependencies)
+    .settings(coverageMinimum := 65.0D)
 } 
 
 

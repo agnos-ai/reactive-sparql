@@ -1,7 +1,5 @@
 package com.modelfabric.sparql
 
-import java.net.URI
-
 import com.modelfabric.sparql.api._
 import org.eclipse.rdf4j.model.IRI
 
@@ -12,8 +10,8 @@ import com.modelfabric.sparql.stream.client.SparqlClientConstants.{valueFactory 
 trait SparqlQueries {
   implicit val pm = PrefixMapping.extended
 
-  implicit def uriToIri(uri: URI): IRI = {
-    svf.createIRI(uri.toString)
+  implicit def stringToIri(iri: String): IRI = {
+    svf.createIRI(iri.toString)
   }
 
   lazy val dropGraph = SparqlUpdate { s"""
@@ -49,9 +47,9 @@ trait SparqlQueries {
     |}"""
   }
 
-  lazy val graphIri = uri("urn:test:mfab:data")
-  lazy val whateverIri = uri("urn:test:whatever")
-  lazy val propertyIri = uri("http://xmlns.com/foaf/0.1/givenName")
+  lazy val graphIri   : IRI = "urn:test:mfab:data"
+  lazy val whateverIri: IRI = "urn:test:whatever"
+  lazy val propertyIri: IRI = "http://xmlns.com/foaf/0.1/givenName"
 
 
   lazy val insert1 = SparqlUpdate { s"""
@@ -139,8 +137,15 @@ trait SparqlQueries {
   lazy val mappedQuery2Result = Person(whateverIri, "William") :: Nil
 
 
-  lazy val modelGraphIri = uri("urn:test:mfab:model")
-  lazy val modelAlternateGraphIri = uri("urn:test:mfab:modelalt")
+  lazy val modelGraphIri          : IRI = "urn:test:mfab:model"
+  lazy val modelAlternateGraphIri : IRI = "urn:test:mfab:modelalt"
+  lazy val deleteDefaultGraphTriples = {
+    SparqlUpdate(s"""
+       |DELETE { ?s ?p ?o }
+       |WHERE  { ?s ?p ?o }
+     """)
+  }
+
   lazy val deleteModelGraph = {
     SparqlUpdate(s"""
        |DROP SILENT GRAPH <$modelGraphIri>
@@ -153,7 +158,7 @@ trait SparqlQueries {
      """)
   }
 
-  def modelResourceIri(suffix: String): URI = uri(s"urn:test:mfab:res:$suffix")
+  def modelResourceIri(suffix: String): IRI = s"urn:test:mfab:res:$suffix"
 
 
   lazy val queryModelGraph = {
@@ -219,11 +224,4 @@ trait SparqlQueries {
      """)
   }
 
-  /**
-    * TODO: Move this to the string extensions in modelfabric/scala-utils project.
-    *
-    * @param value
-    * @return
-    */
-  def uri(value: String) = URI.create(value)
 }

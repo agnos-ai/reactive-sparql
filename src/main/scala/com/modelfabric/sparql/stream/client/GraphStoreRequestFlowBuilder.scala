@@ -1,7 +1,7 @@
 package com.modelfabric.sparql.stream.client
 
 import java.io.{StringReader, StringWriter}
-import java.net.{URI, URL}
+import java.net.URL
 import java.nio.file.Path
 
 import akka.actor.ActorSystem
@@ -9,11 +9,11 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.Accept
 import akka.http.scaladsl.model.{HttpEntity, _}
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{FileIO, Flow, Source}
+import akka.stream.scaladsl.{FileIO, Flow, Framing, Source}
 import akka.util.ByteString
 import com.modelfabric.sparql.api._
 import com.modelfabric.sparql.util.HttpEndpoint
-import org.eclipse.rdf4j.model.Model
+import org.eclipse.rdf4j.model.{IRI, Model}
 import org.eclipse.rdf4j.rio.{RDFFormat, Rio}
 
 import scala.util.{Failure, Success, Try}
@@ -74,7 +74,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
     * as a proper stream but there is the risk is that the user might
     * get more than a single response per request.
     */
-  val useStrictByteStringStrategy = false
+  val useStrictByteStringStrategy = true
 
   /**
     * Specifies for how long to wait for a "strict" http entity.
@@ -82,9 +82,9 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
   val strictEntityReadTimeout: FiniteDuration = 60 seconds
 
   /**
-    * Limit the response entity size to 1MB by default
+    * Limit the response entity size to 100MB by default
     */
-  val strictEntityMaximumLengthInBytes: Int = 1024 * 1024
+  val strictEntityMaximumLengthInBytes: Int = 100 * 1024 * 1024
 
   def graphStoreRequestFlow(endpoint: HttpEndpoint): Flow[GraphStoreRequest, GraphStoreResponse, _] = {
     Flow
@@ -107,24 +107,28 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
   }
 
   def makeModelSource(entity: HttpEntity): Source[Option[Model], Any] = {
-    if ( !entity.isChunked() && (entity.isKnownEmpty() || entity.contentLengthOption.getOrElse(0) ==0)) {
+    if ( !entity.isChunked() && (entity.isKnownEmpty() || entity.contentLengthOption.getOrElse(0) == 0)) {
       // if we know there are no bytes in the entity (no-graph has been returned)
       // or the reponse content type is not what we have requested then no model is emitted.
       entity.discardBytes()
       Source.single(None)
-    } else if ( !useStrictByteStringStrategy) {
+    } else if ( !useStrictByteStringStrategy && entity.isChunked()) {
       // NB: mapping over the data bytes stream won't work because the stream will never emit for empty entities
       // the trick is to introduce a scan() call, which will emit an empty string even if nothing comes through.
       entity.withoutSizeLimit().dataBytes
+        .via(Framing.delimiter(ByteString.fromString("\n"), maximumFrameLength = strictEntityMaximumLengthInBytes, allowTruncation = true))
         .scan(ByteString.empty)((a,b) => b ++ a)
         .filter(_.nonEmpty)
-        //.via(Framing.delimiter(ByteString.fromString("\n"), maximumFrameLength = strictEntityMaximumLengthInBytes))
         .map { bs =>
-          val reader = new StringReader(bs.utf8String)
-          val mt = Try(Rio.parse(reader, "", mapContentTypeToRdfFormat(entity.contentType)))
-          mt.toOption
+          if ( !bs.isEmpty ) {
+            val reader = new StringReader(bs.utf8String)
+            val mt = Try(Rio.parse(reader, "", mapContentTypeToRdfFormat(entity.contentType)))
+            mt.toOption
+          } else {
+            None
+          }
         }
-    } else if (useStrictByteStringStrategy) {
+    } else { //i.e. if useStrictByteStringStrategy is true
       // this workaround does seem to be alright for smaller graphs that can be
       // converted to a strict in-memory entity - currently this off by default
       Source.single(entity.withSizeLimit(strictEntityMaximumLengthInBytes))
@@ -134,9 +138,6 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
           val mt = Try(Rio.parse(reader, "", mapContentTypeToRdfFormat(entity.contentType)))
           mt.toOption
         }
-    } else {
-      // unreachable code, but IntelliJ is dumb for not seeing that
-      ???
     }
   }
 
@@ -197,14 +198,14 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
   (
     endpoint: HttpEndpoint,
     method: HttpMethod,
-    graphUri: Option[URI],
+    graphIri: Option[IRI],
     contentType: ContentType
   )
   (
     entitySourceCreator: () => Source[ByteString, Any]
   ): HttpRequest = {
     HttpRequest(
-      method, uri = s"${endpoint.path}${mapGraphOptionToPath(graphUri)}"
+      method, uri = s"${endpoint.path}${mapGraphOptionToPath(graphIri)}"
     )
     .withHeaders(makeRequestHeaders(endpoint))
     .withEntity(
@@ -215,7 +216,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
     )
   }
 
-  private def mapGraphOptionToPath(graphUri: Option[URI]): String = graphUri match {
+  private def mapGraphOptionToPath(graphIri: Option[IRI]): String = graphIri match {
     case Some(uri) => s"?$GRAPH_PARAM_NAME=${uri.toString.urlEncode}"
     case None      => s"?$DEFAULT_PARAM_NAME"
 

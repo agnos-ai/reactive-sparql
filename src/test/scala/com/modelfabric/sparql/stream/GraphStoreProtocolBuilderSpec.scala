@@ -199,7 +199,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
     }
 
     "3. Add a triple to the named graph" in {
-      assert(model1named.contexts().contains(uriToIri(graphIri)), "checking the model")
+      assert(model1named.contexts().contains(graphIri), "checking the model")
 
       sink.request(1)
       source.sendNext(InsertGraphFromModel(model1named, Some(graphIri)))
@@ -240,8 +240,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       checkAllGood(sink, Some(true), Some(1))
     }
 
-    //FIXME: this works with Stardog, but not with the local Fuseki!
-    "6. Load N-TRIPLES file from the local filesystem into a named graph" ignore {
+    "6. Load N-TRIPLES file from the local filesystem into a named graph" in {
       val ntFilePath = new File("src/test/resources/labels.nt").getAbsoluteFile.toPath
 
       sink.request(1)
@@ -257,8 +256,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       dumpModel(res.model.get, RDFFormat.JSONLD)
     }
 
-    //FIXME: this works with Stardog, but not with the local Fuseki!
-    "7. Load TURTLE file from the local filesystem into a named graph" ignore {
+    "7. Load TURTLE file from the local filesystem into a named graph" in {
       val ntFilePath = new File("src/test/resources/labels.ttl").getAbsoluteFile.toPath
 
       sink.request(1)
@@ -272,8 +270,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       res.model.get.predicates.containsAll(Set(RDFS.LABEL, RDFS.COMMENT))
     }
 
-    //FIXME: this works with Stardog, but not with the local Fuseki!
-    "8. Load JSON-LD file from the local filesystem into a named graph" ignore {
+    "8. Load JSON-LD file from the local filesystem into a named graph" in {
       val ntFilePath = new File("src/test/resources/labels.json").getAbsoluteFile.toPath
 
       sink.request(1)
@@ -287,8 +284,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       res.model.get.predicates.containsAll(Set(RDFS.LABEL, RDFS.COMMENT))
     }
 
-    //FIXME: this works with Stardog, but not with the local Fuseki!
-    "9. Load TURTLE file from an http server using a URL into a named graph" ignore {
+    "9. Load TURTLE file from an http server using a URL into a named graph" in {
 
       def serveFileViaHttp(serverEndpoint: HttpEndpoint, rootFolder: String): Future[ServerBinding] = {
         import com.modelfabric.sparql.stream.client.SparqlClientConstants._
@@ -324,8 +320,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       shutdownFileServer()
     }
 
-    //FIXME: this works with Stardog, but not with the local Fuseki!
-    "10. Streams must complete gracefully" ignore {
+    "10. Streams must complete gracefully" in {
 
       source.sendComplete()
       sparqlSource.sendComplete()

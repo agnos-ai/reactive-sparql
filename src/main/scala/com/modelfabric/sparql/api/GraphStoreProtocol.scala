@@ -1,11 +1,11 @@
 package com.modelfabric.sparql.api
 
-import java.net.{URI, URL}
+import java.net.URL
 import java.nio.file.Path
 
 import akka.http.scaladsl.model.HttpMethod
 import akka.http.scaladsl.model.HttpMethods._
-import org.eclipse.rdf4j.model.Model
+import org.eclipse.rdf4j.model.{IRI, Model}
 import org.eclipse.rdf4j.rio.RDFFormat
 import org.eclipse.rdf4j.rio.RDFFormat.NTRIPLES
 
@@ -35,42 +35,42 @@ case class GraphStoreResponse
 ) extends ClientHttpResponse with GraphStoreProtocol
 
 object GetGraphM {
-  def unapply(arg: GetGraph): Option[(Option[URI], HttpMethod)] = {
-    Some((arg.graphUri, arg.httpMethod))
+  def unapply(arg: GetGraph): Option[(Option[IRI], HttpMethod)] = {
+    Some((arg.graphIri, arg.httpMethod))
   }
 }
 
 /**
   * Represents the operation to retrieve a single graph via the graph-store protocol.
-  * @param graphUri the graph IRI to get, if not specified this denotes the DEFAULT graph
+  * @param graphIri the graph IRI to get, if not specified this denotes the DEFAULT graph
   *
   * @see [[https://www.w3.org/TR/2013/REC-sparql11-http-rdf-update-20130321/#http-get]]
   */
-case class GetGraph(graphUri: Option[URI]) extends GraphStoreRequest {
+case class GetGraph(graphIri: Option[IRI]) extends GraphStoreRequest {
   final override val httpMethod: HttpMethod = GET
 }
 
 
 object DropGraphM {
-  def unapply(arg: DropGraph): Option[(Option[URI], HttpMethod)] = {
-    Some((arg.graphUri, arg.httpMethod))
+  def unapply(arg: DropGraph): Option[(Option[IRI], HttpMethod)] = {
+    Some((arg.graphIri, arg.httpMethod))
   }
 }
 
 /**
   * Represents an operation to drop a single graph via the graph-store protocol.
-  * @param graphUri the graph IRI to drop, if not specified this denotes the DEFAULT graph
+  * @param graphIri the graph IRI to drop, if not specified this denotes the DEFAULT graph
   *
   * @see [[https://www.w3.org/TR/2013/REC-sparql11-http-rdf-update-20130321/#http-delete]]
   */
-case class DropGraph(graphUri: Option[URI]) extends GraphStoreRequest {
+case class DropGraph(graphIri: Option[IRI]) extends GraphStoreRequest {
   final override val httpMethod: HttpMethod = DELETE
 }
 
 
 /**
   * Represents an operation to insert graph(s) via the graph-store protocol.
-  * @param graphUri    an optional graph IRI specifier, will be added as the value of the "?graph=uri"
+  * @param graphIri    an optional graph IRI specifier, will be added as the value of the "?graph=uri"
   *                    query parameter
   * @param mergeGraphs merge if true, replace graph if false
   *
@@ -78,7 +78,7 @@ case class DropGraph(graphUri: Option[URI]) extends GraphStoreRequest {
   * @see [[https://www.w3.org/TR/2013/REC-sparql11-http-rdf-update-20130321/#http-put]]
 
   */
-abstract class InsertGraph(val graphUri: Option[URI], val mergeGraphs: Boolean) extends GraphStoreRequest {
+abstract class InsertGraph(val graphIri: Option[IRI], val mergeGraphs: Boolean) extends GraphStoreRequest {
 
   override val httpMethod: HttpMethod = if (mergeGraphs) POST else PUT
 
@@ -87,15 +87,15 @@ abstract class InsertGraph(val graphUri: Option[URI], val mergeGraphs: Boolean) 
 
 object InsertGraphFromModelM {
 
-   def unapply(arg: InsertGraphFromModel): Option[(Model, RDFFormat, Option[URI], HttpMethod)] = {
-    Some((arg.graphModel, arg.modelFormat, arg.graphUri, arg.httpMethod))
+   def unapply(arg: InsertGraphFromModel): Option[(Model, RDFFormat, Option[IRI], HttpMethod)] = {
+    Some((arg.graphModel, arg.modelFormat, arg.graphIri, arg.httpMethod))
   }
 }
 
 /**
   * Used to insert an in-memory RDF model into the triple store.
   * @param graphModel  the graph model
-  * @param graphUri    optional graph Uri, defaults to None
+  * @param graphIri    optional graph IRI, defaults to None
   * @param mergeGraphs indicates if the inserted data should be merged data already in the specified graph in
   *                    the database, if set to false the previously stored data in the graph will be replaced
   *                    with the payload, defaults to false
@@ -103,9 +103,9 @@ object InsertGraphFromModelM {
 case class InsertGraphFromModel
 (
   graphModel: Model,
-  override val graphUri: Option[URI] = None,
+  override val graphIri: Option[IRI] = None,
   override val mergeGraphs: Boolean = false
-) extends InsertGraph(graphUri, mergeGraphs) {
+) extends InsertGraph(graphIri, mergeGraphs) {
 
   /**
     * We only use NTRIPLES upload format when uploading in-memory Models.
@@ -116,8 +116,8 @@ case class InsertGraphFromModel
 
 
 object InsertGraphFromURLM {
-  def unapply(arg: InsertGraphFromURL): Option[(URL, RDFFormat, Option[URI], HttpMethod)] = {
-    Some((arg.url, arg.modelFormat, arg.graphUri, arg.httpMethod))
+  def unapply(arg: InsertGraphFromURL): Option[(URL, RDFFormat, Option[IRI], HttpMethod)] = {
+    Some((arg.url, arg.modelFormat, arg.graphIri, arg.httpMethod))
   }
 }
 
@@ -125,7 +125,7 @@ object InsertGraphFromURLM {
   * Used to insert RDF contents from a file or another resource into the triple store.
   * @param url         the URL of the file to use
   * @param modelFormat the RDF format to use, supporting all formats available in org.eclipse.rdf4j.rio.Rio
-  * @param graphUri    an optional graph Uri, will insert into the default graph if no graph is specified.
+  * @param graphIri    an optional graph IRI, will insert into the default graph if no graph is specified.
   *                    NB: if the incoming RDF is in "quads" format, i.e. NQUADS
   *                    or JSON-LD, the graph
   *                    in the RDF is ignored and instead the graphIri property is used.
@@ -137,13 +137,13 @@ case class InsertGraphFromURL
 (
   url: URL,
   modelFormat: RDFFormat,
-  override val graphUri: Option[URI] = None,
+  override val graphIri: Option[IRI] = None,
   override val mergeGraphs: Boolean = false
-) extends InsertGraph(graphUri, mergeGraphs)
+) extends InsertGraph(graphIri, mergeGraphs)
 
 object InsertGraphFromPathM {
-  def unapply(arg: InsertGraphFromPath): Option[(Path, RDFFormat, Option[URI], HttpMethod)] = {
-    Some((arg.path, arg.modelFormat, arg.graphUri, arg.httpMethod))
+  def unapply(arg: InsertGraphFromPath): Option[(Path, RDFFormat, Option[IRI], HttpMethod)] = {
+    Some((arg.path, arg.modelFormat, arg.graphIri, arg.httpMethod))
   }
 }
 
@@ -151,7 +151,7 @@ object InsertGraphFromPathM {
   * Used to insert RDF contents from a file or another resource into the triple store.
   * @param path        the local filesystem path of the file to use
   * @param modelFormat the RDF format to use, supporting all formats available in org.eclipse.rdf4j.rio.Rio
-  * @param graphUri    an optional graph Uri, will insert into the default graph if no graph is specified.
+  * @param graphIri    an optional graph IRI, will insert into the default graph if no graph is specified.
   *                    NB: if the incoming RDF is in "quads" format, i.e. NQUADS
   *                    or JSON-LD, the graph
   *                    in the RDF is ignored and instead the graphIri property is used.
@@ -163,6 +163,6 @@ case class InsertGraphFromPath
 (
   path: Path,
   modelFormat: RDFFormat,
-  override val graphUri: Option[URI] = None,
+  override val graphIri: Option[IRI] = None,
   override val mergeGraphs: Boolean = false
-) extends InsertGraph(graphUri, mergeGraphs)
+) extends InsertGraph(graphIri, mergeGraphs)

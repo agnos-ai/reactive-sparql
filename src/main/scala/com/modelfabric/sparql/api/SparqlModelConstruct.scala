@@ -1,20 +1,20 @@
 package com.modelfabric.sparql.api
 
-import java.net.URI
 
 import akka.http.scaladsl.model.{HttpMethod, HttpMethods}
+import org.eclipse.rdf4j.model.IRI
 
 object SparqlModelConstruct {
-  def apply(resourceIRIs: Seq[URI] = Nil,
-            propertyIRIs: Seq[URI] = Nil,
-            graphIRIs: Seq[URI] = Nil,
+  def apply(resourceIRIs: Seq[IRI] = Nil,
+            propertyIRIs: Seq[IRI] = Nil,
+            graphIRIs: Seq[IRI] = Nil,
             reasoningEnabled: Boolean = false)(
     implicit _paging: PagingParams = NoPaging
   ): SparqlModelConstruct = {
     new SparqlModelConstruct()(PrefixMapping.standard) {
 
-      private def values(binding: String, iris: Seq[URI]): String = {
-        def mkIRIs(iris: Seq[URI]): String = {
+      private def values(binding: String, iris: Seq[IRI]): String = {
+        def mkIRIs(iris: Seq[IRI]): String = {
           iris.map(iri => s"<$iri>").mkString(" ")
         }
         iris match {

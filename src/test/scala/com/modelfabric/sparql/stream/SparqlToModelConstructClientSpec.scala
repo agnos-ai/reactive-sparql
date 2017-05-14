@@ -45,6 +45,10 @@ class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToMode
     "1. Clear the data" in {
 
       sink.request(1)
+      source.sendNext(SparqlRequest(deleteDefaultGraphTriples))
+      assertSuccessResponse(sink.expectNext(receiveTimeout))
+
+      sink.request(1)
       source.sendNext(SparqlRequest(deleteModelGraph))
       assertSuccessResponse(sink.expectNext(receiveTimeout))
 
@@ -128,7 +132,7 @@ class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToMode
       source.sendNext(
         SparqlRequest(
           SparqlModelConstruct(
-            propertyIRIs = uri(PrefixMapping.standard.getNsPrefixURI("rdfs") + "label") :: Nil
+            propertyIRIs = PrefixMapping.standard.getNsPrefixURI("rdfs") + "label":: Nil
           )
         )
       )

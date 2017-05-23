@@ -75,7 +75,7 @@ object Version {
 
   val scala      = "2.11.8"
   val scalaUtils = "0.4-SNAPSHOT"
-  val akka       = "2.5.0"
+  val akka       = "2.5.1"
   val akkaHttp   = "10.0.5"
   val sprayJson  = "1.3.3"
   val spray      = "1.3.3"

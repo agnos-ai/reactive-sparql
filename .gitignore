@@ -53,3 +53,8 @@ out/
 project/project/
 run/
 
+
+project/eclipse.sbt
+/bin/
+/.cache-main
+/.cache-tests

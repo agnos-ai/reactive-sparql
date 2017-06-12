@@ -66,7 +66,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
 
   implicit val system: ActorSystem
   implicit val materializer: ActorMaterializer
-  import system.dispatcher
+
 
   /**
     * If this is set to true then the response entity is "strictified", i.e. all chunks are loaded

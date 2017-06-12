@@ -351,14 +351,14 @@ class PrefixMapping {
     }
     (null, null)
   }
-
-  private def sparqlPrefix(prefix_ : String, namespace_ : String) = {
-    s"PREFIX ${prefix_}: <${namespace_}>"
-  }
-
-  private def sparqlPrefix(prefix_ : String) {
-    sparqlPrefix(prefix_, get(prefix_))
-  }
+  //TODO should be clean up since it is not used anywhere
+//  private def sparqlPrefix(prefix_ : String, namespace_ : String) = {
+//    s"PREFIX ${prefix_}: <${namespace_}>"
+//  }
+//TODO should be clean up since it is not used anywhere
+//  private def sparqlPrefix(prefix_ : String) {
+//    sparqlPrefix(prefix_, get(prefix_))
+//  }
 
   private def pairs = prefixToURI.toList sortBy { _._1 }
 

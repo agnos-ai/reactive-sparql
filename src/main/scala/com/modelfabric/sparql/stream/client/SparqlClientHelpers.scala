@@ -20,7 +20,7 @@ trait SparqlClientHelpers {
   import HttpMethods._
 
   import com.modelfabric.extension.StringExtensions._
-  import com.modelfabric.sparql.util.SparqlQueryStringConverter._
+
 
   implicit val system: ActorSystem
   implicit val materializer: ActorMaterializer

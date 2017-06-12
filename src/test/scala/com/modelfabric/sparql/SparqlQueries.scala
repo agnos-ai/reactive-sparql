@@ -192,6 +192,7 @@ trait SparqlQueries {
        |    <urn:test:mfab:res:12> rdfs:label "Label 12" .
        |    <urn:test:mfab:res:13> rdfs:label "Label 13" .
        |    <urn:test:mfab:res:14> rdfs:label "Label 14" .
+       |    <urn:test:mfab:res:15> rdfs:label "Label 15" .
        |    <urn:test:mfab:res:0> rdfs:comment "Comment 0" .
        |    <urn:test:mfab:res:1> rdfs:comment "Comment 1" .
        |    <urn:test:mfab:res:2> rdfs:comment "Comment 2" .
@@ -207,6 +208,7 @@ trait SparqlQueries {
        |    <urn:test:mfab:res:12> rdfs:comment "Comment 12" .
        |    <urn:test:mfab:res:13> rdfs:comment "Comment 13" .
        |    <urn:test:mfab:res:14> rdfs:comment "Comment 14" .
+       |    <urn:test:mfab:res:15> rdfs:comment "Comment 15" .
        |  }
        |  GRAPH <$modelAlternateGraphIri> {
        |    <urn:test:mfab:res:0> rdfs:label "Alt Label 0" .
@@ -219,6 +221,7 @@ trait SparqlQueries {
        |    <urn:test:mfab:res:7> rdfs:label "Alt Label 7" .
        |    <urn:test:mfab:res:8> rdfs:label "Alt Label 8" .
        |    <urn:test:mfab:res:9> rdfs:label "Alt Label 9" .
+       |    <urn:test:mfab:res:10> rdfs:label "Alt Label 10" .
        |  }
        |}
      """)

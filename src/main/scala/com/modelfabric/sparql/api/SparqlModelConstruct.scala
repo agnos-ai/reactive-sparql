@@ -43,17 +43,17 @@ object SparqlModelConstruct {
          """.stripMargin
       }
 
-//      private val graphConstruct = {
-//        s"""
-//           |CONSTRUCT {
-//           |  GRAPH ?graphIri {
-//           |    ?resourceIri ?propertyIri ?value .
-//           |  }
-//           |}
-//           |$whereClause
-//           |$pagingParams
-//        """.stripMargin.trim
-//      }
+      private val graphConstruct = {
+        s"""
+           |CONSTRUCT {
+           |  GRAPH ?graphIri {
+           |    ?resourceIri ?propertyIri ?value .
+           |  }
+           |}
+           |$whereClause
+           |$pagingParams
+        """.stripMargin.trim
+      }
 
       private val graphConstructReified = {
         s"""
@@ -69,14 +69,14 @@ object SparqlModelConstruct {
       }
 
       // this won't work when n-quads or n-triples are required to be returned via HTTP from the triple store.
-//      private val graphConstructViaSelect = {
-//        s"""
-//           |SELECT ?resourceIri ?propertyIri ?value ?graphIri
-//           |$whereClause
-//           |$pagingParams
-//        """.stripMargin.trim
-//
-//      }
+      private val graphConstructViaSelect = {
+        s"""
+           |SELECT ?resourceIri ?propertyIri ?value ?graphIri
+           |$whereClause
+           |$pagingParams
+        """.stripMargin.trim
+
+      }
 
       override val statement: String = build(graphConstructReified)
 

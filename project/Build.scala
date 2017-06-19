@@ -85,6 +85,7 @@ object Version {
   val fuseki     = "2.4.0"
 }
 
+
 object Library {
 
   val scalaUtils        = "com.modelfabric"   %% "scala-utils"                       % Version.scalaUtils

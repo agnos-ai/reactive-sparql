@@ -21,7 +21,7 @@ import scala.util.{Failure, Success, Try}
 /**
   * This test runs as part of the [[HttpEndpointSuiteTestRunner]] Suite.
   */
-//@DoNotDiscover
+@DoNotDiscover
 class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToModelConstructClientSpec"))
   with WordSpecLike with MustMatchers with BeforeAndAfterAll
   with SparqlQueries with SparqlRequestFlowBuilder with RdfModelTestUtils {
@@ -43,13 +43,7 @@ class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToMode
       .toMat(TestSink.probe[SparqlResponse])(Keep.both)
       .run()
 
-    val fakeSparqlRequestFlowUnderTest = sparqlRequestFlow(fakeServerEndpoint)
 
-    val ( source1, sink1 ) = TestSource.probe[SparqlRequest]
-      .via(fakeSparqlRequestFlowUnderTest)
-      .log("constructModelRequestFlow")(log = testSystem.log)
-      .toMat(TestSink.probe[SparqlResponse])(Keep.both)
-      .run()
 
     "1. Clear the data" in {
 
@@ -73,20 +67,14 @@ class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToMode
 
     }
 
-    "2.0 Allow one insert" in {
+    "2 Allow one insert" in {
 
       sink.request(1)
       source.sendNext(SparqlRequest(insertModelGraphData))
       assertSuccessResponse(sink.expectNext(receiveTimeout))
     }
 
-    "2.1 Fail one insert" in {
-      info("Using fake sparql endpoint and on purpose to fail it")
-      sink1.request(1)
-      source1.sendNext(SparqlRequest(insertModelGraphData))
-      assertErrorResponse(Try(sink1.expectNext(receiveTimeout)))
 
-    }
 
     "3. Get the filtered graph just inserted via a model construct query" in {
 

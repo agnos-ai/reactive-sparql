@@ -32,7 +32,6 @@ object HttpEndpointSuiteTestRunner {
     case _ => HttpEndpoint.localhostWithAutomaticPort("/test")
   }
 
-  val fakeServerEndpoint = HttpEndpoint("http://fake-r00enbn0c.bnymellon.net:13420/knowledge-graph", Some(sparqlServerEndpointAuthentication))
 
   val config: Config = {
     ConfigFactory.parseString(

@@ -1,7 +1,7 @@
 package com.modelfabric.sparql.stream.client
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.{HttpEntity, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.stream.{ActorMaterializer, FlowShape}
 import akka.stream.scaladsl.{Broadcast, Flow, Framing, GraphDSL, Source, ZipWith}
 import akka.util.ByteString

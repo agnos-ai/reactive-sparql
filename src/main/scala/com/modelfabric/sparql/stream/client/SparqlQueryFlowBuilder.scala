@@ -39,8 +39,8 @@ trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
 
       val responseMerger = builder.add(Merge[SparqlResponse](routes).named("merge.sparqlResponse"))
 
-      partition ~> sparqlQueryToStreamFlow(endpoint)                               ~> responseMerger
-      partition ~> sparqlQueryToStreamFlow(endpoint) ~> responseUnmarshallerFlow() ~> responseMerger
+      partition.out(0) ~> sparqlQueryToStreamFlow(endpoint)                               ~> responseMerger
+      partition.out(1) ~> sparqlQueryToStreamFlow(endpoint) ~> responseUnmarshallerFlow() ~> responseMerger
 
       FlowShape(partition.in, responseMerger.out)
 

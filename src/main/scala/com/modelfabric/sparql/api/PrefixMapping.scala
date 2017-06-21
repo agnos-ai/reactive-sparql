@@ -351,11 +351,11 @@ class PrefixMapping {
     }
     (null, null)
   }
-
+  //TODO should be clean up since it is not used anywhere
   private def sparqlPrefix(prefix_ : String, namespace_ : String) = {
     s"PREFIX ${prefix_}: <${namespace_}>"
   }
-
+//TODO should be clean up since it is not used anywhere
   private def sparqlPrefix(prefix_ : String) {
     sparqlPrefix(prefix_, get(prefix_))
   }

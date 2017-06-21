@@ -17,7 +17,7 @@ object BuildSettings {
     exportJars    := buildExportJars,
     updateOptions := updateOptions.value.withCachedResolution(true),
     shellPrompt := { state => "sbt [%s]> ".format(Project.extract(state).currentProject.id) },
-    scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.8", "-language:implicitConversions", "-language:postfixOps", "-Xlint", "-Xfatal-warnings"),
+    scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.8", "-language:implicitConversions", "-language:postfixOps", "-Xlint"),
     incOptions    := incOptions.value.withNameHashing(nameHashing     = true),
     ivyScala      := ivyScala.value map { _.copy(overrideScalaVersion = true) },
     parallelExecution in Test := false,
@@ -73,9 +73,9 @@ object PublishingSettings {
 
 object Version {
 
-  val scala      = "2.11.8"
-  val scalaUtils = "0.4"
-  val akka       = "2.5.1"
+  val scala      = "2.12.2"
+  val scalaUtils = "0.5"
+  val akka       = "2.5.2"
   val akkaHttp   = "10.0.6"
   val javaxWsRs  = "1.1.1"
   val jersey     = "1.19"
@@ -84,6 +84,7 @@ object Version {
   val scalaTest  = "3.0.1"
   val fuseki     = "2.4.0"
 }
+
 
 object Library {
 

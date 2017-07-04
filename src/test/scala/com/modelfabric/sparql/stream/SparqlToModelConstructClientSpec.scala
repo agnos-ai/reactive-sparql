@@ -8,7 +8,7 @@ import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestKit
 import com.modelfabric.sparql.SparqlQueries
 import com.modelfabric.sparql.api._
-import com.modelfabric.sparql.stream.client.SparqlRequestFlowBuilder
+import com.modelfabric.sparql.stream.client.{HttpClientFlowBuilder, HttpEndpointFlow, SparqlRequestFlowBuilder}
 import com.modelfabric.sparql.util.RdfModelTestUtils
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 import org.scalatest._
@@ -24,7 +24,7 @@ import scala.util.{Failure, Success, Try}
 @DoNotDiscover
 class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToModelConstructClientSpec"))
   with WordSpecLike with MustMatchers with BeforeAndAfterAll
-  with SparqlQueries with SparqlRequestFlowBuilder with RdfModelTestUtils {
+  with SparqlQueries with SparqlRequestFlowBuilder with RdfModelTestUtils with HttpClientFlowBuilder {
 
   implicit val materializer: ActorMaterializer = ActorMaterializer()(system)
   implicit val dispatcher: ExecutionContext = system.dispatcher
@@ -35,7 +35,7 @@ class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToMode
   import HttpEndpointSuiteTestRunner._
 
   "The ModelConstructFlow Builder" must {
-    val sparqlRequestFlowUnderTest = sparqlRequestFlow(testServerEndpoint)
+    val sparqlRequestFlowUnderTest = sparqlRequestFlow(HttpEndpointFlow(testServerEndpoint, pooledClientFlow[SparqlRequest]))
 
     val ( source, sink ) = TestSource.probe[SparqlRequest]
       .via(sparqlRequestFlowUnderTest)

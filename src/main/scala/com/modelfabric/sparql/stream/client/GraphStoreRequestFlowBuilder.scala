@@ -4,6 +4,7 @@ import java.io.{StringReader, StringWriter}
 import java.net.URL
 import java.nio.file.Path
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.headers.Accept
@@ -57,7 +58,7 @@ object GraphStoreRequestFlowBuilder {
 }
 
 
-trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
+trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers with HttpClientFlowBuilder {
 
   import SparqlClientConstants._
   import com.modelfabric.extension.StringExtensions._
@@ -86,11 +87,13 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers {
     */
   val strictEntityMaximumLengthInBytes: Int = 100 * 1024 * 1024
 
-  def graphStoreRequestFlow(endpoint: HttpEndpoint): Flow[GraphStoreRequest, GraphStoreResponse, _] = {
+  def graphStoreRequestFlow(
+    endpointFlow: HttpEndpointFlow[GraphStoreRequest]
+  ): Flow[GraphStoreRequest, GraphStoreResponse, NotUsed] = {
     Flow
-      .fromFunction(graphStoreOpToRequest(endpoint))
+      .fromFunction(graphStoreOpToRequest(endpointFlow.endpoint))
       .log("beforeHttpRequest")
-      .via(pooledHttpClientFlow[GraphStoreRequest](endpoint))
+      .via(endpointFlow.flow)
       .log("afterHttpRequest")
       .flatMapConcat {
         case (Success(response), request) =>

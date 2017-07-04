@@ -1,12 +1,10 @@
 package com.modelfabric.sparql.stream.client
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpEntity, _}
 import akka.http.scaladsl.model.headers.{Accept, Authorization, BasicHttpCredentials}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, PredefinedFromEntityUnmarshallers}
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Flow
 import com.modelfabric.sparql.api._
 import com.modelfabric.sparql.stream.client.SparqlClientConstants._
 import com.modelfabric.sparql.util.{BasicAuthentication, HttpEndpoint}
@@ -27,13 +25,6 @@ trait SparqlClientHelpers {
 
   implicit val rawBooleanFromEntityUnmarshaller: FromEntityUnmarshaller[Boolean] =
     PredefinedFromEntityUnmarshallers.stringUnmarshaller.map(_.toBoolean)
-
-  def pooledHttpClientFlow[T](endpoint: HttpEndpoint): Flow[(HttpRequest, T), (Try[HttpResponse], T), _] = {
-    Flow[(HttpRequest, T)]
-      .log("beforeHttpRequest", (req => req._1.httpMessage))
-      .via(Http().cachedHostConnectionPool[T](endpoint.host, endpoint.port))
-      .log("afterHttpRequest")
-  }
 
   def sparqlToRequest(endpoint: HttpEndpoint)(request: SparqlRequest): (HttpRequest, SparqlRequest) = {
     (makeHttpRequest(endpoint, request.statement), request)

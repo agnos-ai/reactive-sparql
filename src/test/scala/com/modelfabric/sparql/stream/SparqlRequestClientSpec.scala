@@ -8,7 +8,7 @@ import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestKit
 import com.modelfabric.sparql.SparqlQueries
 import com.modelfabric.sparql.api._
-import com.modelfabric.sparql.stream.client.SparqlRequestFlowBuilder
+import com.modelfabric.sparql.stream.client.{HttpClientFlowBuilder, HttpEndpointFlow, SparqlRequestFlowBuilder}
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 import org.scalatest._
 
@@ -22,7 +22,7 @@ import scala.language.postfixOps
 @DoNotDiscover
 class SparqlRequestClientSpec extends TestKit(ActorSystem("SparqlRequestClientSpec"))
   with WordSpecLike with MustMatchers with BeforeAndAfterAll
-  with SparqlQueries with SparqlRequestFlowBuilder {
+  with SparqlQueries with SparqlRequestFlowBuilder with HttpClientFlowBuilder {
 
   implicit val materializer: ActorMaterializer = ActorMaterializer()(system)
   implicit val dispatcher: ExecutionContext = system.dispatcher
@@ -33,7 +33,7 @@ class SparqlRequestClientSpec extends TestKit(ActorSystem("SparqlRequestClientSp
   import HttpEndpointSuiteTestRunner._
 
   "The Akka-Streams Sparql Client" must {
-    val sparqlRequestFlowUnderTest = sparqlRequestFlow(testServerEndpoint)
+    val sparqlRequestFlowUnderTest = sparqlRequestFlow(HttpEndpointFlow(testServerEndpoint, pooledClientFlow[SparqlRequest]))
 
     val ( source, sink ) = TestSource.probe[SparqlRequest]
       .via(sparqlRequestFlowUnderTest)

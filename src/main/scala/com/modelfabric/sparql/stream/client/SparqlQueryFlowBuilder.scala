@@ -1,13 +1,11 @@
 package com.modelfabric.sparql.stream.client
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.stream.{ActorMaterializer, FlowShape}
 import akka.stream.scaladsl.{Flow, GraphDSL, Merge, Partition, Source}
 import akka.util.ByteString
 import com.modelfabric.sparql.api._
-import com.modelfabric.sparql.util.HttpEndpoint
 
 import scala.util.{Failure, Success, Try}
 import spray.json._
@@ -23,10 +21,7 @@ trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
   implicit val materializer: ActorMaterializer
   implicit val dispatcher: ExecutionContext
 
-  def sparqlQueryFlow
-  (
-    endpoint: HttpEndpoint
-  ): Flow[SparqlRequest, SparqlResponse, Any] = {
+  def sparqlQueryFlow(endpointFlow: HttpEndpointFlow[SparqlRequest]): Flow[SparqlRequest, SparqlResponse, Any] = {
     Flow.fromGraph(GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
@@ -39,8 +34,8 @@ trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
 
       val responseMerger = builder.add(Merge[SparqlResponse](routes).named("merge.sparqlResponse"))
 
-      partition.out(0) ~> sparqlQueryToStreamFlow(endpoint)                               ~> responseMerger
-      partition.out(1) ~> sparqlQueryToStreamFlow(endpoint) ~> responseUnmarshallerFlow() ~> responseMerger
+      partition.out(0) ~> sparqlQueryToStreamFlow(endpointFlow)                               ~> responseMerger
+      partition.out(1) ~> sparqlQueryToStreamFlow(endpointFlow) ~> responseUnmarshallerFlow() ~> responseMerger
 
       FlowShape(partition.in, responseMerger.out)
 
@@ -78,7 +73,9 @@ trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
           dataStream.map { data =>
             response.copy(
               success = false, result = Nil,
-              error = Some(SparqlClientRequestFailed(s"unsupported result type [${contentType.getOrElse("Unknown")}] ${data.take(100).utf8String}..."))
+              error = Some(SparqlClientRequestFailed(
+                s"unsupported result type [${contentType.getOrElse("Unknown")}] ${data.take(100).utf8String}...")
+              )
             )
           }
 
@@ -91,23 +88,15 @@ trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
       }
   }
 
-
-  private def sparqlQueryToStreamFlow
-  (
-    endpoint: HttpEndpoint
-  ): Flow[SparqlRequest, SparqlResponse, Any] = {
-
-    val connection: Flow[(HttpRequest, SparqlRequest), (Try[HttpResponse], SparqlRequest), _] = {
-      Http().cachedHostConnectionPool[SparqlRequest](endpoint.host, endpoint.port)
-    }
+  private def sparqlQueryToStreamFlow(endpointFlow: HttpEndpointFlow[SparqlRequest]): Flow[SparqlRequest, SparqlResponse, Any] = {
 
     Flow[SparqlRequest]
       .map {
         case request@SparqlRequest(query: SparqlQuery) =>
-          (makeHttpRequest(endpoint, query), request)
+          (makeHttpRequest(endpointFlow.endpoint, query), request)
         }
       .log("SPARQL endpoint request")
-      .via(connection)
+      .via(endpointFlow.flow)
       .log("SPARQL endpoint response")
       .map {
         case (Success(HttpResponse(status, _, entity, _)), request) =>

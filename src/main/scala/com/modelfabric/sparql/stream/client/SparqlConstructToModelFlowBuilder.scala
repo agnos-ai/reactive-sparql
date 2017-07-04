@@ -1,12 +1,12 @@
 package com.modelfabric.sparql.stream.client
 
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.stream.{ActorMaterializer, FlowShape}
 import akka.stream.scaladsl.{Broadcast, Flow, Framing, GraphDSL, Source, ZipWith}
 import akka.util.ByteString
 import com.modelfabric.sparql.api._
-import com.modelfabric.sparql.util.HttpEndpoint
 import com.modelfabric.sparql.stream.client.SparqlClientConstants.{modelFactory => mf, valueFactory => vf}
 import org.eclipse.rdf4j.model.{IRI, Model, Resource}
 import org.eclipse.rdf4j.rio.{RDFFormat, Rio}
@@ -32,14 +32,12 @@ trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
 
   type Sparql = String
 
-  def sparqlModelConstructFlow(
-    endpoint: HttpEndpoint
-  ): Flow[SparqlRequest, SparqlResponse, _] = {
+  def sparqlModelConstructFlow(endpointFlow: HttpEndpointFlow[SparqlRequest]): Flow[SparqlRequest, SparqlResponse, NotUsed] = {
 
     Flow.fromGraph(GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
-      val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpoint)).async.named("mapping.sparqlToConstruct"))
+      val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpointFlow.endpoint)).async.named("mapping.sparqlToConstruct"))
       val broadcastConstructHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).async.named("broadcast.constructResponse"))
       val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).async.named("mapping.makeResponseFromHeader"))
       val resultZipper = builder.add(ZipWith[SparqlResult, SparqlResponse, SparqlResponse]((result, response) =>
@@ -48,7 +46,7 @@ trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
         )
       ).async.named("zipper.updateResultZipper"))
 
-      converter ~> pooledHttpClientFlow[SparqlRequest](endpoint) ~> broadcastConstructHttpResponse
+      converter ~> endpointFlow.flow ~> broadcastConstructHttpResponse
 
       broadcastConstructHttpResponse ~> responseToModelFlow ~> resultZipper.in0
       broadcastConstructHttpResponse ~> resultMaker         ~> resultZipper.in1
@@ -58,7 +56,7 @@ trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
 
   }
 
-  def deReifyConstructSubGraph(): Flow[Model, Model, _] = {
+  def deReifyConstructSubGraph(): Flow[Model, Model, NotUsed] = {
     import scala.collection.JavaConverters._
     Flow[Model]
       .mapConcat(_.stream().iterator().asScala.toList)
@@ -77,7 +75,7 @@ trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
   /**
     * This flow will consume the Http response entity and produces a corresponding SparqlResult
     */
-  val responseToModelFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, _] = {
+  val responseToModelFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, NotUsed] = {
     Flow[(Try[HttpResponse], SparqlRequest)]
       .flatMapConcat {
         // TODO: there are issues here with Stardog...
@@ -101,7 +99,7 @@ trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
   }
 
   //@deprecated
-  val responseToPagingModelFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, _] = {
+  val responseToPagingModelFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, NotUsed] = {
     Flow[(Try[HttpResponse], SparqlRequest)]
       .flatMapConcat {
         case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) => entity.withoutSizeLimit().getDataBytes()

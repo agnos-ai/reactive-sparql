@@ -15,7 +15,7 @@ import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestKit
 import com.modelfabric.sparql.SparqlQueries
 import com.modelfabric.sparql.api._
-import com.modelfabric.sparql.stream.client.{GraphStoreRequestFlowBuilder, SparqlRequestFlowBuilder}
+import com.modelfabric.sparql.stream.client.{GraphStoreRequestFlowBuilder, HttpEndpointFlow, SparqlRequestFlowBuilder}
 import com.modelfabric.sparql.util.{HttpEndpoint, RdfModelTestUtils}
 import com.modelfabric.test.HttpEndpointSuiteTestRunner
 import org.eclipse.rdf4j.model.util.ModelBuilder
@@ -56,8 +56,8 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
     Await.result(system.terminate(), 5 seconds)
   }
 
-  private val flowUnderTest = graphStoreRequestFlow(testServerEndpoint)
-  private val sparqlRequests = sparqlRequestFlow(testServerEndpoint)
+  private val flowUnderTest = graphStoreRequestFlow(HttpEndpointFlow(testServerEndpoint, pooledClientFlow[GraphStoreRequest]))
+  private val sparqlRequests = sparqlRequestFlow(HttpEndpointFlow(testServerEndpoint, pooledClientFlow[SparqlRequest]))
 
   private val (source, sink) = TestSource.probe[GraphStoreRequest]
     .via(flowUnderTest)

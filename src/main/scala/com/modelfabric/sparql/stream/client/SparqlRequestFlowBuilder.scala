@@ -1,23 +1,22 @@
 package com.modelfabric.sparql.stream.client
 
+import akka.NotUsed
 import akka.stream.FlowShape
 import akka.stream.scaladsl.{Flow, GraphDSL, Merge, Partition}
 import com.modelfabric.sparql.api.{SparqlModelConstruct, _}
-import com.modelfabric.sparql.util.HttpEndpoint
 
 
-trait SparqlRequestFlowBuilder
-  extends SparqlQueryFlowBuilder with SparqlConstructToModelFlowBuilder with SparqlUpdateFlowBuilder {
+trait SparqlRequestFlowBuilder extends SparqlQueryFlowBuilder
+  with SparqlConstructToModelFlowBuilder
+  with SparqlUpdateFlowBuilder {
 
   /**
     * Create a flow of Sparql requests to results.
     *
-    * @param endpoint the HTTP endpoint of the Sparql triple store server
+    * @param endpointFlow the HTTP endpoint flow for the Sparql triple store server
     * @return
     */
-  def sparqlRequestFlow(
-    endpoint: HttpEndpoint
-  ): Flow[SparqlRequest, SparqlResponse, _] = {
+  def sparqlRequestFlow(endpointFlow: HttpEndpointFlow[SparqlRequest]): Flow[SparqlRequest, SparqlResponse, NotUsed] = {
     Flow.fromGraph(GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
@@ -31,9 +30,9 @@ trait SparqlRequestFlowBuilder
 
       val responseMerger = builder.add(Merge[SparqlResponse](routes).named("merge.sparqlResponse"))
 
-      partition ~> sparqlQueryFlow(endpoint)          ~> responseMerger
-      partition ~> sparqlUpdateFlow(endpoint)         ~> responseMerger
-      partition ~> sparqlModelConstructFlow(endpoint) ~> responseMerger
+      partition ~> sparqlQueryFlow(endpointFlow)          ~> responseMerger
+      partition ~> sparqlUpdateFlow(endpointFlow)         ~> responseMerger
+      partition ~> sparqlModelConstructFlow(endpointFlow) ~> responseMerger
 
       FlowShape(partition.in, responseMerger.out)
 

@@ -108,6 +108,24 @@ class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToMode
         case x@_ => fail(s"failing due to unexpected message received: $x")
       }
     }
+
+    "3.2 return empty model for invalid IRI" in {
+
+      sink.request(1)
+      source.sendNext(
+        SparqlRequest(
+          SparqlModelConstruct(graphIRIs = "urn:test:mfab:not-exist-iri" :: Nil)
+        )
+      )
+
+      sink.expectNext(receiveTimeout) match {
+        case SparqlResponse (_, true, _, Seq(SparqlModelResult(modelResult)), None) =>
+          dumpModel(modelResult)
+          assert(modelResult.size() === 0)
+        case x@_ => fail(s"failing due to unexpected message received: $x")
+      }
+    }
+
     "4. Get the full graph just inserted via a model construct query with pagenation" in {
 
       //TODO - need to use pagenation, otherwise the test will be failed with "Unexpected end of file" error

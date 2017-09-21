@@ -80,9 +80,10 @@ trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
       .flatMapConcat {
         // TODO: there are issues here with Stardog...
         case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) if entity.isChunked() =>
-          entity.withoutSizeLimit().dataBytes/*.scan(ByteString.empty)(_ ++ _)*/.zip(Source.single(entity.contentType))
+          entity.withoutSizeLimit().dataBytes.fold(ByteString.empty)(_ ++ _).zip(Source.single(entity.contentType))
         case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) =>
-          entity.withoutSizeLimit().dataBytes.zip(Source.single(entity.contentType))
+          entity.withoutSizeLimit().dataBytes.fold(ByteString.empty)(_ ++ _).zip(Source.single(entity.contentType))
+        case x => throw new Exception(s"Unsupported $x")
       }
 /*
       .flatMapConcat {

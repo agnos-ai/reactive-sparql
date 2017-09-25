@@ -92,11 +92,12 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
     * @return
     */
   override def nestedSuites = Vector(
-    new SparqlToModelConstructClientSpec(),
+    new SparqlConstructClientSpec(),
     new SparqlHttpSpec(),
     new SparqlRequestClientSpec(),
     new MappingStreamSparqlClientSpec(),
-    new GraphStoreProtocolBuilderSpec()
+    new GraphStoreProtocolBuilderSpec(),
+    new SparqlConstructResourceAsObjectSpec()
   )
 
   val _log = akka.event.Logging(this.system, testActor)

@@ -81,7 +81,7 @@ class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToMode
       sink.request(1)
       source.sendNext(
         SparqlRequest(
-          SparqlModelConstruct(graphIRIs = modelAlternateGraphIri :: Nil)
+          SparqlConstruct(graphIRIs = modelAlternateGraphIri :: Nil)
         )
       )
 
@@ -97,7 +97,7 @@ class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToMode
       sink.request(1)
       source.sendNext(
         SparqlRequest(
-          SparqlModelConstruct(graphIRIs = modelGraphIri :: Nil)
+          SparqlConstruct(graphIRIs = modelGraphIri :: Nil)
         )
       )
 
@@ -114,7 +114,7 @@ class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToMode
       sink.request(1)
       source.sendNext(
         SparqlRequest(
-          SparqlModelConstruct(graphIRIs = "urn:test:mfab:not-exist-iri" :: Nil)
+          SparqlConstruct(graphIRIs = "urn:test:mfab:not-exist-iri" :: Nil)
         )
       )
 
@@ -134,7 +134,7 @@ class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToMode
       sink.request(1)
       source.sendNext(
         SparqlRequest(
-          SparqlModelConstruct()(_paging)
+          SparqlConstruct()(_paging)
         )
       )
 
@@ -151,7 +151,7 @@ class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToMode
       sink.request(1)
       source.sendNext(
         SparqlRequest(
-          SparqlModelConstruct(
+          SparqlConstruct(
             resourceIRIs = modelResourceIri("0") :: Nil
           )
         )
@@ -170,7 +170,7 @@ class SparqlToModelConstructClientSpec extends TestKit(ActorSystem("SparqlToMode
       sink.request(1)
       source.sendNext(
         SparqlRequest(
-          SparqlModelConstruct(
+          SparqlConstruct(
             propertyIRIs = PrefixMapping.standard.getNsPrefixURI("rdfs") + "label":: Nil
           )
         )

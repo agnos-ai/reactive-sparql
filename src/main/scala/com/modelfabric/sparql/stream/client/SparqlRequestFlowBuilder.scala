@@ -3,11 +3,11 @@ package com.modelfabric.sparql.stream.client
 import akka.NotUsed
 import akka.stream.FlowShape
 import akka.stream.scaladsl.{Flow, GraphDSL, Merge, Partition}
-import com.modelfabric.sparql.api.{SparqlModelConstruct, _}
+import com.modelfabric.sparql.api.{SparqlConstruct, _}
 
 
 trait SparqlRequestFlowBuilder extends SparqlQueryFlowBuilder
-  with SparqlConstructToModelFlowBuilder
+  with SparqlConstructFlowBuilder
   with SparqlUpdateFlowBuilder {
 
   /**
@@ -25,14 +25,14 @@ trait SparqlRequestFlowBuilder extends SparqlQueryFlowBuilder
       val partition = builder.add(Partition[SparqlRequest](routes, {
         case SparqlRequest(_: SparqlQuery)          => 0
         case SparqlRequest(_: SparqlUpdate)         => 1
-        case SparqlRequest(_: SparqlModelConstruct) => 2
+        case SparqlRequest(_: SparqlConstruct) => 2
       }))
 
       val responseMerger = builder.add(Merge[SparqlResponse](routes).named("merge.sparqlResponse"))
 
       partition ~> sparqlQueryFlow(endpointFlow)          ~> responseMerger
       partition ~> sparqlUpdateFlow(endpointFlow)         ~> responseMerger
-      partition ~> sparqlModelConstructFlow(endpointFlow) ~> responseMerger
+      partition ~> sparqlConstructFlow(endpointFlow) ~> responseMerger
 
       FlowShape(partition.in, responseMerger.out)
 

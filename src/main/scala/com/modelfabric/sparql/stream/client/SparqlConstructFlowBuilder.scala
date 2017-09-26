@@ -14,7 +14,7 @@ import org.eclipse.rdf4j.rio.{RDFFormat, Rio}
 import scala.concurrent.ExecutionContext
 import scala.util.{Success, Try}
 
-object SparqlConstructToModelFlowBuilder {
+object SparqlConstructFlowBuilder {
   val `rdf:subject`  : IRI = vf.createIRI(NamespaceConstants.RDF, "subject")
   val `rdf:predicate`: IRI = vf.createIRI(NamespaceConstants.RDF, "predicate")
   val `rdf:object`   : IRI = vf.createIRI(NamespaceConstants.RDF, "object")
@@ -22,9 +22,9 @@ object SparqlConstructToModelFlowBuilder {
 }
 
 
-trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
+trait SparqlConstructFlowBuilder extends SparqlClientHelpers {
 
-  import SparqlConstructToModelFlowBuilder._
+  import SparqlConstructFlowBuilder._
 
   implicit val system: ActorSystem
   implicit val materializer: ActorMaterializer
@@ -32,7 +32,7 @@ trait SparqlConstructToModelFlowBuilder extends SparqlClientHelpers {
 
   type Sparql = String
 
-  def sparqlModelConstructFlow(endpointFlow: HttpEndpointFlow[SparqlRequest]): Flow[SparqlRequest, SparqlResponse, NotUsed] = {
+  def sparqlConstructFlow(endpointFlow: HttpEndpointFlow[SparqlRequest]): Flow[SparqlRequest, SparqlResponse, NotUsed] = {
 
     Flow.fromGraph(GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._

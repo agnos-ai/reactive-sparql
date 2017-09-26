@@ -56,7 +56,7 @@ trait SparqlClientHelpers {
         entity = HttpEntity(query.encodedQueryString).withContentType(`application/x-www-form-urlencoded`)
       )
 
-    case SparqlModelConstruct(POST, query, reasoning) =>
+    case SparqlConstruct(POST, query, reasoning) =>
       HttpRequest(
         method = POST,
         uri = s"${endpoint.path}$QUERY_URI_PART",

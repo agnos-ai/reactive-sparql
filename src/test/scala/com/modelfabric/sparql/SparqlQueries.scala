@@ -177,6 +177,7 @@ trait SparqlQueries {
     SparqlUpdate(s"""
        |INSERT DATA {
        |  GRAPH <$modelGraphIri> {
+       |    <urn:test:mfab:res:0> rdf:type <urn:test:mfab:type:0> .
        |    <urn:test:mfab:res:0> rdfs:label "Label 0" .
        |    <urn:test:mfab:res:1> rdfs:label "Label 1" .
        |    <urn:test:mfab:res:2> rdfs:label "Label 2" .
@@ -209,6 +210,7 @@ trait SparqlQueries {
        |    <urn:test:mfab:res:14> rdfs:comment "Comment 14" .
        |  }
        |  GRAPH <$modelAlternateGraphIri> {
+       |    <urn:test:mfab:res:0> rdf:type <urn:test:mfab:type:0> .
        |    <urn:test:mfab:res:0> rdfs:label "Alt Label 0" .
        |    <urn:test:mfab:res:1> rdfs:label "Alt Label 1" .
        |    <urn:test:mfab:res:2> rdfs:label "Alt Label 2" .

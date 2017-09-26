@@ -90,15 +90,15 @@ CONSTRUCT {
 
 This flow has been created to circumvent the problem. It is an extension of the API used in [Flavour #1](#flavour-1-run-sparql).
 
-Instead of a `SparqlQuery()` this flow works with a `SparqlModelConstruct()` inside the `SparqlRequest()`
+Instead of a `SparqlQuery()` this flow works with a `SparqlConstruct()` inside the `SparqlRequest()`
 ```scala
-object SparqlModelConstruct {
+object SparqlConstruct {
   def apply(resourceIRIs: Seq[URI] = Nil,
             propertyIRIs: Seq[URI] = Nil,
             graphIRIs: Seq[URI] = Nil,
             reasoningEnabled: Boolean = false)(
     implicit _paging: PagingParams = NoPaging
-  ): SparqlModelConstruct = {
+  ): SparqlConstruct = {
     ...
   }
 }

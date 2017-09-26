@@ -58,7 +58,7 @@ class SparqlConstructClientSpec
       sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, _, Seq(SparqlModelResult(modelResult)), None) =>
           dumpModel(modelResult)
-          assert(modelResult.size() === 10)
+          assert(modelResult.size() === 11)
         case x@_ => fail(s"failing due to unexpected message received: $x")
       }
     }
@@ -74,7 +74,7 @@ class SparqlConstructClientSpec
       sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, _, Seq(SparqlModelResult(modelResult)), None) =>
           dumpModel(modelResult)
-          assert(modelResult.size() === 30)
+          assert(modelResult.size() === 31)
         case x@_ => fail(s"failing due to unexpected message received: $x")
       }
     }
@@ -130,7 +130,7 @@ class SparqlConstructClientSpec
       sink.expectNext(receiveTimeout) match {
         case SparqlResponse (_, true, _, Seq(SparqlModelResult(modelResult)), None) =>
           dumpModel(modelResult)
-          assert(modelResult.size() === 3)
+          assert(modelResult.size() === 5)
         case x@_ => fail(s"failing due to unexpected message received: $x")
       }
     }
@@ -154,7 +154,26 @@ class SparqlConstructClientSpec
       }
     }
 
-    "7. Stream must complete gracefully" in {
+    "7. Get resource as value" in {
+
+      sink.request(1)
+      source.sendNext(
+        SparqlRequest(
+          SparqlConstruct(
+            valueIRIs = "urn:test:mfab:type:0" :: Nil
+          )
+        )
+      )
+
+      sink.expectNext(receiveTimeout) match {
+        case SparqlResponse (_, true, _, Seq(SparqlModelResult(modelResult)), None) =>
+          dumpModel(modelResult)
+          assert(modelResult.size() === 2)
+        case x@_ => fail(s"failing due to unexpected message received: $x")
+      }
+    }
+
+    "8. Stream must complete gracefully" in {
 
       source.sendComplete()
       sink.expectComplete()

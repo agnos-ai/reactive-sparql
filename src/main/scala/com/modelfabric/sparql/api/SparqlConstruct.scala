@@ -4,9 +4,12 @@ package com.modelfabric.sparql.api
 import akka.http.scaladsl.model.{HttpMethod, HttpMethods}
 import org.eclipse.rdf4j.model.IRI
 
+
 object SparqlConstruct extends SparqlConstructFactory {
+
   def apply(resourceIRIs: Seq[IRI] = Nil,
             propertyIRIs: Seq[IRI] = Nil,
+            valueIRIs: Seq[IRI] = Nil,
             graphIRIs: Seq[IRI] = Nil,
             reasoningEnabled: Boolean = false)(
     implicit _paging: PagingParams = NoPaging
@@ -20,6 +23,7 @@ object SparqlConstruct extends SparqlConstructFactory {
            |  GRAPH ?graphIri {
            |    ${values("resourceIri", resourceIRIs)}
            |    ${values("propertyIri", propertyIRIs)}
+           |    ${values("value", valueIRIs)}
            |    ?resourceIri ?propertyIri ?value .
            |  }
            |}
@@ -56,39 +60,6 @@ object SparqlConstruct extends SparqlConstructFactory {
 
 }
 
-
-/**
-  * Creates a construct which will match given resource IRI(s) with property value.
-  * This construct is to find 'inbound' properties of an resource, where the resource appears
-  * on the object side of a triple
-  */
-object SparqlConstructResourceAsObject extends SparqlConstructFactory {
-
-  def apply(resourceIRIs: Seq[IRI] = Nil,
-            graphIRIs: Seq[IRI] = Nil,
-            reasoningEnabled: Boolean = false)(
-             implicit _paging: PagingParams = NoPaging
-           ): SparqlConstruct = {
-    new SparqlConstruct()(PrefixMapping.standard) {
-
-      private val whereClause: String = {
-        s"""
-           |WHERE {
-           |  ${values("graphIri", graphIRIs)}
-           |  GRAPH ?graphIri {
-           |    ${values("value", resourceIRIs)}
-           |    ?resourceIri ?propertyIri ?value .
-           |  }
-           |}
-         """.stripMargin
-      }
-
-      override val statement: String = build(graphConstructReified(whereClause, _paging))
-
-      override val reasoning: Boolean = reasoningEnabled
-    }
-  }
-}
 
 trait SparqlConstructFactory {
 

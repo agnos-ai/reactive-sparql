@@ -96,8 +96,7 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
     new SparqlHttpSpec(),
     new SparqlRequestClientSpec(),
     new MappingStreamSparqlClientSpec(),
-    new GraphStoreProtocolBuilderSpec(),
-    new SparqlConstructResourceAsObjectSpec()
+    new GraphStoreProtocolBuilderSpec()
   )
 
   val _log = akka.event.Logging(this.system, testActor)

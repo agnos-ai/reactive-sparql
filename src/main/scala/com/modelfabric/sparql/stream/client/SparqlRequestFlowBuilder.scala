@@ -20,18 +20,20 @@ trait SparqlRequestFlowBuilder extends SparqlQueryFlowBuilder
     Flow.fromGraph(GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
-      val routes = 3
+      val routes = 4
 
       val partition = builder.add(Partition[SparqlRequest](routes, {
         case SparqlRequest(_: SparqlQuery)          => 0
         case SparqlRequest(_: SparqlUpdate)         => 1
         case SparqlRequest(_: SparqlModelConstruct) => 2
+        case SparqlRequest(_: SearchModelConstruct) => 3
       }))
 
       val responseMerger = builder.add(Merge[SparqlResponse](routes).named("merge.sparqlResponse"))
 
       partition ~> sparqlQueryFlow(endpointFlow)          ~> responseMerger
       partition ~> sparqlUpdateFlow(endpointFlow)         ~> responseMerger
+      partition ~> sparqlModelConstructFlow(endpointFlow) ~> responseMerger
       partition ~> sparqlModelConstructFlow(endpointFlow) ~> responseMerger
 
       FlowShape(partition.in, responseMerger.out)

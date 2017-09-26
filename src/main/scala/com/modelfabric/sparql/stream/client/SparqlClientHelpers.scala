@@ -66,6 +66,16 @@ trait SparqlClientHelpers {
         s"$QUERY_PARAM_NAME=${query.urlEncode}&$REASONING_PARAM_NAME=$reasoning"
       )
 
+    case SearchModelConstruct(POST, query, reasoning) =>
+      HttpRequest(
+        method = POST,
+        uri = s"${endpoint.path}$QUERY_URI_PART",
+        Accept(`application/n-quads`.mediaType) :: makeRequestHeaders(endpoint)
+      ).withEntity(
+        `application/x-www-form-urlencoded`,
+        s"$QUERY_PARAM_NAME=${query.urlEncode}&$REASONING_PARAM_NAME=$reasoning"
+      )
+
     case SparqlUpdate(POST, update) =>
       HttpRequest(
         method = HttpMethods.POST,

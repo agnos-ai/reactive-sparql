@@ -66,6 +66,7 @@ trait SparqlClientHelpers {
         s"$QUERY_PARAM_NAME=${query.urlEncode}&$REASONING_PARAM_NAME=$reasoning"
       )
 
+
     case SparqlUpdate(POST, update) =>
       HttpRequest(
         method = HttpMethods.POST,

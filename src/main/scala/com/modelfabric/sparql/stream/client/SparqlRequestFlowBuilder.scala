@@ -25,14 +25,14 @@ trait SparqlRequestFlowBuilder extends SparqlQueryFlowBuilder
       val partition = builder.add(Partition[SparqlRequest](routes, {
         case SparqlRequest(_: SparqlQuery)          => 0
         case SparqlRequest(_: SparqlUpdate)         => 1
-        case SparqlRequest(_: SparqlConstruct) => 2
+        case SparqlRequest(_: SparqlConstruct)      => 2
       }))
 
       val responseMerger = builder.add(Merge[SparqlResponse](routes).named("merge.sparqlResponse"))
 
       partition ~> sparqlQueryFlow(endpointFlow)          ~> responseMerger
       partition ~> sparqlUpdateFlow(endpointFlow)         ~> responseMerger
-      partition ~> sparqlConstructFlow(endpointFlow) ~> responseMerger
+      partition ~> sparqlConstructFlow(endpointFlow)      ~> responseMerger
 
       FlowShape(partition.in, responseMerger.out)
 

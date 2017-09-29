@@ -2,7 +2,8 @@ package com.modelfabric.sparql.api
 
 
 import akka.http.scaladsl.model.{HttpMethod, HttpMethods}
-import org.eclipse.rdf4j.model.IRI
+import org.eclipse.rdf4j.model.vocabulary.XMLSchema
+import org.eclipse.rdf4j.model.{BNode, IRI, Literal, Value}
 
 
 object SparqlConstruct extends SparqlConstructFactory {
@@ -12,8 +13,10 @@ object SparqlConstruct extends SparqlConstructFactory {
             valueIRIs: Seq[IRI] = Nil,
             graphIRIs: Seq[IRI] = Nil,
             reasoningEnabled: Boolean = false)(
+           // JC why make _paging implicit?
     implicit _paging: PagingParams = NoPaging
   ): SparqlConstruct = {
+
     new SparqlConstruct()(PrefixMapping.standard) {
 
       private val whereClause = {
@@ -87,13 +90,24 @@ trait SparqlConstructFactory {
         """.stripMargin.trim
   }
 
-  protected def values(binding: String, iris: Seq[IRI]): String = {
+  protected def values(binding: String, iris: Seq[IRI])(implicit pm: PrefixMapping): String = {
     def mkIRIs(iris: Seq[IRI]): String = {
-      iris.map(iri => s"<$iri>").mkString(" ")
+      iris.map(iri => strInSparql(iri)).mkString(" ")
     }
     iris match {
       case Nil => ""
       case _ => s"VALUES ?$binding { ${mkIRIs(iris)} }"
+    }
+  }
+
+  protected def strInSparql(value: Value)(implicit pm: PrefixMapping): String = {
+    value match {
+      case _: IRI =>
+        val s = value.stringValue()
+        if (pm.isPrefixed(s)) s else s"<$s>"
+      case literal: Literal if literal.getDatatype == XMLSchema.STRING => s"'${literal.stringValue()}'"
+        // TODO more Literal types, how they are handled in other sparql query impl?
+      case _:BNode => "BNODE" // TODO
     }
   }
 

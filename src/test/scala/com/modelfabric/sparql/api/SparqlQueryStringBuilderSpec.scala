@@ -2,7 +2,6 @@ package com.modelfabric.sparql.api
 
 import org.eclipse.rdf4j.model.IRI
 import org.scalatest.WordSpec
-import com.modelfabric.extension.StringExtensions._
 import com.modelfabric.sparql.stream.client.SparqlClientConstants.{valueFactory => vf}
 
 class SparqlQueryStringBuilderSpec extends WordSpec {
@@ -10,6 +9,8 @@ class SparqlQueryStringBuilderSpec extends WordSpec {
   implicit val pm: PrefixMapping = PrefixMapping.none
 
   def iri(resource: String): IRI = vf.createIRI(s"http://modelfabric.com/resource/$resource")
+
+  private def urlDecode(string: String) : String = java.net.URLDecoder.decode(string, "UTF-8")
 
   import com.modelfabric.sparql.util.SparqlQueryStringConverter._
 
@@ -20,7 +21,7 @@ class SparqlQueryStringBuilderSpec extends WordSpec {
         "select * from <urn:uuid:1234> where { ?s ?p ?o }"
       )
       info(query)
-      info("DECODED:\n" + toQueryString(query).urlDecode)
+      info(s"DECODED:\n${urlDecode(toQueryString(query))}")
       assert(toQueryString(query) === "query=select+*+from+%3Curn%3Auuid%3A1234%3E+where+%7B+%3Fs+%3Fp+%3Fo+%7D")
     }
 
@@ -36,7 +37,7 @@ class SparqlQueryStringBuilderSpec extends WordSpec {
         timeout = Some(5000)
       )
       info(query)
-      info("DECODED:\n" + toQueryString(query).urlDecode)
+      info(s"DECODED:\n${urlDecode(toQueryString(query))}")
       assert(toQueryString(query) === "query=select+*+from+%3Curn%3Auuid%3A1234%3E+where+%7B+%3Fs+%3Fp+%3Fo&$s=%3Chttp%3A%2F%2Fmodelfabric.com%2Fresource%2Fresource1%3E&default-graph-uri=%3Chttp%3A%2F%2Fmodelfabric.com%2Fresource%2Fgraph1%3E&default-graph-uri=%3Chttp%3A%2F%2Fmodelfabric.com%2Fresource%2Fgraph2%3E&named-graph-uri=%3Chttp%3A%2F%2Fmodelfabric.com%2Fresource%2Fgraph3%3E&named-graph-uri=%3Chttp%3A%2F%2Fmodelfabric.com%2Fresource%2Fgraph4%3E&limit=100&offset=1000000&reasoning=true&timeout=5000")
     }
 
@@ -67,7 +68,7 @@ class SparqlQueryStringBuilderSpec extends WordSpec {
       val sortedParams = qs.sorted.mkString("&")
       info(s"sorted: $sortedParams")
       assert(sortedParams === """$boolean="true"^^http://www.w3.org/2001/XMLSchema#boolean&$double="0.3333333333333333"^^http://www.w3.org/2001/XMLSchema#double&$int="1"^^http://www.w3.org/2001/XMLSchema#int&$string=string&query=select""")
-      info(s"decoded: ${sortedParams.urlDecode}")
+      info(s"decoded: ${urlDecode(sortedParams)}")
     }
 
   }

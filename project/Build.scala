@@ -87,8 +87,7 @@ object Version {
 
 
 object Library {
-
-  val scalaUtils        = "com.modelfabric"   %% "scala-utils"                       % Version.scalaUtils
+  
   val akkaActor         = "com.typesafe.akka" %% "akka-actor"                        % Version.akka
   val akkaStream        = "com.typesafe.akka" %% "akka-stream"                       % Version.akka
   val akkaHttpCore      = "com.typesafe.akka" %% "akka-http-core"                    % Version.akkaHttp
@@ -113,7 +112,7 @@ object Build extends sbt.Build {
   import plugins._
 
   val projectDependencies = Seq(
-    scalaUtils, akkaActor, akkaStream, akkaHttpCore, akkaHttpSprayJson, akkaSlf4j,
+    akkaActor, akkaStream, akkaHttpCore, akkaHttpSprayJson, akkaSlf4j,
     javaxWsRs, jerseyCore, jerseyClient, rdf4jRuntime,
     logbackClassic, scalaTest, akkaTestkit, akkaStreamTestkit, fusekiServer)
 

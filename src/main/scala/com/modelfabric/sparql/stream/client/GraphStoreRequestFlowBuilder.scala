@@ -1,5 +1,7 @@
 package com.modelfabric.sparql.stream.client
 
+import com.modelfabric.sparql._
+
 import java.io.{StringReader, StringWriter}
 import java.net.URL
 import java.nio.file.Path
@@ -61,7 +63,7 @@ object GraphStoreRequestFlowBuilder {
 trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers with HttpClientFlowBuilder {
 
   import SparqlClientConstants._
-  import com.modelfabric.extension.StringExtensions._
+  //import com.modelfabric.extension.StringExtensions._
 
   import GraphStoreRequestFlowBuilder._
 
@@ -220,7 +222,7 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers with HttpClientFl
   }
 
   private def mapGraphOptionToPath(graphIri: Option[IRI]): String = graphIri match {
-    case Some(uri) => s"?$GRAPH_PARAM_NAME=${uri.toString.urlEncode}"
+    case Some(uri) => s"?$GRAPH_PARAM_NAME=${urlEncode(uri.toString)}"
     case None      => s"?$DEFAULT_PARAM_NAME"
 
   }

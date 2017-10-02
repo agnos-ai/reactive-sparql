@@ -63,7 +63,6 @@ object GraphStoreRequestFlowBuilder {
 trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers with HttpClientFlowBuilder {
 
   import SparqlClientConstants._
-  //import com.modelfabric.extension.StringExtensions._
 
   import GraphStoreRequestFlowBuilder._
 

@@ -1,7 +1,6 @@
 package com.modelfabric.sparql.api
 
 import akka.http.scaladsl.model._
-//import com.modelfabric.extension.StringExtensions._
 
 import scala.concurrent.duration._
 import scala.language.postfixOps

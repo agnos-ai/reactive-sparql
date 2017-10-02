@@ -57,14 +57,14 @@ class SparqlFilterConstructSpec extends WordSpec {
                               |WHERE {
                               |\u0020\u0020
                               |  GRAPH ?graphIri {
-                              |    ?resourceIri rdf:type <https://nexen-data.qa.bnymellon.net/owl/nexen-topology#Device> .
+                              |    ?resourceIri rdf:type <https://test.domain/owl/test-topology#Something> .
                               |    VALUES ?propertyIri { rdfs:label }
                               |    ?resourceIri ?propertyIri ?value .
                               |  }
                               |}""".stripMargin.trim
 
       val c = SparqlFilterConstruct(
-        filters = Map(vf.createIRI(s"rdf:type") -> vf.createIRI("https://nexen-data.qa.bnymellon.net/owl/nexen-topology#Device") ),
+        filters = Map(vf.createIRI(s"rdf:type") -> vf.createIRI("https://test.domain/owl/test-topology#Something") ),
         propertyIRIs = Seq(vf.createIRI("rdfs:label"))
       )
 
@@ -88,7 +88,7 @@ class SparqlFilterConstructSpec extends WordSpec {
                               |WHERE {
                               |\u0020\u0020
                               |  GRAPH ?graphIri {
-                              |    ?resourceIri rdf:type <https://nexen-data.qa.bnymellon.net/owl/nexen-topology#Device> .
+                              |    ?resourceIri rdf:type <https://test.domain/owl/test-topology#Something> .
                               |    ?resourceIri rdfs:label 'SomeName' .
                               |    VALUES ?propertyIri { rdfs:label }
                               |    ?resourceIri ?propertyIri ?value .
@@ -97,7 +97,7 @@ class SparqlFilterConstructSpec extends WordSpec {
 
       val c = SparqlFilterConstruct(
         filters = Map(
-          vf.createIRI(s"rdf:type") -> vf.createIRI("https://nexen-data.qa.bnymellon.net/owl/nexen-topology#Device"),
+          vf.createIRI(s"rdf:type") -> vf.createIRI("https://test.domain/owl/test-topology#Something"),
           vf.createIRI(s"rdfs:label") -> vf.createLiteral("SomeName")
         ),
         propertyIRIs = Seq(vf.createIRI("rdfs:label"))

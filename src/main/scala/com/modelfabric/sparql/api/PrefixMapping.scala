@@ -181,7 +181,7 @@ class PrefixMapping {
     URItoPrefix += uri -> prefix
   }
 
-  def get(prefix : String) : String = prefixToURI(prefix)
+  def get(prefix : String) : String = prefixToURI.getOrElse(prefix, null)
 
   def setNsPrefix(prefix : String, uri : String) : PrefixMapping = {
     checkLegal(prefix)
@@ -277,6 +277,25 @@ class PrefixMapping {
       }
       else {
         uri + prefixed.substring(colon + 1)
+      }
+    }
+  }
+
+  def isPrefixed(uri : String): Boolean = {
+
+    val colon = uri.indexOf(':')
+
+    if (colon < 0) {
+      false
+    }
+    else {
+      val prefix = get(uri.substring(0, colon))
+
+      if (prefix == null) {
+        false
+      }
+      else {
+        true
       }
     }
   }

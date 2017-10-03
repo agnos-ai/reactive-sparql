@@ -1,7 +1,6 @@
 package com.modelfabric.sparql.api
 
 import akka.http.scaladsl.model._
-import com.modelfabric.extension.StringExtensions._
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -26,7 +25,7 @@ abstract class SparqlStatement()(implicit val pm : PrefixMapping) extends Client
   protected def build(statement_ : String) : String = s"""
     |${pm.sparql}
     ${statement_}
-  """.stripped.trim
+  """.stripMargin.trim
 
   override def toString: String = super.toString + ":\n" + statement
 

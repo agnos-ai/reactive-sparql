@@ -1,5 +1,7 @@
 package com.modelfabric.sparql.stream.client
 
+import com.modelfabric.sparql._
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{HttpEntity, _}
 import akka.http.scaladsl.model.headers.{Accept, Authorization, BasicHttpCredentials}
@@ -16,9 +18,6 @@ import scala.util.{Failure, Success, Try}
 trait SparqlClientHelpers {
 
   import HttpMethods._
-
-  import com.modelfabric.extension.StringExtensions._
-
 
   implicit val system: ActorSystem
   implicit val materializer: ActorMaterializer
@@ -63,7 +62,7 @@ trait SparqlClientHelpers {
         Accept(`application/n-quads`.mediaType) :: makeRequestHeaders(endpoint)
       ).withEntity(
         `application/x-www-form-urlencoded`,
-        s"$QUERY_PARAM_NAME=${query.urlEncode}&$REASONING_PARAM_NAME=$reasoning"
+        s"$QUERY_PARAM_NAME=${urlEncode(query)}&$REASONING_PARAM_NAME=$reasoning"
       )
 
 
@@ -74,7 +73,7 @@ trait SparqlClientHelpers {
         Accept(`text/boolean`.mediaType) :: makeRequestHeaders(endpoint)
       ).withEntity(
         `application/x-www-form-urlencoded`,
-        s"$UPDATE_PARAM_NAME=${update.urlEncode}"
+        s"$UPDATE_PARAM_NAME=${urlEncode(update)}"
       )
   }
 

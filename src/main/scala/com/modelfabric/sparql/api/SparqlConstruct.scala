@@ -66,10 +66,23 @@ object SparqlConstruct extends SparqlConstructFactory {
 
 trait SparqlConstructFactory {
 
+  def unapply(construct: SparqlConstruct): Option[(HttpMethod, String, Boolean)] = {
+    Some((construct.httpMethod, construct.statement, construct.reasoning))
+  }
+}
+
+
+abstract class SparqlConstruct()(
+  implicit pm: PrefixMapping) extends SparqlStatement()(pm) {
+
+  override val httpMethod = HttpMethods.POST
+
+  def reasoning = false
+
   protected def graphConstructReified (
-    whereClause: String,
-    _paging: PagingParams
-  ): String = {
+                                        whereClause: String,
+                                        _paging: PagingParams
+                                      ): String = {
 
     val pagingParams: String = {
       s"""
@@ -105,22 +118,10 @@ trait SparqlConstructFactory {
       case _: IRI =>
         val s = value.stringValue()
         if (pm.isPrefixed(s)) s else s"<$s>"
-      case literal: Literal if literal.getDatatype == XMLSchema.STRING => s"'${literal.stringValue()}'"
-        // TODO more Literal types, how they are handled in other sparql query impl?
-      case _:BNode => "BNODE" // TODO
+      case literal: Literal =>
+        val tpe = literal.getDatatype
+        s"'${literal.stringValue()}'^^${pm.getNsURIPrefix(tpe.getNamespace)}:${tpe.getLocalName}"
+      case bn: BNode => throw new IllegalArgumentException("Should not use Blank Node as query parameter")
     }
   }
-
-  def unapply(construct: SparqlConstruct): Option[(HttpMethod, String, Boolean)] = {
-    Some((construct.httpMethod, construct.statement, construct.reasoning))
-  }
-}
-
-
-abstract class SparqlConstruct()(
-  implicit pm: PrefixMapping) extends SparqlStatement()(pm) {
-
-  override val httpMethod = HttpMethods.POST
-
-  def reasoning = false
 }

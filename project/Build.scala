@@ -73,10 +73,10 @@ object PublishingSettings {
 
 object Version {
 
-  val scala      = "2.12.2"
-  val scalaUtils = "0.5"
-  val akka       = "2.5.2"
-  val akkaHttp   = "10.0.6"
+  val scala      = "2.12.4"
+  val scalaUtils = "0.6"
+  val akka       = "2.5.7"
+  val akkaHttp   = "10.0.10"
   val javaxWsRs  = "1.1.1"
   val jersey     = "1.19"
   val rdf4j      = "2.1.2"

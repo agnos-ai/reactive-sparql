@@ -2,7 +2,7 @@ package com.modelfabric.sparql.api
 
 import org.eclipse.rdf4j.model.IRI
 
-object SearchSparqlConstruct extends SparqlConstructFactory {
+object SparqlSearchConstruct extends SparqlConstructFactory {
 
   def apply(resourceIRIs: Seq[IRI] = Nil,
             propertyIRIs: Seq[IRI] = Nil,

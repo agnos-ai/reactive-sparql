@@ -26,7 +26,7 @@ class SparqlFilterConstructSpec extends WordSpec {
                              |WHERE {
                              |\u0020\u0020
                              |  GRAPH ?graphIri {
-                             |    ?resourceIri rdfs:label 'SomeName' .
+                             |    ?resourceIri rdfs:label 'SomeName'^^xsd:string .
                              |    VALUES ?propertyIri { rdfs:label }
                              |    ?resourceIri ?propertyIri ?value .
                              |  }
@@ -89,7 +89,7 @@ class SparqlFilterConstructSpec extends WordSpec {
                               |\u0020\u0020
                               |  GRAPH ?graphIri {
                               |    ?resourceIri rdf:type <https://test.domain/owl/test-topology#Something> .
-                              |    ?resourceIri rdfs:label 'SomeName' .
+                              |    ?resourceIri rdfs:label 'SomeName'^^xsd:string .
                               |    VALUES ?propertyIri { rdfs:label }
                               |    ?resourceIri ?propertyIri ?value .
                               |  }

@@ -23,9 +23,9 @@ trait SparqlRequestFlowBuilder extends SparqlQueryFlowBuilder
       val routes = 3
 
       val partition = builder.add(Partition[SparqlRequest](routes, {
-        case SparqlRequest(_: SparqlQuery)          => 0
-        case SparqlRequest(_: SparqlUpdate)         => 1
-        case SparqlRequest(_: SparqlConstruct)      => 2
+        case SparqlRequest(_: SparqlQuery, _)     => 0
+        case SparqlRequest(_: SparqlUpdate, _)    => 1
+        case SparqlRequest(_: SparqlConstruct, _) => 2
       }))
 
       val responseMerger = builder.add(Merge[SparqlResponse](routes).named("merge.sparqlResponse"))

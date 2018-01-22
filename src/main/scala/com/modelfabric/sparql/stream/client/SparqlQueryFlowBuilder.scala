@@ -28,8 +28,8 @@ trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
       val routes = 2
 
       val partition = builder.add(Partition[SparqlRequest](routes, {
-        case SparqlRequest(SparqlQuery(_, _, StreamedQuery(_),_,_,_,_,_,_,_)) => 0
-        case SparqlRequest(SparqlQuery(_, _,_: MappedQuery[_],_,_,_,_,_,_,_)) => 1
+        case SparqlRequest(SparqlQuery(_, _, StreamedQuery(_),_,_,_,_,_,_,_), _) => 0
+        case SparqlRequest(SparqlQuery(_, _,_: MappedQuery[_],_,_,_,_,_,_,_), _) => 1
       }))
 
       val responseMerger = builder.add(Merge[SparqlResponse](routes).named("merge.sparqlResponse"))
@@ -49,7 +49,7 @@ trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
 
         case response@SparqlResponse(
           SparqlRequest(
-            SparqlQuery(_, _, mappedQueryType: MappedQuery[_],_,_,_,_,_,_,_)
+            SparqlQuery(_, _, mappedQueryType: MappedQuery[_],_,_,_,_,_,_,_), _
           ), true, _, List(StreamingSparqlResult(dataStream, Some(contentType))), _)
         if isSparqlResultsJson(contentType) =>
           Source.fromFuture {
@@ -92,7 +92,7 @@ trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
 
     Flow[SparqlRequest]
       .map {
-        case request@SparqlRequest(query: SparqlQuery) =>
+        case request@SparqlRequest(query: SparqlQuery, _) =>
           (makeHttpRequest(endpointFlow.endpoint, query), request)
         }
       .log("SPARQL endpoint request")

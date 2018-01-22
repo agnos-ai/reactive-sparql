@@ -11,7 +11,7 @@ trait SparqlClientProtocol extends ClientAPIProtocol
   *
   * @param statement the sparql statement string, any | margins will be stripped automatically
   */
-case class SparqlRequest(statement: SparqlStatement) extends ClientHttpRequest with SparqlClientProtocol {
+case class SparqlRequest(statement: SparqlStatement, context: Option[Any] = None) extends ClientHttpRequest with SparqlClientProtocol {
   override def httpMethod = GET
 }
 

@@ -10,6 +10,7 @@ trait SparqlClientProtocol extends ClientAPIProtocol
   * Represents a single Sparql request to be sent to the triple store.
   *
   * @param statement the sparql statement string, any | margins will be stripped automatically
+  * @param context an optional context to be carried along the flow
   */
 case class SparqlRequest(statement: SparqlStatement, context: Option[Any] = None) extends ClientHttpRequest with SparqlClientProtocol {
   override def httpMethod = GET

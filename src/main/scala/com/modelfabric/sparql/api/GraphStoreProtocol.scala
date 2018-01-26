@@ -15,7 +15,9 @@ import org.eclipse.rdf4j.rio.RDFFormat.NTRIPLES
   */
 trait GraphStoreProtocol extends ClientAPIProtocol
 
-abstract class GraphStoreRequest extends ClientHttpRequest with GraphStoreProtocol
+abstract class GraphStoreRequest extends ClientHttpRequest with GraphStoreProtocol {
+  def context: Option[Any]
+}
 
 /**
   * The response entity for graph store operations.
@@ -46,7 +48,7 @@ object GetGraphM {
   *
   * @see [[https://www.w3.org/TR/2013/REC-sparql11-http-rdf-update-20130321/#http-get]]
   */
-case class GetGraph(graphIri: Option[IRI]) extends GraphStoreRequest {
+case class GetGraph(graphIri: Option[IRI], context: Option[Any] = None) extends GraphStoreRequest {
   final override val httpMethod: HttpMethod = GET
 }
 
@@ -63,7 +65,7 @@ object DropGraphM {
   *
   * @see [[https://www.w3.org/TR/2013/REC-sparql11-http-rdf-update-20130321/#http-delete]]
   */
-case class DropGraph(graphIri: Option[IRI]) extends GraphStoreRequest {
+case class DropGraph(graphIri: Option[IRI], context: Option[Any] = None) extends GraphStoreRequest {
   final override val httpMethod: HttpMethod = DELETE
 }
 
@@ -78,7 +80,8 @@ case class DropGraph(graphIri: Option[IRI]) extends GraphStoreRequest {
   * @see [[https://www.w3.org/TR/2013/REC-sparql11-http-rdf-update-20130321/#http-put]]
 
   */
-abstract class InsertGraph(val graphIri: Option[IRI], val mergeGraphs: Boolean) extends GraphStoreRequest {
+abstract class InsertGraph(val graphIri: Option[IRI], val mergeGraphs: Boolean)
+  extends GraphStoreRequest {
 
   override val httpMethod: HttpMethod = if (mergeGraphs) POST else PUT
 
@@ -99,12 +102,14 @@ object InsertGraphFromModelM {
   * @param mergeGraphs indicates if the inserted data should be merged data already in the specified graph in
   *                    the database, if set to false the previously stored data in the graph will be replaced
   *                    with the payload, defaults to false
+  * @param context     an optional context to be carried along the flow
   */
 case class InsertGraphFromModel
 (
   graphModel: Model,
   override val graphIri: Option[IRI] = None,
-  override val mergeGraphs: Boolean = false
+  override val mergeGraphs: Boolean = false,
+  context: Option[Any] = None
 ) extends InsertGraph(graphIri, mergeGraphs) {
 
   /**
@@ -132,13 +137,15 @@ object InsertGraphFromURLM {
   * @param mergeGraphs indicates if the inserted data should be merged data already in the specified graph in
   *                    the database, if set to false the previously stored data in the graph will be replaced
   *                    with the payload, defaults to false
+  * @param context     an optional context to be carried along the flow
   */
 case class InsertGraphFromURL
 (
   url: URL,
   modelFormat: RDFFormat,
   override val graphIri: Option[IRI] = None,
-  override val mergeGraphs: Boolean = false
+  override val mergeGraphs: Boolean = false,
+  context: Option[Any] = None
 ) extends InsertGraph(graphIri, mergeGraphs)
 
 object InsertGraphFromPathM {
@@ -158,11 +165,13 @@ object InsertGraphFromPathM {
   * @param mergeGraphs indicates if the inserted data should be merged data already in the specified graph in
   *                    the database, if set to false the previously stored data in the graph will be replaced
   *                    with the payload, defaults to false
+  * @param context     an optional context to be carried along the flow
   */
 case class InsertGraphFromPath
 (
   path: Path,
   modelFormat: RDFFormat,
   override val graphIri: Option[IRI] = None,
-  override val mergeGraphs: Boolean = false
+  override val mergeGraphs: Boolean = false,
+  context: Option[Any] = None
 ) extends InsertGraph(graphIri, mergeGraphs)

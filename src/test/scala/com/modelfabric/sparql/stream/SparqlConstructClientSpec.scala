@@ -204,7 +204,7 @@ trait SparqlConstructSpecBase
     sparqlRequestFlow(
       HttpEndpointFlow(
         testServerEndpoint,
-        pooledClientFlow[SparqlRequest]
+        defaultHttpClientFlow[SparqlRequest]
       )
     )
 

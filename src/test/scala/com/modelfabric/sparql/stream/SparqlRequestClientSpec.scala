@@ -33,7 +33,7 @@ class SparqlRequestClientSpec extends TestKit(ActorSystem("SparqlRequestClientSp
   import HttpEndpointSuiteTestRunner._
 
   "The Akka-Streams Sparql Client" must {
-    val sparqlRequestFlowUnderTest = sparqlRequestFlow(HttpEndpointFlow(testServerEndpoint, pooledClientFlow[SparqlRequest]))
+    val sparqlRequestFlowUnderTest = sparqlRequestFlow(HttpEndpointFlow(testServerEndpoint, defaultHttpClientFlow[SparqlRequest]))
 
     val ( source, sink ) = TestSource.probe[SparqlRequest]
       .via(sparqlRequestFlowUnderTest)

@@ -37,6 +37,20 @@ trait HttpClientFlowBuilder {
     }
   }
 
+  /**
+    * Creates a flow that allows for access to the connection pool via a bounded request queue.
+    *
+    * {@see https://doc.akka.io/docs/akka-http/current/client-side/host-level.html#using-the-host-level-api-with-a-queue}
+    *
+    * @param endpoint the HTTP(S) endpoint
+    * @param queueSize the size of the queue
+    * @param overflowStrategy the overflow strategy to apply if the queue overruns
+    * @param akkaSSLConfig SSL config
+    * @param system
+    * @param materializer
+    * @tparam T
+    * @return
+    */
   def queuedAndPooledHttpClientFlow[T]
   (
     endpoint: HttpEndpoint,

@@ -16,8 +16,8 @@ publishTo := {
 
 pomExtra := {
   <scm>
-    <url>https://github.com/modelfabric/reactive-sparql.git</url>
-    <connection>scm:git:https://github.com/modelfabric/reactive-sparql.git</connection>
+    <url>https://github.org/modelfabric/reactive-sparql.git</url>
+    <connection>scm:git:https://github.org/modelfabric/reactive-sparql.git</connection>
   </scm>
     <developers>
       <developer>

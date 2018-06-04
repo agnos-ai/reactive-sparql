@@ -15,7 +15,7 @@ val buildSettings = Seq (
   scalaVersion  := buildScalaVersion,
   exportJars    := buildExportJars,
   updateOptions := updateOptions.value.withCachedResolution(true),
-  shellPrompt := { state => "sbt [%s]> ".format(Project.extract(state).currentProject.id) },
+  shellPrompt   := { state => "sbt [%s]> ".format(Project.extract(state).currentProject.id) },
   scalacOptions := Seq("-deprecation", "-unchecked", "-feature", "-target:jvm-1.8", "-language:implicitConversions", "-language:postfixOps", "-Xlint"),
   parallelExecution in Test := false,
   coverageFailOnMinimum := true,

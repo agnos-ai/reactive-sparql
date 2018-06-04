@@ -19,11 +19,11 @@ The akka-streams APIs currently supports 3 flavours of flows:
 Use the `SparqlQuery(stmt: String)` or `SparqlUpdate(stmt: String)` case class and embed it in a `SparqlRequest()` to be passed to the flow. On the other end a
 `SparqlResponse()` pops out. Support for custom mappings is available, where the resulting values get marshaled to a custom domain object.
 This is however not mandatory, there is a default result mapper available that will return a [standard
-result set model](src/main/scala/com/modelfabric/sparql/api/ResultSet.scala) based on the `application/sparql-results+json` content type.
+result set model](src/main/scala/org/modelfabric/sparql/api/ResultSet.scala) based on the `application/sparql-results+json` content type.
 
-It is possible to use a single wrapper flow of [`Flow[SparqlRequest, SparqlResponse, _]`](src/main/scala/com/modelfabric/sparql/stream/client/SparqlRequestFlowBuilder.scala)
-to run both `SparqlUpdate()` and `SparqlQuery()` statements. There is an option to use specialised [query](src/main/scala/com/modelfabric/sparql/stream/client/SparqlQueryFlowBuilder.scala)
-and [update](src/main/scala/com/modelfabric/sparql/stream/client/SparqlUpdateFlowBuilder.scala) flows as well.
+It is possible to use a single wrapper flow of [`Flow[SparqlRequest, SparqlResponse, _]`](src/main/scala/org/modelfabric/sparql/stream/client/SparqlRequestFlowBuilder.scala)
+to run both `SparqlUpdate()` and `SparqlQuery()` statements. There is an option to use specialised [query](src/main/scala/org/modelfabric/sparql/stream/client/SparqlQueryFlowBuilder.scala)
+and [update](src/main/scala/org/modelfabric/sparql/stream/client/SparqlUpdateFlowBuilder.scala) flows as well.
 
 The underlying implementation communicates with the triple store via the HTTP endpoints, as documented here
 for [queries](https://www.w3.org/TR/2013/REC-sparql11-query-20130321/)
@@ -111,7 +111,7 @@ The flow responds with a `SparqlModelResult(model: Model)` within a `SparqlResul
 case class SparqlModelResult(model: Model) extends SparqlResult
 ```
 
-Refer to [`Flow[SparqlRequest, SparqlResponse, _]`](src/main/scala/com/modelfabric/sparql/stream/client/SparqlConstructToModelFlowBuilder.scala)
+Refer to [`Flow[SparqlRequest, SparqlResponse, _]`](src/main/scala/org/modelfabric/sparql/stream/client/SparqlConstructToModelFlowBuilder.scala)
 for more detail.
 
 ### Flavour #3: Manipulate Graphs
@@ -161,5 +161,5 @@ the newly inserted triples.
 
 If no graph is specified, the insert will use the DEFAULT graph in the triple store.
 
-Refer to [`Flow[GraphStoreRequest, GraphStoreResponse, _]`](src/main/scala/com/modelfabric/sparql/stream/client/GraphStoreRequestFlowBuilder.scala)
+Refer to [`Flow[GraphStoreRequest, GraphStoreResponse, _]`](src/main/scala/org/modelfabric/sparql/stream/client/GraphStoreRequestFlowBuilder.scala)
 for more detail.

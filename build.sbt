@@ -5,9 +5,8 @@ import scoverage.ScoverageKeys._
 import scala.util.Try
 
 import Dependencies._
-import Publishing._
 
-val buildOrganization = "com.modelfabric"
+val buildOrganization = "org.modelfabric"
 val buildScalaVersion = Version.scala
 val buildExportJars   = true
 
@@ -28,7 +27,6 @@ val buildSettings = Seq (
 lazy val project = Project("reactive-sparql", file("."))
   .configs(IntegrationTest)
   .settings(buildSettings: _*)
-  .settings(jenkinsMavenSettings: _*)
   .settings(name := "reactive-sparql")
   .settings(libraryDependencies ++= `reactive-sparql-dependencies`)
   .settings(coverageMinimum := 65.0D)

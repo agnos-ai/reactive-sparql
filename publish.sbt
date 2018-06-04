@@ -15,7 +15,7 @@ publishTo := {
 }
 
 pomExtra := {
-  <url></url>
+  <url>https://github.com/modelfabric/reactive-sparql</url>
   <licenses>
     <license>
       <name>MIT License</name>
@@ -46,4 +46,4 @@ pomExtra := {
   </developers>
 }
 
-pgpReadOnly := false
+pgpReadOnly := true

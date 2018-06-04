@@ -8,7 +8,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
 import akka.http.scaladsl.model.{HttpEntity, HttpResponse}
 import akka.http.scaladsl.server.Directives._
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.stream.scaladsl._
 import akka.stream.testkit.TestSubscriber.Probe
 import akka.stream.testkit.scaladsl.{TestSink, TestSource}
@@ -56,8 +56,8 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
     Await.result(system.terminate(), 5 seconds)
   }
 
-  private val flowUnderTest = graphStoreRequestFlow(HttpEndpointFlow(testServerEndpoint, pooledClientFlow[GraphStoreRequest]))
-  private val sparqlRequests = sparqlRequestFlow(HttpEndpointFlow(testServerEndpoint, pooledClientFlow[SparqlRequest]))
+  private val flowUnderTest = graphStoreRequestFlow(HttpEndpointFlow(testServerEndpoint, defaultHttpClientFlow[GraphStoreRequest]))
+  private val sparqlRequests = sparqlRequestFlow(HttpEndpointFlow(testServerEndpoint, defaultHttpClientFlow[SparqlRequest]))
 
   private val (source, sink) = TestSource.probe[GraphStoreRequest]
     .via(flowUnderTest)

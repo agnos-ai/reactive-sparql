@@ -9,11 +9,10 @@ sudo: false
 language: scala
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION test
+  - sbt ++$TRAVIS_SCALA_VERSION coverage test coverageReport
 
 jdk:
   - oraclejdk8
 
 scala:
-  - 2.12.1
-  - 2.11.8
+  - 2.12.6

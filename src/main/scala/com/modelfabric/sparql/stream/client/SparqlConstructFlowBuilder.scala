@@ -48,7 +48,7 @@ trait SparqlConstructFlowBuilder extends SparqlClientHelpers {
 
       converter ~> endpointFlow.flow ~> broadcastConstructHttpResponse
 
-      broadcastConstructHttpResponse ~> responseToModelFlow ~> resultZipper.in0
+      broadcastConstructHttpResponse ~> responseToResultFlow ~> resultZipper.in0
       broadcastConstructHttpResponse ~> resultMaker         ~> resultZipper.in1
 
       FlowShape(converter.in, resultZipper.out)
@@ -75,23 +75,18 @@ trait SparqlConstructFlowBuilder extends SparqlClientHelpers {
   /**
     * This flow will consume the Http response entity and produces a corresponding SparqlResult
     */
-  val responseToModelFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, NotUsed] = {
+  val responseToResultFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, NotUsed] = {
     Flow[(Try[HttpResponse], SparqlRequest)]
       .flatMapConcat {
-        // TODO: there are issues here with Stardog...
+        // TODO: Add support for sliding through the entity 4 lines at a time (see responseToPagingModelFlow)
+/*
         case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) if entity.isChunked() =>
           entity.withoutSizeLimit().dataBytes.fold(ByteString.empty)(_ ++ _).zip(Source.single(entity.contentType))
+*/
         case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) =>
           entity.withoutSizeLimit().dataBytes.fold(ByteString.empty)(_ ++ _).zip(Source.single(entity.contentType))
-        case x => throw new Exception(s"Unsupported $x")
+        case x => throw new RuntimeException(s"Unsupported Error Encountered: $x")
       }
-/*
-      .flatMapConcat {
-        case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) =>
-          val fut = entity.withoutSizeLimit().dataBytes.runFold(ByteString.empty)(_ ++ _).map( (_, entity.contentType) )
-          Source.fromFuture(fut)
-      }
-*/
       .map { x =>
         Rio.parse(x._1.iterator.asInputStream, "", mapContentTypeToRdfFormat(x._2))
       }

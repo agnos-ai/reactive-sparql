@@ -104,4 +104,11 @@ case class QuerySolution(values : Map[String, QuerySolutionValue]) {
   }
 }
 
+/**
+  * Error result
+  * @param error
+  * @param code
+  * @param message
+  */
+case class SparqlErrorResult(error: Throwable, code: Int, message: String) extends SparqlResult
 

@@ -27,6 +27,8 @@ class MappingStreamSparqlClientSpec() extends TestKit(ActorSystem("MappingStream
   implicit val dispatcher = system.dispatcher
   implicit val prefixMapping = PrefixMapping.none
 
+  implicit val errorHandler: ErrorHandler = DefaultErrorHandler
+
   val receiveTimeout = 5 seconds
 
   import HttpEndpointSuiteTestRunner._

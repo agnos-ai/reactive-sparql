@@ -60,7 +60,7 @@ object GraphStoreRequestFlowBuilder {
 }
 
 
-trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers with HttpClientFlowBuilder {
+trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers with HttpClientFlowBuilder with ErrorHandlerSupport {
 
   import SparqlClientConstants._
 
@@ -106,7 +106,10 @@ trait GraphStoreRequestFlowBuilder extends SparqlClientHelpers with HttpClientFl
           )
           makeModelSource(response.entity).map( s => gsr.copy(model = s))
       case (Failure(error), _) =>
-        throw error //fail the stream, there is nothing we can do
+        // the handler can choose to throw, which will collapse the stream or ignore the error, in which case
+        // no response will be returned
+        errorHandler.handleError(error)
+        Source.empty
     }
   }
 

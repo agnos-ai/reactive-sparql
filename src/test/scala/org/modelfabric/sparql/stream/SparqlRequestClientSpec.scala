@@ -28,6 +28,8 @@ class SparqlRequestClientSpec extends TestKit(ActorSystem("SparqlRequestClientSp
   implicit val dispatcher: ExecutionContext = system.dispatcher
   implicit val prefixMapping: PrefixMapping = PrefixMapping.none
 
+  implicit val errorHandler: ErrorHandler = DefaultErrorHandler
+
   implicit val receiveTimeout: FiniteDuration = 30 seconds
 
   import HttpEndpointSuiteTestRunner._

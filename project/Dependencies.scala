@@ -7,8 +7,7 @@ object Version {
   val akka       = "2.5.12"
   val akkaHttp   = "10.1.0"
   val javaxWsRs  = "1.1.1"
-  //val jersey     = "1.19.4"
-  val rdf4j      = "2.3.2"
+  val rdf4j      = "2.1.6" //"2.3.2"
   val logback    = "1.2.3"
   val scalaTest  = "3.0.5"
   val fuseki     = "3.7.0"
@@ -23,8 +22,6 @@ object Dependencies {
   val akkaHttpSprayJson = "com.typesafe.akka" %% "akka-http-spray-json"              % Version.akkaHttp
   val akkaSlf4j         = "com.typesafe.akka" %% "akka-slf4j"                        % Version.akka
   val javaxWsRs         = "javax.ws.rs"       %  "jsr311-api"                        % Version.javaxWsRs
-  //val jerseyCore        = "com.sun.jersey"    %  "jersey-core"                       % Version.jersey
-  //val jerseyClient      = "com.sun.jersey"    %  "jersey-client"                     % Version.jersey
   val logbackClassic    = "ch.qos.logback"    %  "logback-classic"                   % Version.logback
   val rdf4jRuntime      = "org.eclipse.rdf4j" %  "rdf4j-runtime"                     % Version.rdf4j
   val scalaTest         = "org.scalatest"     %% "scalatest"                         % Version.scalaTest   % "it,test"

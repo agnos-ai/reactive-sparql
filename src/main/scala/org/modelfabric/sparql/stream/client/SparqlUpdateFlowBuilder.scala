@@ -6,12 +6,12 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.{ActorMaterializer, FlowShape}
 import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, ZipWith}
-import org.modelfabric.sparql.api.{SparqlClientRequestFailed, SparqlRequest, SparqlResponse}
+import org.modelfabric.sparql.api.{ErrorHandlerSupport, SparqlClientRequestFailed, SparqlRequest, SparqlResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
-trait SparqlUpdateFlowBuilder extends SparqlClientHelpers {
+trait SparqlUpdateFlowBuilder extends SparqlClientHelpers with ErrorHandlerSupport {
 
   import SparqlClientConstants._
 
@@ -24,11 +24,11 @@ trait SparqlUpdateFlowBuilder extends SparqlClientHelpers {
     Flow.fromGraph(GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
-      val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpointFlow.endpoint)).async.named("mapping.sparqlToHttpRequest"))
-      val updateConnectionFlow = builder.add(endpointFlow.flow.async.named("http.sparqlUpdate"))
-      val broadcastUpdateHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).async.named("broadcast.updateResponse"))
+      val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpointFlow.endpoint)).named("mapping.sparqlToHttpRequest"))
+      val updateConnectionFlow = builder.add(endpointFlow.flow.named("http.sparqlUpdate"))
+      val broadcastUpdateHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).named("broadcast.updateResponse"))
       val booleanParser = builder.add(Flow[(Try[HttpResponse], SparqlRequest)].mapAsync(1)(res => responseToBoolean(res)).async.named("mapping.parseBoolean"))
-      val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).async.named("mapping.makeResponseFromHeader"))
+      val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).named("mapping.makeResponseFromHeader"))
       val updateResultZipper = builder.add(ZipWith[Boolean, SparqlResponse, SparqlResponse]((success, response) =>
         response.copy(
           success = success
@@ -59,7 +59,11 @@ trait SparqlUpdateFlowBuilder extends SparqlClientHelpers {
       case (Success(HttpResponse(status, _, entity, _)), _) =>
         entity.discardBytes()
         Future.failed(SparqlClientRequestFailed(s"Unexpected response status: $status"))
+      case (Failure(err), _) =>
+        errorHandler.handleError(err)
+        Future.failed(SparqlClientRequestFailed(s"Requested failed: $err"))
       case x@_ =>
+        errorHandler.handleError(new IllegalStateException(s"Unexpected response: $x"))
         Future.failed(SparqlClientRequestFailed(s"Unexpected response: $x"))
     }
   }

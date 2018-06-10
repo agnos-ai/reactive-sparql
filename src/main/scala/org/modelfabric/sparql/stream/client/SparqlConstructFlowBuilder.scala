@@ -4,7 +4,7 @@ import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.stream.{ActorMaterializer, FlowShape}
-import akka.stream.scaladsl.{Broadcast, Flow, Framing, GraphDSL, Source, ZipWith}
+import akka.stream.scaladsl.{Broadcast, Flow, Framing, GraphDSL, Merge, Partition, Source, ZipWith}
 import akka.util.ByteString
 import org.modelfabric.sparql.api._
 import org.modelfabric.sparql.stream.client.SparqlClientConstants.{modelFactory => mf, valueFactory => vf}
@@ -12,7 +12,7 @@ import org.eclipse.rdf4j.model.{IRI, Model, Resource}
 import org.eclipse.rdf4j.rio.{RDFFormat, Rio}
 
 import scala.concurrent.ExecutionContext
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 object SparqlConstructFlowBuilder {
   val `rdf:subject`  : IRI = vf.createIRI(NamespaceConstants.RDF, "subject")
@@ -22,7 +22,7 @@ object SparqlConstructFlowBuilder {
 }
 
 
-trait SparqlConstructFlowBuilder extends SparqlClientHelpers {
+trait SparqlConstructFlowBuilder extends SparqlClientHelpers with ErrorHandlerSupport {
 
   import SparqlConstructFlowBuilder._
 
@@ -37,9 +37,9 @@ trait SparqlConstructFlowBuilder extends SparqlClientHelpers {
     Flow.fromGraph(GraphDSL.create() { implicit builder =>
       import GraphDSL.Implicits._
 
-      val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpointFlow.endpoint)).async.named("mapping.sparqlToConstruct"))
-      val broadcastConstructHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).async.named("broadcast.constructResponse"))
-      val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).async.named("mapping.makeResponseFromHeader"))
+      val converter = builder.add(Flow.fromFunction(sparqlToRequest(endpointFlow.endpoint)).named("mapping.sparqlToConstruct"))
+      val broadcastConstructHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).named("broadcast.constructResponse"))
+      val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).named("mapping.makeResponseFromHeader"))
       val resultZipper = builder.add(ZipWith[SparqlResult, SparqlResponse, SparqlResponse]((result, response) =>
         response.copy(
           result = List(result)
@@ -49,7 +49,7 @@ trait SparqlConstructFlowBuilder extends SparqlClientHelpers {
       converter ~> endpointFlow.flow ~> broadcastConstructHttpResponse
 
       broadcastConstructHttpResponse ~> responseToResultFlow ~> resultZipper.in0
-      broadcastConstructHttpResponse ~> resultMaker         ~> resultZipper.in1
+      broadcastConstructHttpResponse ~> resultMaker          ~> resultZipper.in1
 
       FlowShape(converter.in, resultZipper.out)
     } named "flow.sparqlUpdateRequest")
@@ -73,19 +73,14 @@ trait SparqlConstructFlowBuilder extends SparqlClientHelpers {
   }
 
   /**
-    * This flow will consume the Http response entity and produces a corresponding SparqlResult
+    * This flow will consume the Http response entity and produces a corresponding SparqlModelResult
     */
-  val responseToResultFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, NotUsed] = {
+  lazy val responseToSuccessFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, NotUsed] = {
     Flow[(Try[HttpResponse], SparqlRequest)]
       .flatMapConcat {
         // TODO: Add support for sliding through the entity 4 lines at a time (see responseToPagingModelFlow)
-/*
-        case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) if entity.isChunked() =>
-          entity.withoutSizeLimit().dataBytes.fold(ByteString.empty)(_ ++ _).zip(Source.single(entity.contentType))
-*/
         case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) =>
           entity.withoutSizeLimit().dataBytes.fold(ByteString.empty)(_ ++ _).zip(Source.single(entity.contentType))
-        case x => throw new RuntimeException(s"Unsupported Error Encountered: $x")
       }
       .map { x =>
         Rio.parse(x._1.iterator.asInputStream, "", mapContentTypeToRdfFormat(x._2))
@@ -94,8 +89,49 @@ trait SparqlConstructFlowBuilder extends SparqlClientHelpers {
       .map(SparqlModelResult)
   }
 
-  //@deprecated
-  val responseToPagingModelFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, NotUsed] = {
+  /**
+    * This flow will also consume the Http response entity if it is received via a valid HTTP response with
+    * an HTTP status code and produces a corresponding SparqlErrorResult
+    */
+  lazy val responseToFailureFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, NotUsed] = {
+    Flow[(Try[HttpResponse], SparqlRequest)]
+      .flatMapConcat {
+        case (Success(HttpResponse(code, _, entity, _)), _) =>
+          entity.withoutSizeLimit().dataBytes.fold(ByteString.empty)(_ ++ _).map {
+            case message: ByteString => SparqlErrorResult(
+              error = new RuntimeException(
+                s"${message.utf8String}"
+              ),
+              code = code.intValue(),
+              message = "SPARQL endpoint returned unexpected response body")
+          }
+        case (Failure(err), req) =>
+          errorHandler.handleError(err)
+          Source.single(SparqlErrorResult(err, 0, s"unexpected error when processing flow for request: ${req}"))
+      }
+  }
+
+  val responseToResultFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, NotUsed] = {
+    Flow.fromGraph(GraphDSL.create() { implicit builder =>
+      import GraphDSL.Implicits._
+
+      val switch = builder.add(Partition[(Try[HttpResponse], SparqlRequest)](2, {
+        case (Success(HttpResponse(StatusCodes.OK, _, _, _)), _) => 0
+        case _ => 1
+      }))
+
+      val merge = builder.add(Merge[SparqlResult](2))
+
+      switch.out(0) ~> responseToSuccessFlow ~> merge.in(0)
+      switch.out(1) ~> responseToFailureFlow ~> merge.in(1)
+
+      FlowShape(switch.in, merge.out)
+    })
+  }
+
+
+  @deprecated
+  lazy val responseToPagingModelFlow: Flow[(Try[HttpResponse], SparqlRequest), SparqlResult, NotUsed] = {
     Flow[(Try[HttpResponse], SparqlRequest)]
       .flatMapConcat {
         case (Success(HttpResponse(StatusCodes.OK, _, entity, _)), _) => entity.withoutSizeLimit().getDataBytes()

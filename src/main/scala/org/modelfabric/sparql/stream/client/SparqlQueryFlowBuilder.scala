@@ -13,7 +13,7 @@ import spray.json._
 import scala.concurrent.ExecutionContext
 
 
-trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
+trait SparqlQueryFlowBuilder extends SparqlClientHelpers with ErrorHandlerSupport {
 
   import org.modelfabric.sparql.mapper.SparqlClientJsonProtocol._
 
@@ -50,20 +50,24 @@ trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
         case response@SparqlResponse(
           SparqlRequest(
             SparqlQuery(_, _, mappedQueryType: MappedQuery[_],_,_,_,_,_,_,_), _
-          ), true, _, List(StreamingSparqlResult(dataStream, Some(contentType))), _)
-        if isSparqlResultsJson(contentType) =>
-          Source.fromFuture {
-            dataStream.runFold(ByteString.empty)(_ ++ _).map { data =>
-              Try(format3.read(data.utf8String.parseJson)) match {
-                case Success(x: ResultSet) =>
-                  response.copy(result = mappedQueryType.mapper.map(x))
-                case Failure(err) =>
-                  response.copy(
-                    success = false, result = Nil,
-                    error = Some(SparqlClientRequestFailedWithError("failed to un-marshall result", err))
-                  )
+          ),
+          true,
+          _,
+          List(StreamingSparqlResult(dataStream, Some(contentType))), _
+        ) if isSparqlResultsJson(contentType) =>
+            Source.fromFuture {
+              dataStream.runFold(ByteString.empty)(_ ++ _).map { data =>
+                Try(format3.read(data.utf8String.parseJson)) match {
+                  case Success(x: ResultSet) =>
+                    response.copy(result = mappedQueryType.mapper.map(x))
+                  case Failure(err) =>
+                    errorHandler.handleError(err)
+                    response.copy(
+                      success = false, result = Nil,
+                      error = Some(SparqlClientRequestFailedWithError("failed to un-marshall result", err))
+                    )
+                }
               }
-            }
           }
 
         // catchall for all streaming responses, we need to process the response entities stream, otherwise
@@ -74,7 +78,7 @@ trait SparqlQueryFlowBuilder extends SparqlClientHelpers {
             response.copy(
               success = false, result = Nil,
               error = Some(SparqlClientRequestFailed(
-                s"unsupported result type [${contentType.getOrElse("Unknown")}] ${data.take(100).utf8String}...")
+                s"unsupported result type [${contentType.getOrElse("Unknown")}] ${data.take(1024).utf8String}...")
               )
             )
           }

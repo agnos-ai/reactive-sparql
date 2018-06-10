@@ -15,25 +15,35 @@ publishTo := {
 }
 
 pomExtra := {
+  <url>https://github.com/modelfabric/reactive-sparql</url>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>http://www.opensource.org/licenses/mit-license.php</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
   <scm>
     <url>https://github.org/modelfabric/reactive-sparql.git</url>
     <connection>scm:git:https://github.org/modelfabric/reactive-sparql.git</connection>
   </scm>
-    <developers>
-      <developer>
-        <id>jgeluk</id>
-        <name>Jacobus Geluk</name>
-        <url>https://github.com/orgs/modelfabric/people/jgeluk</url>
-      </developer>
-      <developer>
-        <id>JianChen123</id>
-        <name>Jian Chen</name>
-        <url>https://github.com/orgs/modelfabric/people/JianChen123</url>
-      </developer>
-      <developer>
-        <id>szaniszlo</id>
-        <name>Stefan Szaniszlo</name>
-        <url>https://github.com/orgs/modelfabric/people/szaniszlo</url>
-      </developer>
-    </developers>
+  <developers>
+    <developer>
+      <id>jgeluk</id>
+      <name>Jacobus Geluk</name>
+      <url>https://github.com/orgs/modelfabric/people/jgeluk</url>
+    </developer>
+    <developer>
+      <id>JianChen123</id>
+      <name>Jian Chen</name>
+      <url>https://github.com/orgs/modelfabric/people/JianChen123</url>
+    </developer>
+    <developer>
+      <id>szaniszlo</id>
+      <name>Stefan Szaniszlo</name>
+      <url>https://github.com/orgs/modelfabric/people/szaniszlo</url>
+    </developer>
+  </developers>
 }
+
+pgpReadOnly := true

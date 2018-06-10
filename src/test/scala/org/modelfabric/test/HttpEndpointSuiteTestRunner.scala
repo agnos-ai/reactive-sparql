@@ -103,17 +103,20 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
 
   private lazy val fusekiManager = system.actorOf(Props(classOf[FusekiManager], testServerEndpoint), "fuseki-manager")
 
+  val startTimeout = 100 seconds
+  val stopTimeout = 20 seconds
+
   override def beforeAll() {
     if (useFuseki) {
       fusekiManager ! Start
-      expectMsg(20 seconds, StartOk)
+      expectMsg(startTimeout, StartOk)
     }
   }
 
   override def afterAll() {
     if (useFuseki) {
       fusekiManager ! Shutdown
-      expectMsg(20 seconds, "Allowing Fuseki Server to shut down", ShutdownOk)
+      expectMsg(stopTimeout, "Allowing Fuseki Server to shut down", ShutdownOk)
     }
     shutdownSystem
   }

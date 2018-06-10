@@ -40,6 +40,8 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
   implicit val dispatcher: ExecutionContext = system.dispatcher
   implicit val prefixMapping: PrefixMapping = PrefixMapping.none
 
+  implicit val errorHandler: ErrorHandler = DefaultErrorHandler
+
   import HttpEndpointSuiteTestRunner._
 
   val timeout: FiniteDuration = 30 seconds

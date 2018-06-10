@@ -54,7 +54,7 @@ trait HttpClientFlowBuilder {
   def queuedAndPooledHttpClientFlow[T]
   (
     endpoint: HttpEndpoint,
-    queueSize: Int = 32,
+    queueSize: Int = 10,
     overflowStrategy: OverflowStrategy = OverflowStrategy.backpressure,
     akkaSSLConfig: Option[AkkaSSLConfig] = None
   )

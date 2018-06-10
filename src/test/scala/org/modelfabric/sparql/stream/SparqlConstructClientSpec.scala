@@ -31,6 +31,7 @@ class SparqlConstructClientSpec
   implicit val dispatcher: ExecutionContext = system.dispatcher
   implicit val prefixMapping: PrefixMapping = PrefixMapping.none
 
+  implicit val errorHandler: ErrorHandler = DefaultErrorHandler
 
   "The ModelConstructFlow Builder" must {
 

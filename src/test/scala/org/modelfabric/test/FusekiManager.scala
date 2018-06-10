@@ -39,7 +39,7 @@ object FusekiManager {
     override def run(): Unit = {
       // JC: another option is to call org.apache.jena.fuseki.cmd.FusekiCmd.main(args), instead of starting a process
       val path = new org.apache.jena.fuseki.Fuseki().getClass.getProtectionDomain.getCodeSource.getLocation.getPath
-      val cmd = s"java -Xms2g -Xmx2g -jar $path --port=$port --mem --update $resource"
+      val cmd = s"java -Xms768m -Xmx768m -jar $path --port=$port --mem --update $resource"
       println(s"Launching Fuseki Server: $cmd")
       process = Some(Runtime.getRuntime.exec(cmd))
     }
@@ -102,7 +102,7 @@ class  FusekiManager(val endpoint: HttpEndpoint) extends Actor with ActorLogging
       // with multiple parameters to control behavior, not straightforward to understand
       //SSZ: True, but again, this is a test class that does the work for us already. I would not worry
       // about making it more understandable, unless you really think it would add more value?
-      self ! Ping(sender, sendOnSuccess = StartOk, sendOnFailure = StartError)
+      self ! Ping(sender, sendOnSuccess = StartOk, sendOnFailure = StartError, pingInterval = 3 seconds, retriesLeft = 30)
 
     case x @ Ping(originalSender, sendOnSuccess, sendOnFailure, pingInterval, stopOnSuccess, 0) =>
       log.info(s"Ping timeout for $x")

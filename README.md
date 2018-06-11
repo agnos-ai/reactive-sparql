@@ -6,7 +6,8 @@ reactive-sparql
 This client uses [akka-streams](http://doc.akka.io/docs/akka/2.4/scala.html) to do as much as possible asynchronously, with back pressure
 support around the HTTP connection towards the triple store. There are no blocking calls crossing process boundaries.
 
-The older Spray HTTP client is still available, however no longer supported.
+The older Spray HTTP client no longer supported, however it is still available as
+release [v0.1.3](https://github.com/modelfabric/reactive-sparql/tree/v0.1.3).
 
 The akka-streams APIs currently supports 3 flavours of flows:
 

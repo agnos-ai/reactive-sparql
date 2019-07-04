@@ -2,7 +2,6 @@ package org.modelfabric.sparql.util
 
 import org.modelfabric.sparql._
 import org.modelfabric.sparql.api.SparqlQuery
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import org.eclipse.rdf4j.model.{BNode, IRI, Literal, Value}
 
 object SparqlQueryStringConverter {
@@ -21,13 +20,7 @@ object SparqlQueryStringConverter {
     def valueToString(value: Value): String = {
       value match {
         case l: Literal =>
-          val v = urlEncode(l.stringValue())
-          val t = l.getDatatype()
-          if (t != XMLSchema.STRING) {
-            s""""$v"^^$t"""
-          } else {
-            v
-          }
+          urlEncode(l.toString)
         case i: IRI => urlEncode(s"<${i.toString}>")
         case _: BNode => throw new IllegalArgumentException("BNode bindings are not allowed")
       }

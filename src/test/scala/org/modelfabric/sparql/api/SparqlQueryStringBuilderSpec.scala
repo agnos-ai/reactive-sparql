@@ -63,12 +63,14 @@ class SparqlQueryStringBuilderSpec extends WordSpec {
           "boolean" -> vf.createLiteral(true)
         )
       )
-      info(s"raw: ${toQueryString(query)}")
-      val qs = query.split(("&"))
+      val queryString = toQueryString(query)
+      info(s"raw: ${queryString}")
+      val qs = queryString.split(("&"))
       val sortedParams = qs.sorted.mkString("&")
       info(s"sorted: $sortedParams")
-      assert(sortedParams === """$boolean="true"^^http://www.w3.org/2001/XMLSchema#boolean&$double="0.3333333333333333"^^http://www.w3.org/2001/XMLSchema#double&$int="1"^^http://www.w3.org/2001/XMLSchema#int&$string=string&query=select""")
-      info(s"decoded: ${urlDecode(sortedParams)}")
+      val decodedParams = urlDecode(sortedParams)
+      info(s"decoded: ${decodedParams}")
+      assert(decodedParams === """$boolean="true"^^<http://www.w3.org/2001/XMLSchema#boolean>&$double="0.3333333333333333"^^<http://www.w3.org/2001/XMLSchema#double>&$int="1"^^<http://www.w3.org/2001/XMLSchema#int>&$string="string"^^<http://www.w3.org/2001/XMLSchema#string>&query=select""")
     }
 
   }

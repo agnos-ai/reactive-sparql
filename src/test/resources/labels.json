@@ -1,6 +1,6 @@
 [
   {
-    "@id": "urn:test:mfab:res:0",
+    "@id": "urn:test:agnos:res:0",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 0"
@@ -16,7 +16,7 @@
     ]
   },
   {
-    "@id": "urn:test:mfab:res:1",
+    "@id": "urn:test:agnos:res:1",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 1"
@@ -32,7 +32,7 @@
     ]
   },
   {
-    "@id": "urn:test:mfab:res:10",
+    "@id": "urn:test:agnos:res:10",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 10"
@@ -45,7 +45,7 @@
     ]
   },
   {
-    "@id": "urn:test:mfab:res:11",
+    "@id": "urn:test:agnos:res:11",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 11"
@@ -58,7 +58,7 @@
     ]
   },
   {
-    "@id": "urn:test:mfab:res:12",
+    "@id": "urn:test:agnos:res:12",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 12"
@@ -71,7 +71,7 @@
     ]
   },
   {
-    "@id": "urn:test:mfab:res:13",
+    "@id": "urn:test:agnos:res:13",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 13"
@@ -84,7 +84,7 @@
     ]
   },
   {
-    "@id": "urn:test:mfab:res:14",
+    "@id": "urn:test:agnos:res:14",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 14"
@@ -97,7 +97,7 @@
     ]
   },
   {
-    "@id": "urn:test:mfab:res:2",
+    "@id": "urn:test:agnos:res:2",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 2"
@@ -113,7 +113,7 @@
     ]
   },
   {
-    "@id": "urn:test:mfab:res:3",
+    "@id": "urn:test:agnos:res:3",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 3"
@@ -129,7 +129,7 @@
     ]
   },
   {
-    "@id": "urn:test:mfab:res:4",
+    "@id": "urn:test:agnos:res:4",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 4"
@@ -145,7 +145,7 @@
     ]
   },
   {
-    "@id": "urn:test:mfab:res:5",
+    "@id": "urn:test:agnos:res:5",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 5"
@@ -161,7 +161,7 @@
     ]
   },
   {
-    "@id": "urn:test:mfab:res:6",
+    "@id": "urn:test:agnos:res:6",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 6"
@@ -177,7 +177,7 @@
     ]
   },
   {
-    "@id": "urn:test:mfab:res:7",
+    "@id": "urn:test:agnos:res:7",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 7"
@@ -193,7 +193,7 @@
     ]
   },
   {
-    "@id": "urn:test:mfab:res:8",
+    "@id": "urn:test:agnos:res:8",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 8"
@@ -209,7 +209,7 @@
     ]
   },
   {
-    "@id": "urn:test:mfab:res:9",
+    "@id": "urn:test:agnos:res:9",
     "http://www.w3.org/2000/01/rdf-schema#comment": [
       {
         "@value": "Comment 9"

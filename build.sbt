@@ -6,7 +6,7 @@ import scala.util.Try
 
 import Dependencies._
 
-val buildOrganization = "org.modelfabric"
+val buildOrganization = "ai.agnos"
 val buildScalaVersion = Version.scala
 val buildExportJars   = true
 

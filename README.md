@@ -7,7 +7,7 @@ This client uses [akka-streams](http://doc.akka.io/docs/akka/2.4/scala.html) to 
 support around the HTTP connection towards the triple store. There are no blocking calls crossing process boundaries.
 
 The older Spray HTTP client no longer supported, however it is still available as
-release [v0.1.3](https://github.com/modelfabric/reactive-sparql/tree/v0.1.3).
+release [v0.1.3](https://github.com/agnos-ai/reactive-sparql/tree/v0.1.3).
 
 The akka-streams APIs currently supports 3 flavours of flows:
 
@@ -20,11 +20,11 @@ The akka-streams APIs currently supports 3 flavours of flows:
 Use the `SparqlQuery(stmt: String)` or `SparqlUpdate(stmt: String)` case class and embed it in a `SparqlRequest()` to be passed to the flow. On the other end a
 `SparqlResponse()` pops out. Support for custom mappings is available, where the resulting values get marshaled to a custom domain object.
 This is however not mandatory, there is a default result mapper available that will return a [standard
-result set model](src/main/scala/org/modelfabric/sparql/api/ResultSet.scala) based on the `application/sparql-results+json` content type.
+result set model](src/main/scala/ai/agnos/sparql/api/ResultSet.scala) based on the `application/sparql-results+json` content type.
 
-It is possible to use a single wrapper flow of [`Flow[SparqlRequest, SparqlResponse, _]`](src/main/scala/org/modelfabric/sparql/stream/client/SparqlRequestFlowBuilder.scala)
-to run both `SparqlUpdate()` and `SparqlQuery()` statements. There is an option to use specialised [query](src/main/scala/org/modelfabric/sparql/stream/client/SparqlQueryFlowBuilder.scala)
-and [update](src/main/scala/org/modelfabric/sparql/stream/client/SparqlUpdateFlowBuilder.scala) flows as well.
+It is possible to use a single wrapper flow of [`Flow[SparqlRequest, SparqlResponse, _]`](src/main/scala/ai/agnos/sparql/stream/client/SparqlRequestFlowBuilder.scala)
+to run both `SparqlUpdate()` and `SparqlQuery()` statements. There is an option to use specialised [query](src/main/scala/ai/agnos/sparql/stream/client/SparqlQueryFlowBuilder.scala)
+and [update](src/main/scala/ai/agnos/sparql/stream/client/SparqlUpdateFlowBuilder.scala) flows as well.
 
 The underlying implementation communicates with the triple store via the HTTP endpoints, as documented here
 for [queries](https://www.w3.org/TR/2013/REC-sparql11-query-20130321/)
@@ -44,7 +44,7 @@ case class Person(id: URI, name: String) extends SparqlResult
 /* Create a bespoke SparqlQuery with a mapping to a Person */
 val mappingQuery2Get = SparqlQuery( """
   |SELECT ?g ?b ?c
-  |FROM NAMED <urn:test:mfab:data>
+  |FROM NAMED <urn:test:agnos:data>
   |WHERE {
   |  GRAPH ?g {
   |   <urn:test:whatever> ?b ?c
@@ -112,7 +112,7 @@ The flow responds with a `SparqlModelResult(model: Model)` within a `SparqlResul
 case class SparqlModelResult(model: Model) extends SparqlResult
 ```
 
-Refer to [`Flow[SparqlRequest, SparqlResponse, _]`](src/main/scala/org/modelfabric/sparql/stream/client/SparqlConstructToModelFlowBuilder.scala)
+Refer to [`Flow[SparqlRequest, SparqlResponse, _]`](src/main/scala/ai/agnos/sparql/stream/client/SparqlConstructToModelFlowBuilder.scala)
 for more detail.
 
 ### Flavour #3: Manipulate Graphs
@@ -162,5 +162,5 @@ the newly inserted triples.
 
 If no graph is specified, the insert will use the DEFAULT graph in the triple store.
 
-Refer to [`Flow[GraphStoreRequest, GraphStoreResponse, _]`](src/main/scala/org/modelfabric/sparql/stream/client/GraphStoreRequestFlowBuilder.scala)
+Refer to [`Flow[GraphStoreRequest, GraphStoreResponse, _]`](src/main/scala/ai/agnos/sparql/stream/client/GraphStoreRequestFlowBuilder.scala)
 for more detail.

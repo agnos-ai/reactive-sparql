@@ -25,7 +25,7 @@ pomExtra := {
   </licenses>
   <scm>
     <url>https://github.com/agnos-ai/reactive-sparql.git</url>
-    <connection>scm:git:https://github.ai/agnos/reactive-sparql.git</connection>
+    <connection>scm:git:https://github.com/agnos-ai/reactive-sparql.git</connection>
   </scm>
   <developers>
     <developer>

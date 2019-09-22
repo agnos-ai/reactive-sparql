@@ -2,7 +2,6 @@ package ai.agnos.sparql.api
 
 
 import akka.http.scaladsl.model.{HttpMethod, HttpMethods}
-import org.eclipse.rdf4j.model.vocabulary.XMLSchema
 import org.eclipse.rdf4j.model.{BNode, IRI, Literal, Value}
 
 

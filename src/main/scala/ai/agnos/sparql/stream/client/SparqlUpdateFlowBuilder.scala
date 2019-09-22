@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.{ActorMaterializer, FlowShape}
 import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, ZipWith}
-import ai.agnos.sparql.api.{ErrorHandlerSupport, SparqlClientRequestFailed, SparqlRequest, SparqlResponse}
+import ai.agnos.sparql.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -29,11 +29,22 @@ trait SparqlUpdateFlowBuilder extends SparqlClientHelpers with ErrorHandlerSuppo
       val broadcastUpdateHttpResponse = builder.add(Broadcast[(Try[HttpResponse], SparqlRequest)](2).named("broadcast.updateResponse"))
       val booleanParser = builder.add(Flow[(Try[HttpResponse], SparqlRequest)].mapAsync(1)(res => responseToBoolean(res)).async.named("mapping.parseBoolean"))
       val resultMaker = builder.add(Flow.fromFunction(responseToSparqlResponse).named("mapping.makeResponseFromHeader"))
-      val updateResultZipper = builder.add(ZipWith[Boolean, SparqlResponse, SparqlResponse]((success, response) =>
-        response.copy(
-          success = success
-        )
-      ).async.named("zipper.updateResultZipper"))
+      val updateResultZipper = builder.add(ZipWith[Try[Boolean], SparqlResponse, SparqlResponse] {
+        case (Success(status), response) =>
+          response.copy(
+            success = status
+          )
+        case (Failure(err: SparqlClientError), response) =>
+          response.copy(
+            success = false,
+            error = Some(err)
+          )
+        case (Failure(err), response) =>
+          response.copy(
+            success = false,
+            error = Some(SparqlClientRequestFailedWithError("error while handling sparql response", err))
+          )
+      }.async.named("zipper.updateResultZipper"))
 
       converter ~> updateConnectionFlow ~> broadcastUpdateHttpResponse ~> booleanParser ~> updateResultZipper.in0
                                            broadcastUpdateHttpResponse ~> resultMaker   ~> updateResultZipper.in1
@@ -48,26 +59,27 @@ trait SparqlUpdateFlowBuilder extends SparqlClientHelpers with ErrorHandlerSuppo
     * @param response
     * @return
     */
-  protected def responseToBoolean(response: (Try[HttpResponse], _)): Future[Boolean] = {
+  protected def responseToBoolean(response: (Try[HttpResponse], _)): Future[Try[Boolean]] = {
     response match {
       case (Success(HttpResponse(status, _, entity, _)), _)
         if status == StatusCodes.OK && entity.contentType == `text/boolean` =>
-        Unmarshal(entity).to[Boolean]
+        val fbt: Future[Try[Boolean]] = Unmarshal(entity).to[Boolean].map(Try(_))
+        fbt.recoverWith {
+          case f => Future.successful(Failure(f))
+        }
       case (Success(HttpResponse(status, _, entity, _)), _) if status == StatusCodes.OK =>
         entity.discardBytes()
-        Future.successful(true)
+        Future.successful(Try(true))
       case (Success(HttpResponse(status, _, entity, _)), _) =>
         entity.discardBytes()
-        Future.failed(SparqlClientRequestFailed(s"Unexpected response status: $status"))
+        Future.successful(Failure(SparqlClientRequestFailed(s"Unexpected response status: $status")))
       case (Failure(err), _) =>
         errorHandler.handleError(err)
-        Future.failed(SparqlClientRequestFailed(s"Requested failed: $err"))
+        Future.successful(Failure(SparqlClientRequestFailed(s"Requested failed: $err")))
       case x@_ =>
         errorHandler.handleError(new IllegalStateException(s"Unexpected response: $x"))
-        Future.failed(SparqlClientRequestFailed(s"Unexpected response: $x"))
+        Future.successful(Failure(SparqlClientRequestFailed(s"Unexpected response: $x")))
     }
   }
-
-
 
 }

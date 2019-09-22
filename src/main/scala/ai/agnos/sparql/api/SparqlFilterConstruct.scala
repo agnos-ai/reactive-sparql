@@ -1,7 +1,7 @@
 package ai.agnos.sparql.api
 
 
-import org.eclipse.rdf4j.model.{BNode, IRI, Literal, Value}
+import org.eclipse.rdf4j.model.{IRI, Value}
 
 object SparqlFilterConstruct extends SparqlConstructFactory {
 

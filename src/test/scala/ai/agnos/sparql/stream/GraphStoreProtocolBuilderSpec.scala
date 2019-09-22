@@ -8,24 +8,27 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
 import akka.http.scaladsl.model.{HttpEntity, HttpResponse}
 import akka.http.scaladsl.server.Directives._
-import akka.stream.{ActorMaterializer, OverflowStrategy}
+import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 import akka.stream.testkit.TestSubscriber.Probe
 import akka.stream.testkit.scaladsl.{TestSink, TestSource}
 import akka.testkit.TestKit
-import ai.agnos.sparql.SparqlQueries
-import ai.agnos.sparql.api._
-import ai.agnos.sparql.stream.client.{GraphStoreRequestFlowBuilder, HttpEndpointFlow, SparqlRequestFlowBuilder}
-import ai.agnos.sparql.util.{HttpEndpoint, RdfModelTestUtils}
-import ai.agnos.test.HttpEndpointSuiteTestRunner
+
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
+
 import org.eclipse.rdf4j.model.util.ModelBuilder
 import org.eclipse.rdf4j.model.Model
 import org.eclipse.rdf4j.model.vocabulary.RDFS
 import org.eclipse.rdf4j.rio.RDFFormat
 import org.scalatest.{BeforeAndAfterAll, DoNotDiscover, WordSpecLike}
 
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.concurrent.duration._
+import ai.agnos.sparql.SparqlQueries
+import ai.agnos.sparql.api._
+import ai.agnos.sparql.stream.client.{GraphStoreRequestFlowBuilder, HttpEndpointFlow, SparqlRequestFlowBuilder}
+import ai.agnos.sparql.util.{HttpEndpoint, RdfModelTestUtils}
+import ai.agnos.test.HttpEndpointSuiteTestRunner
+
 
 @DoNotDiscover
 class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProtocolBuilderSpec"))
@@ -39,6 +42,8 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
   implicit val materializer: ActorMaterializer = ActorMaterializer()(system)
   implicit val dispatcher: ExecutionContext = system.dispatcher
   implicit val prefixMapping: PrefixMapping = PrefixMapping.none
+
+  import scala.collection.JavaConverters._
 
   implicit val errorHandler: ErrorHandler = DefaultErrorHandler
 
@@ -127,8 +132,6 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
     }
     response
   }
-
-  import scala.collection.JavaConversions._
 
   "The Akka-Streams Graph Store Protocol Client" must {
 
@@ -253,7 +256,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       sink.request(1)
       source.sendNext(GetGraph(Some(modelGraphIri)))
       val res = checkAllGood(sink, Some(true), Some(40))
-      res.model.get.predicates.containsAll(Set(RDFS.LABEL, RDFS.COMMENT))
+      res.model.get.predicates.containsAll(Set(RDFS.LABEL, RDFS.COMMENT).asJavaCollection)
       dumpModel(res.model.get, RDFFormat.TURTLE)
       dumpModel(res.model.get, RDFFormat.JSONLD)
     }
@@ -269,7 +272,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       sink.request(1)
       source.sendNext(GetGraph(Some(modelGraphIri)))
       val res = checkAllGood(sink, Some(true), Some(40))
-      res.model.get.predicates.containsAll(Set(RDFS.LABEL, RDFS.COMMENT))
+      res.model.get.predicates.containsAll(Set(RDFS.LABEL, RDFS.COMMENT).asJavaCollection)
     }
 
     "8. Load JSON-LD file from the local filesystem into a named graph" in {
@@ -283,7 +286,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       sink.request(1)
       source.sendNext(GetGraph(Some(modelGraphIri)))
       val res = checkAllGood(sink, Some(true), Some(40))
-      res.model.get.predicates.containsAll(Set(RDFS.LABEL, RDFS.COMMENT))
+      res.model.get.predicates.containsAll(Set(RDFS.LABEL, RDFS.COMMENT).asJavaCollection)
     }
 
     "9. Load TURTLE file from an http server using a URL into a named graph" in {
@@ -316,7 +319,7 @@ class GraphStoreProtocolBuilderSpec extends TestKit(ActorSystem("GraphStoreProto
       sink.request(1)
       source.sendNext(GetGraph(Some(modelGraphIri)))
       val res = checkAllGood(sink, Some(true), Some(40))
-      res.model.get.predicates.containsAll(Set(RDFS.LABEL, RDFS.COMMENT))
+      res.model.get.predicates.containsAll(Set(RDFS.LABEL, RDFS.COMMENT).asJavaCollection)
 
       // should the test never get this far to stop the server, the afterAll() hook will attempt it again
       shutdownFileServer()

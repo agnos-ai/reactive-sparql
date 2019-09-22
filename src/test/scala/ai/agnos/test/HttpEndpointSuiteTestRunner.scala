@@ -11,7 +11,6 @@ import org.scalatest._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.languageFeature.postfixOps
 
 object HttpEndpointSuiteTestRunner {
 

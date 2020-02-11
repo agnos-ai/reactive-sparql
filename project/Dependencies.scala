@@ -3,9 +3,9 @@ import sbt._
 
 object Version {
 
-  val scala      = "2.12.6"
-  val akka       = "2.5.12"
-  val akkaHttp   = "10.1.0"
+  val scala      = "2.12.10"
+  val akka       = "2.5.29"
+  val akkaHttp   = "10.1.11"
   val javaxWsRs  = "1.1.1"
   val rdf4j      = "2.1.6" //"2.3.2"
   val logback    = "1.2.3"

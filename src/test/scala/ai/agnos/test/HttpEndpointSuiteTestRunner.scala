@@ -91,10 +91,10 @@ class HttpEndpointSuiteTestRunner(_system: ActorSystem) extends TestKit(_system)
     * @return
     */
   override def nestedSuites = Vector(
-    new SparqlConstructClientSpec(),
-    new SparqlHttpSpec(),
-    new SparqlRequestClientSpec(),
-    new MappingStreamSparqlClientSpec(),
+    //new SparqlConstructClientSpec(),
+    //new SparqlHttpSpec(),
+    //new SparqlRequestClientSpec(),
+    //new MappingStreamSparqlClientSpec(),
     new GraphStoreProtocolBuilderSpec()
   )
 

@@ -1,18 +1,23 @@
 package ai.agnos.test
 
+import java.io.{InputStream, PrintStream}
+
 import akka.actor._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest, HttpResponse, StatusCodes}
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
+import ai.agnos.sparql._
 import ai.agnos.sparql.util.HttpEndpoint
 import ai.agnos.test.FusekiManager._
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 object FusekiManager {
+
+  val ProcessLaunchGracePeriod = 5 seconds
 
   sealed trait Message
   case object Start extends Message
@@ -33,15 +38,34 @@ object FusekiManager {
   private case class HardShutdownRequested(respondTo: ActorRef)
 
   private class FusekiRunner(val port: Int, val resource: String) extends Thread {
-
-    var process: Option[Process] = None
+    val NoProcessRunning = Failure[Process](new RuntimeException("no process is running"))
+    var process: Try[Process] = NoProcessRunning
 
     override def run(): Unit = {
-      // JC: another option is to call org.apache.jena.fuseki.cmd.FusekiCmd.main(args), instead of starting a process
-      val path = new org.apache.jena.fuseki.Fuseki().getClass.getProtectionDomain.getCodeSource.getLocation.getPath
-      val cmd = s"java -Xms768m -Xmx768m -jar $path --port=$port --mem --update $resource"
-      println(s"Launching Fuseki Server: $cmd")
-      process = Some(Runtime.getRuntime.exec(cmd))
+      // Starting Fuseki as a separate Java Process. Another option is to call
+      // org.apache.jena.fuseki.cmd.FusekiCmd.main(args), instead of starting a process
+      this.process = for {
+        url     <- Try(new org.apache.jena.fuseki.Fuseki().getClass.getProtectionDomain.getCodeSource.getLocation.toURI.toURL)
+        jar     <- urlToFile(url)
+                   cmd = s"""java -Xms768m -Xmx768m -jar "$jar" --port=$port --mem --update $resource"""
+        _       <- Try(println(s"Launching Fuseki Server: $cmd"))
+        process <- Try(Runtime.getRuntime.exec(cmd))
+      } yield process
+      println(s"Launch Status: ${this.process}")
+      this.process.foreach { p =>
+        println(s"Waiting ${ProcessLaunchGracePeriod} for process to initialise...")
+        Thread.sleep(ProcessLaunchGracePeriod.toMillis)
+        (p.isAlive, p.exitValue(), p.getInputStream, p.getErrorStream) match {
+          case (true, _, _, _) =>
+            println(s"Server is ALIVE on port ${port}")
+          case (false, rc, stdout, stderr) =>
+            printStream(stdout, System.out)
+            println(s"Server failed with RC=${rc}")
+            printStream(stderr, System.err, Some("Error output:"))
+          case any@_ =>
+            println(s"Unexpected outcome: ${any}")
+        }
+      }
     }
 
     def startServer(): Unit = {
@@ -49,12 +73,17 @@ object FusekiManager {
     }
 
     def shutdownServer(): Unit = {
-      process.foreach { p =>
-        p.destroy()
+      this.process.foreach { p =>
+        p.destroyForcibly()
         p.waitFor()
         println(s"Fuseki Server killed with status: ${p.exitValue()}")
       }
-      process = None
+      this.process = NoProcessRunning
+    }
+
+    private def printStream(is: InputStream, ps: PrintStream, header: Option[String] = None): Unit = {
+      header.foreach(ps.println)
+      ps.println(new String(Stream.continually(is.read).takeWhile(_ != -1).map(_.toByte).toArray))
     }
   }
 }

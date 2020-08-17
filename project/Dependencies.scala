@@ -3,13 +3,13 @@ import sbt._
 
 object Version {
 
-  val scala      = "2.12.10"
+  val scala      = "2.13.3"
   val akka       = "2.5.29"
   val akkaHttp   = "10.1.11"
   val javaxWsRs  = "1.1.1"
   val rdf4j      = "2.1.6" //"2.3.2"
   val logback    = "1.2.3"
-  val scalaTest  = "3.0.5"
+  val scalaTest  = "3.0.8"
   val fuseki     = "3.7.0"
 }
 
@@ -32,5 +32,6 @@ object Dependencies {
   val `reactive-sparql-dependencies` = Seq(
     akkaActor, akkaStream, akkaHttpCore, akkaHttpSprayJson, akkaSlf4j,
     javaxWsRs, /*jerseyCore, jerseyClient, */ rdf4jRuntime,
-    logbackClassic, scalaTest, akkaTestkit, akkaStreamTestkit, fusekiServer)
+    logbackClassic, scalaTest, akkaTestkit, akkaStreamTestkit, fusekiServer,
+    "jakarta.xml.bind" % "jakarta.xml.bind-api" % "2.3.2")
 }

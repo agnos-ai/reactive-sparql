@@ -21,9 +21,9 @@ object SparqlClientJsonProtocol extends SprayJsonSupport with DefaultJsonProtoco
     }
     def read(row : JsValue) = read(row.asInstanceOf[JsObject])
     def read(row : JsObject) = {
-      QuerySolution(row.fields mapValues {
+      QuerySolution((row.fields mapValues {
         (value : JsValue) => value.convertTo[QuerySolutionValue]
-      })
+      }).toMap)
     }
   }
   implicit val format2 = jsonFormat(ResultSetResults, "bindings")

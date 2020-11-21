@@ -11,6 +11,7 @@ object Version {
   val logback    = "1.2.3"
   val scalaTest  = "3.0.8"
   val fuseki     = "3.7.0"
+  val xmlBind    = "2.3.2"
 }
 
 
@@ -24,6 +25,7 @@ object Dependencies {
   val javaxWsRs         = "javax.ws.rs"       %  "jsr311-api"                        % Version.javaxWsRs
   val logbackClassic    = "ch.qos.logback"    %  "logback-classic"                   % Version.logback
   val rdf4jRuntime      = "org.eclipse.rdf4j" %  "rdf4j-runtime"                     % Version.rdf4j
+  val jakartaXmlBind    = "jakarta.xml.bind"  % "jakarta.xml.bind-api"               % Version.xmlBind
   val scalaTest         = "org.scalatest"     %% "scalatest"                         % Version.scalaTest   % "it,test"
   val akkaTestkit       = "com.typesafe.akka" %% "akka-testkit"                      % Version.akka        % "it,test"
   val akkaStreamTestkit = "com.typesafe.akka" %% "akka-stream-testkit"               % Version.akka        % "it,test"
@@ -31,7 +33,7 @@ object Dependencies {
 
   val `reactive-sparql-dependencies` = Seq(
     akkaActor, akkaStream, akkaHttpCore, akkaHttpSprayJson, akkaSlf4j,
-    javaxWsRs, /*jerseyCore, jerseyClient, */ rdf4jRuntime,
+    javaxWsRs, rdf4jRuntime,
     logbackClassic, scalaTest, akkaTestkit, akkaStreamTestkit, fusekiServer,
-    "jakarta.xml.bind" % "jakarta.xml.bind-api" % "2.3.2")
+    jakartaXmlBind)
 }

@@ -1,0 +1,17 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="ScalaTests in 'agnos'" type="ScalaTestRunConfiguration" factoryName="ScalaTest" nameIsGenerated="true" show_console_on_std_err="false" show_console_on_std_out="false">
+    <module name="reactive-sparql" />
+    <option name="allowRunningInParallel" value="false" />
+    <option name="projectPathOnTarget" />
+    <option name="selectedOptions">
+      <list />
+    </option>
+    <option name="testKind" value="All in package" />
+    <option name="javaOptions" value="--add-exports java.xml/com.sun.org.apache.xerces.internal.util=ALL-UNNAMED" />
+    <option name="shortenClasspath" value="NONE" />
+    <option name="testPackagePath" value="ai.agnos" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
